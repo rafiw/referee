@@ -1,12 +1,7 @@
-//
-//  main.cpp
-//  monitor
-//
-//  Created by Michael Rolnik on 09/12/2020.
-//
-
 #include <iostream>
 #include "visitor.hpp"
+#include "factory.hpp"
+#include "canonic.hpp"
 
 int main(int argc, const char * argv[]) {
     // insert code here...

@@ -44,7 +44,7 @@ struct ExprTernary
 
 template<typename Type>
 class ExprConstT
-    : public ExprNullary
+    : public Visitable<ExprNullary, ExprConstT<Type>>
 {
 public:
     ExprConstT(Type value) : value(value) {} 
@@ -53,30 +53,30 @@ public:
 
 template<typename Type, Type Value>
 class ExprConstTV
-    : public ExprConstT<Type>
+    : public Visitable<ExprConstT<Type>, ExprConstTV<Type, Value>>
 {
 public:
-    ExprConstTV() : ExprConstT<Type>(Value) {}
+    ExprConstTV() : Visitable<ExprConstT<Type>, ExprConstTV<Type, Value>>(Value) {}
 };
 
 template<int OP, int NOP = OP>
 class ExprUnaryT
-    : public ExprUnary
+    : public Visitable<ExprUnary, ExprUnaryT<OP, NOP>>
 {
 public:
     ExprUnaryT(Expression* arg)
-        : ExprUnary(OP, arg)
+        : Visitable<ExprUnary, ExprUnaryT<OP, NOP>>(OP, arg)
     {
     }
 };
 
 template<int OP>
 class ExprBinaryT
-    : public ExprBinary
+    : public Visitable<ExprBinary, ExprBinaryT<OP>>
 {
 public:
     ExprBinaryT(Expression* lhs, Expression* rhs)
-        : ExprBinary(OP, lhs, rhs)
+        : Visitable<ExprBinary, ExprBinaryT<OP>>(OP, lhs, rhs)
     {
     }
 };
