@@ -1,45 +1,89 @@
 #pragma once
 #include "visitor.hpp"
+#include <map>
+#include <vector>
 
-struct Expression
+//  Expression
+//  =========================================================================
+class Expr
     : public Visitable<>
 {
-    virtual ~Expression() = default;
+public:
+    virtual ~Expr() = default;
+
+    virtual bool is_temporal() {return false;}
 };
 
-struct ExprNullary
-    : public Visitable<Expression, ExprNullary>
+class   TimeInterval
 {
+public:
+    TimeInterval(Expr* lo, Expr* hi);
+
+    Expr* const lo;
+    Expr* const hi;
 };
 
-struct ExprUnary
-    : public Visitable<Expression, ExprUnary>
+class   TimeLowerBound
+    : public TimeInterval
 {
-    ExprUnary(int op, Expression* arg);
-
-    const int         op;
-    Expression* const arg;
+public:
+    TimeLowerBound(Expr* lo);
 };
 
-struct ExprBinary
-    : public Visitable<Expression, ExprBinary>
+class   TimeUpperBound
+    : public TimeInterval
 {
-    ExprBinary(int op, Expression* lhs, Expression* rhs);
-
-    const int         op;
-    Expression* const lhs;
-    Expression* const rhs;
+public:
+    TimeUpperBound(Expr* hi);
 };
 
-struct ExprTernary
-    : public Visitable<Expression, ExprTernary>
+class ExprNullary
+    : public Visitable<Expr, ExprNullary>
 {
-    ExprTernary(int op, Expression* lhs, Expression* mhs, Expression* rhs);
+protected:
+    ExprNullary();
+};
 
-    const int         op;
-    Expression* const lhs;
-    Expression* const mhs;
-    Expression* const rhs;
+class ExprUnary
+    : public Visitable<Expr, ExprUnary>
+{
+protected:
+    ExprUnary(int op, Expr* arg);
+
+    bool is_temporal() override;
+
+public:
+    const int   op;
+    Expr* const arg;
+};
+
+class ExprBinary
+    : public Visitable<Expr, ExprBinary>
+{
+protected:
+    ExprBinary(int op, Expr* lhs, Expr* rhs);
+
+    bool is_temporal() override;
+
+public:
+    const int   op;
+    Expr* const lhs;
+    Expr* const rhs;
+};
+
+class ExprTernary
+    : public Visitable<Expr, ExprTernary>
+{
+protected:
+    ExprTernary(int op, Expr* lhs, Expr* mhs, Expr* rhs);
+
+    bool is_temporal() override;
+
+public:
+    const int   op;
+    Expr* const lhs;
+    Expr* const mhs;
+    Expr* const rhs;
 };
 
 template<typename Type>
@@ -59,67 +103,197 @@ public:
     ExprConstTV() : Visitable<ExprConstT<Type>, ExprConstTV<Type, Value>>(Value) {}
 };
 
-template<int OP, int NOP = OP>
-class ExprUnaryT
-    : public Visitable<ExprUnary, ExprUnaryT<OP, NOP>>
+template<typename Expr>
+class Temporal
+    : public Visitable<Expr, Temporal<Expr>>
 {
 public:
-    ExprUnaryT(Expression* arg)
-        : Visitable<ExprUnary, ExprUnaryT<OP, NOP>>(OP, arg)
+    template<typename ... Args>
+    Temporal(TimeInterval* time, Args ... args)
+        : Visitable<Expr, Temporal<Expr>>(args...)
+        , time(time)
+    {
+    }
+
+    template<typename ... Args>
+    Temporal(Args ... args, TimeInterval* time)
+        : Visitable<Expr, Temporal<Expr>>(args...)
+        , time(time)
+    {
+    }
+
+    template<typename ... Args>
+    Temporal(Args ... args)
+        : Visitable<Expr, Temporal<Expr>>(args...)
+        , time(nullptr)
+    {
+    }
+
+    bool is_temporal() override {return true;}
+
+    TimeInterval* const time = nullptr;
+};
+
+template<int OP, typename Expr>
+class SetOper
+    : public Visitable<Expr, SetOper<OP, Expr>>
+{
+public:
+    template<typename ... Args>
+    SetOper(Args ... args)
+        : Visitable<Expr, SetOper<OP, Expr>>(OP, args...)
     {
     }
 };
 
-template<int OP>
-class ExprBinaryT
-    : public Visitable<ExprBinary, ExprBinaryT<OP>>
+template<typename Class>
+class Final final
+    : public Visitable<Class, Final<Class>>
 {
 public:
-    ExprBinaryT(Expression* lhs, Expression* rhs)
-        : Visitable<ExprBinary, ExprBinaryT<OP>>(OP, lhs, rhs)
+    template<typename ... Args>
+    Final(Args ... args)
+        : Visitable<Class, Final<Class>>(args ...)
     {
     }
 };
 
-using ExprTrue  = ExprConstTV<bool, true>;
-using ExprFalse = ExprConstTV<bool, false>;
+using ExprTrue  = Final<ExprConstTV<bool, true>>;
+using ExprFalse = Final<ExprConstTV<bool, false>>;
 
-using ExprNeg   = ExprUnaryT<'-'>;
+using ExprNeg   = Final<SetOper<'-',   ExprUnary>>;
 
-using ExprAdd   = ExprBinaryT<'+'>;
-using ExprSub   = ExprBinaryT<'-'>;
-using ExprMul   = ExprBinaryT<'*'>;
-using ExprDiv   = ExprBinaryT<'/'>;
+using ExprAdd   = Final<SetOper<'+',   ExprBinary>>;
+using ExprSub   = Final<SetOper<'-',   ExprBinary>>;
+using ExprMul   = Final<SetOper<'*',   ExprBinary>>;
+using ExprDiv   = Final<SetOper<'/',   ExprBinary>>;
 
-using ExprEQ    = ExprBinaryT<'=='>;
-using ExprNE    = ExprBinaryT<'!='>;
-using ExprGT    = ExprBinaryT<'>'>;
-using ExprGE    = ExprBinaryT<'>='>;
-using ExprLT    = ExprBinaryT<'<'>;
-using ExprLE    = ExprBinaryT<'<='>;
+using ExprEQ    = Final<SetOper<'==',  ExprBinary>>;
+using ExprNE    = Final<SetOper<'!=',  ExprBinary>>;
+using ExprGT    = Final<SetOper<'>',   ExprBinary>>;
+using ExprGE    = Final<SetOper<'>=',  ExprBinary>>;
+using ExprLT    = Final<SetOper<'<',   ExprBinary>>;
+using ExprLE    = Final<SetOper<'<=',  ExprBinary>>;
 
-using ExprNot   = ExprUnaryT<'!'>;
+using ExprNot   = Final<SetOper<'!',   ExprUnary>>;
 
-using ExprOr    = ExprBinaryT<'||'>;
-using ExprAnd   = ExprBinaryT<'&&'>;
-using ExprXor   = ExprBinaryT<'^'>;
-using ExprImp   = ExprBinaryT<'=>'>;
-using ExprEqu   = ExprBinaryT<'<=>'>;
+using ExprOr    = Final<SetOper<'||',  ExprBinary>>;
+using ExprAnd   = Final<SetOper<'&&',  ExprBinary>>;
+using ExprXor   = Final<SetOper<'^',   ExprBinary>>;
+using ExprImp   = Final<SetOper<'=>',  ExprBinary>>;
+using ExprEqu   = Final<SetOper<'<=>', ExprBinary>>;
 
-using ExprG     = ExprUnaryT<'G'>;
-using ExprF     = ExprUnaryT<'F'>;
-using ExprXs    = ExprUnaryT<'Xs'>;
-using ExprXw    = ExprUnaryT<'Xw'>;
-using ExprUs    = ExprBinaryT<'Us'>;
-using ExprUw    = ExprBinaryT<'Uw'>;
-using ExprRs    = ExprBinaryT<'Rs'>;
-using ExprRw    = ExprBinaryT<'Rw'>;
+using ExprChoice= Final<SetOper<'?:',  ExprTernary>>;
 
-using ExprH     = ExprUnaryT<'H'>;
-using ExprO     = ExprUnaryT<'O'>;
-using ExprYs    = ExprUnaryT<'Ys'>;
-using ExprYw    = ExprUnaryT<'Yw'>;
-using ExprSs    = ExprBinaryT<'Ss'>;
-using ExprSw    = ExprBinaryT<'Sw'>;
-using ExprTs    = ExprBinaryT<'Ts'>;
-using ExprTw    = ExprBinaryT<'Tw'>;
+using ExprG     = Final<Temporal<SetOper<'G',   ExprUnary>>>;
+using ExprF     = Final<Temporal<SetOper<'F',   ExprUnary>>>;
+using ExprXs    = Final<Temporal<SetOper<'Xs',  ExprUnary>>>;
+using ExprXw    = Final<Temporal<SetOper<'Xw',  ExprUnary>>>;
+using ExprUs    = Final<Temporal<SetOper<'Us',  ExprBinary>>>;
+using ExprUw    = Final<Temporal<SetOper<'Uw',  ExprBinary>>>;
+using ExprRs    = Final<Temporal<SetOper<'Rs',  ExprBinary>>>;
+using ExprRw    = Final<Temporal<SetOper<'Rw',  ExprBinary>>>;
+
+using ExprH     = Final<Temporal<SetOper<'H',   ExprUnary>>>;
+using ExprO     = Final<Temporal<SetOper<'O',   ExprUnary>>>;
+using ExprYs    = Final<Temporal<SetOper<'Ys',  ExprUnary>>>;
+using ExprYw    = Final<Temporal<SetOper<'Yw',  ExprUnary>>>;
+using ExprSs    = Final<Temporal<SetOper<'Ss',  ExprBinary>>>;
+using ExprSw    = Final<Temporal<SetOper<'Sw',  ExprBinary>>>;
+using ExprTs    = Final<Temporal<SetOper<'Ts',  ExprBinary>>>;
+using ExprTw    = Final<Temporal<SetOper<'Tw',  ExprBinary>>>;
+
+//  Type
+//  =========================================================================
+class Type
+    : public Visitable<>
+{
+public:
+    virtual ~Type() = default;
+};
+
+class TypeVoid    : public Visitable<Type, TypeVoid> {};
+class TypeBoolean : public Visitable<Type, TypeBoolean> {}; 
+class TypeInteger : public Visitable<Type, TypeInteger> {}; 
+class TypeFlating : public Visitable<Type, TypeFlating> {}; 
+class TypeString  : public Visitable<Type, TypeString> {}; 
+
+template<typename T>
+class Named
+{
+public:
+    Named(std::string name, T* data)
+        : name(name)
+        , data(data)
+    {
+    }
+
+    std::string const   name;
+    T* const            data;
+};
+
+class TypeStruct
+    : public Visitable<Type, TypeStruct>
+{
+public:
+    TypeStruct(std::vector<Named<Type>> members);
+
+    std::vector<Named<Type>> const  members;
+};
+
+class TypeArray
+    : public Visitable<Type, TypeArray>
+{
+public:
+    TypeArray(Type* type, unsigned size);
+
+    Type* const     type;
+    unsigned const  size;   //  is size is 0, array is dynamic otherwise it's static
+};
+
+class   TypeEnum
+    : public Visitable<Type, TypeEnum>
+{
+public:
+    TypeEnum(std::vector<std::string>   items);
+
+    std::vector<std::string> const  items;
+};
+
+//  Data
+//  =========================================================================
+class Data
+    : public Visitable<>
+{
+public:
+    virtual ~Data() = default;
+};
+
+//  real data coming from a DB
+class DataReal
+    : public Visitable<Data, DataReal>
+{
+public:
+    DataReal(Type* type);
+};
+
+//  temp data, result of an external function call 
+class DataTemp
+    : public Visitable<Data, DataReal>
+{
+};
+
+//  result of an expression
+class DataExpr
+    : public Visitable<Data, DataReal>
+{
+public:
+    DataExpr(Expr* expr);
+};
+
+//  Module
+//  =========================================================================
+class Module
+{
+public:
+};

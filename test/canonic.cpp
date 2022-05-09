@@ -13,8 +13,8 @@ public:
         f   = Factory<ExprFalse>::create();
     }
 
-    Expression* t = nullptr;
-    Expression* f = nullptr;
+    Expr*   t = nullptr;
+    Expr*   f = nullptr;
 };
 
 

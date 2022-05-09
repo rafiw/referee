@@ -1,6 +1,8 @@
 cmake_minimum_required(VERSION 3.16)
 
 project(monitor)
+include(ExternalAntlr4Cpp)
+
 
 add_compile_options(-Wno-multichar)
 add_compile_options(-g -ggdb)

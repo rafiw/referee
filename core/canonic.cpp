@@ -2,8 +2,8 @@
 #include "negated.hpp"
 #include "factory.hpp"
 
-struct Canonic::Details
-    : Visitor< Expression
+struct CanonicImpl
+    : Visitor< Expr
              , ExprNot
              , ExprOr
              , ExprAnd
@@ -27,13 +27,13 @@ struct Canonic::Details
              , ExprTs
              , ExprTw>
 {
-    Expression* canonic = nullptr;
-    Expression* t = Factory<ExprTrue>::create();
-    Expression* f = Factory<ExprFalse>::create();
+    Expr* canonic = nullptr;
+    Expr* t = Factory<ExprTrue>::create();
+    Expr* f = Factory<ExprFalse>::create();
 
-    Expression* make(Expression* expr);
+    Expr* make(Expr* expr);
 
-    void        visit(Expression*   expr) override;
+    void        visit(Expr*   expr) override;
     void        visit(ExprNot*      expr) override;
     void        visit(ExprOr*       expr) override;
     void        visit(ExprAnd*      expr) override;
@@ -58,23 +58,31 @@ struct Canonic::Details
     void        visit(ExprTw*       expr) override;
 };
 
-Canonic::Canonic()
-{
-    details = std::make_unique<Details>();
-}
+void    CanonicImpl::visit(Expr*  expr) {canonic = expr;}
+void    CanonicImpl::visit(ExprNot*     expr) {canonic = Negated::make(expr->arg);}
+void    CanonicImpl::visit(ExprOr*      expr) {canonic = Factory<ExprOr>::create(make(expr->lhs), make(expr->rhs));}
+void    CanonicImpl::visit(ExprAnd*     expr) {canonic = Factory<ExprAnd>::create(make(expr->lhs), make(expr->rhs));}
+void    CanonicImpl::visit(ExprXor*     expr) {canonic = Factory<ExprXor>::create(make(expr->lhs), make(expr->rhs));}
+void    CanonicImpl::visit(ExprImp*     expr) {canonic = Factory<ExprOr>::create(make(Negated::make(expr->lhs)), make(expr->rhs));}
+void    CanonicImpl::visit(ExprEqu*     expr) {}
+void    CanonicImpl::visit(ExprG*       expr) {canonic = Factory<ExprRw>::create(f, make(expr->arg));}
+void    CanonicImpl::visit(ExprF*       expr) {canonic = Factory<ExprUs>::create(t, make(expr->arg));}
+void    CanonicImpl::visit(ExprXs*      expr) {canonic = Factory<ExprXs>::create(make(expr->arg));}
+void    CanonicImpl::visit(ExprXw*      expr) {canonic = Factory<ExprXw>::create(make(expr->arg));}
+void    CanonicImpl::visit(ExprUs*      expr) {canonic = Factory<ExprUs>::create(make(expr->lhs), make(expr->rhs));}
+void    CanonicImpl::visit(ExprUw*      expr) {canonic = Factory<ExprUw>::create(make(expr->lhs), make(expr->rhs));}
+void    CanonicImpl::visit(ExprRs*      expr) {canonic = Factory<ExprRs>::create(make(expr->lhs), make(expr->rhs));}
+void    CanonicImpl::visit(ExprRw*      expr) {canonic = Factory<ExprRw>::create(make(expr->lhs), make(expr->rhs));}
+void    CanonicImpl::visit(ExprH*       expr) {canonic = Factory<ExprTw>::create(f, make(expr->arg));}
+void    CanonicImpl::visit(ExprO*       expr) {canonic = Factory<ExprSs>::create(t, make(expr->arg));}
+void    CanonicImpl::visit(ExprYs*      expr) {canonic = Factory<ExprYs>::create(make(expr->arg));}
+void    CanonicImpl::visit(ExprYw*      expr) {canonic = Factory<ExprYw>::create(make(expr->arg));}
+void    CanonicImpl::visit(ExprSs*      expr) {canonic = Factory<ExprSs>::create(make(expr->lhs), make(expr->rhs));}
+void    CanonicImpl::visit(ExprSw*      expr) {canonic = Factory<ExprSw>::create(make(expr->lhs), make(expr->rhs));}
+void    CanonicImpl::visit(ExprTs*      expr) {canonic = Factory<ExprTs>::create(make(expr->lhs), make(expr->rhs));}
+void    CanonicImpl::visit(ExprTw*      expr) {canonic = Factory<ExprTw>::create(make(expr->lhs), make(expr->rhs));}
 
-Canonic::~Canonic()
-{
-}
-
-Expression* Canonic::make(Expression* expr)
-{
-    Canonic inst;
-
-    return inst.details->make(expr);
-}
-
-Expression* Canonic::Details::make(Expression* expr)
+Expr* CanonicImpl::make(Expr* expr)
 {
     canonic = expr;
 
@@ -83,26 +91,10 @@ Expression* Canonic::Details::make(Expression* expr)
     return  canonic;
 }
 
-void    Canonic::Details::visit(Expression*  expr) {canonic = expr;}
-void    Canonic::Details::visit(ExprNot*     expr) {canonic = Negated::make(expr->arg);}
-void    Canonic::Details::visit(ExprOr*      expr) {canonic = Factory<ExprOr>::create(make(expr->lhs), make(expr->rhs));}
-void    Canonic::Details::visit(ExprAnd*     expr) {canonic = Factory<ExprAnd>::create(make(expr->lhs), make(expr->rhs));}
-void    Canonic::Details::visit(ExprXor*     expr) {canonic = Factory<ExprXor>::create(make(expr->lhs), make(expr->rhs));}
-void    Canonic::Details::visit(ExprImp*     expr) {canonic = Factory<ExprOr>::create(make(Negated::make(expr->lhs)), make(expr->rhs));}
-void    Canonic::Details::visit(ExprEqu*     expr) {}
-void    Canonic::Details::visit(ExprG*       expr) {canonic = Factory<ExprRw>::create(f, make(expr->arg));}
-void    Canonic::Details::visit(ExprF*       expr) {canonic = Factory<ExprUs>::create(t, make(expr->arg));}
-void    Canonic::Details::visit(ExprXs*      expr) {canonic = Factory<ExprXs>::create(make(expr->arg));}
-void    Canonic::Details::visit(ExprXw*      expr) {canonic = Factory<ExprXw>::create(make(expr->arg));}
-void    Canonic::Details::visit(ExprUs*      expr) {canonic = Factory<ExprUs>::create(make(expr->lhs), make(expr->rhs));}
-void    Canonic::Details::visit(ExprUw*      expr) {canonic = Factory<ExprUw>::create(make(expr->lhs), make(expr->rhs));}
-void    Canonic::Details::visit(ExprRs*      expr) {canonic = Factory<ExprRs>::create(make(expr->lhs), make(expr->rhs));}
-void    Canonic::Details::visit(ExprRw*      expr) {canonic = Factory<ExprRw>::create(make(expr->lhs), make(expr->rhs));}
-void    Canonic::Details::visit(ExprH*       expr) {canonic = Factory<ExprTw>::create(f, make(expr->arg));}
-void    Canonic::Details::visit(ExprO*       expr) {canonic = Factory<ExprSs>::create(t, make(expr->arg));}
-void    Canonic::Details::visit(ExprYs*      expr) {canonic = Factory<ExprYs>::create(make(expr->arg));}
-void    Canonic::Details::visit(ExprYw*      expr) {canonic = Factory<ExprYw>::create(make(expr->arg));}
-void    Canonic::Details::visit(ExprSs*      expr) {canonic = Factory<ExprSs>::create(make(expr->lhs), make(expr->rhs));}
-void    Canonic::Details::visit(ExprSw*      expr) {canonic = Factory<ExprSw>::create(make(expr->lhs), make(expr->rhs));}
-void    Canonic::Details::visit(ExprTs*      expr) {canonic = Factory<ExprTs>::create(make(expr->lhs), make(expr->rhs));}
-void    Canonic::Details::visit(ExprTw*      expr) {canonic = Factory<ExprTw>::create(make(expr->lhs), make(expr->rhs));}
+Expr* Canonic::make(Expr* expr)
+{
+    CanonicImpl impl;
+
+    return impl.make(expr);
+}
+
