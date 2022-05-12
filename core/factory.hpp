@@ -16,7 +16,7 @@ public:
 
         if(!obj)
         {
-            obj.reset(new T(args...));
+            obj = std::make_unique<T>(args...);
         }
 
         return obj.get();

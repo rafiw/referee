@@ -51,19 +51,25 @@ expression  : sign? integer                                     # ExprConst
 
             | reference                                         # ExprRef
 
-            | expression '==' expression                        # ExprEq
-            | expression '!=' expression                        # ExprNe
+            | expression '=='  expression                       # ExprEq
+            | expression '!='  expression                       # ExprNe
 
-            | expression '<'  expression                        # ExprLt
-            | expression '<=' expression                        # ExprLe
+            | expression '<'   expression                       # ExprLt
+            | expression '<='  expression                       # ExprLe
 
-            | expression '>'  expression                        # ExprGt
-            | expression '>=' expression                        # ExprGe
+            | expression '>'   expression                       # ExprGt
+            | expression '>='  expression                       # ExprGe
 
-            | expression '+' expression                         # ExprAdd
-            | expression '-' expression                         # ExprSub
-            | expression '*' expression                         # ExprMul
-            | expression '/' expression                         # ExprDiv
+            | expression '+'   expression                       # ExprAdd
+            | expression '-'   expression                       # ExprSub
+            | expression '*'   expression                       # ExprMul
+            | expression '/'   expression                       # ExprDiv
+
+            | expression '||'  expression                       # ExprOr
+            | expression '&&'  expression                       # ExprAnd
+            | expression '^'   expression                       # ExprXor
+            | expression '=>'  expression                       # ExprImp
+            | expression '<=>' expression                       # ExprEqu
 
             | 'G'  time? '(' expression ')'                     # ExprG
             | 'F'  time? '(' expression ')'                     # ExprF

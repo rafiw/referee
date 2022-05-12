@@ -1,10 +1,9 @@
 #pragma once
+
 #include "visitor.hpp"
 #include <map>
 #include <vector>
 
-//  Expression
-//  =========================================================================
 class Expr
     : public Visitable<>
 {
@@ -168,12 +167,12 @@ using ExprSub   = Final<SetOper<'-',   ExprBinary>>;
 using ExprMul   = Final<SetOper<'*',   ExprBinary>>;
 using ExprDiv   = Final<SetOper<'/',   ExprBinary>>;
 
-using ExprEQ    = Final<SetOper<'==',  ExprBinary>>;
-using ExprNE    = Final<SetOper<'!=',  ExprBinary>>;
-using ExprGT    = Final<SetOper<'>',   ExprBinary>>;
-using ExprGE    = Final<SetOper<'>=',  ExprBinary>>;
-using ExprLT    = Final<SetOper<'<',   ExprBinary>>;
-using ExprLE    = Final<SetOper<'<=',  ExprBinary>>;
+using ExprEq    = Final<SetOper<'==',  ExprBinary>>;
+using ExprNe    = Final<SetOper<'!=',  ExprBinary>>;
+using ExprGt    = Final<SetOper<'>',   ExprBinary>>;
+using ExprGe    = Final<SetOper<'>=',  ExprBinary>>;
+using ExprLt    = Final<SetOper<'<',   ExprBinary>>;
+using ExprLe    = Final<SetOper<'<=',  ExprBinary>>;
 
 using ExprNot   = Final<SetOper<'!',   ExprUnary>>;
 
@@ -203,8 +202,7 @@ using ExprSw    = Final<Temporal<SetOper<'Sw',  ExprBinary>>>;
 using ExprTs    = Final<Temporal<SetOper<'Ts',  ExprBinary>>>;
 using ExprTw    = Final<Temporal<SetOper<'Tw',  ExprBinary>>>;
 
-//  Type
-//  =========================================================================
+
 class Type
     : public Visitable<>
 {
@@ -260,8 +258,7 @@ public:
     std::vector<std::string> const  items;
 };
 
-//  Data
-//  =========================================================================
+
 class Data
     : public Visitable<>
 {
@@ -291,8 +288,7 @@ public:
     DataExpr(Expr* expr);
 };
 
-//  Module
-//  =========================================================================
+
 class Module
 {
 public:

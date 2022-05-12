@@ -5,6 +5,7 @@ project(referee)
 add_compile_options(-Wno-multichar)
 add_compile_options(-g -ggdb)
 add_compile_options(-std=c++17)
+add_compile_options(-O0)
 
 enable_testing()
 
