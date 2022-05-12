@@ -10,6 +10,8 @@ enable_testing()
 
 find_package(antlr4-runtime   REQUIRED)
 find_package(antlr4-generator REQUIRED)
+find_package(LLVM             REQUIRED CONFIG)
+
 set(ANTLR4_JAR_LOCATION /opt/homebrew/Cellar/antlr/4.10.1/antlr-4.10.1-complete.jar)
 
 antlr4_generate(
@@ -29,18 +31,22 @@ include_directories(
     ${ANTLR4_INCLUDE_DIR}
     ${PROJECT_BINARY_DIR}
     ${ANTLR4_INCLUDE_DIR}
+    ${LLVM_INCLUDE_DIRS}
 )
 
 include_directories(
     /opt/homebrew/Cellar/googletest/1.11.0/include
-
+    /opt/homebrew/Cellar/antlr4-cpp-runtime/4.10.1/include/
 )
 
 link_directories(
     /opt/homebrew/Cellar/googletest/1.11.0/lib
+    /opt/homebrew/Cellar/antlr4-cpp-runtime/4.10.1/lib
 )
 
-
+separate_arguments(LLVM_DEFINITIONS_LIST NATIVE_COMMAND ${LLVM_DEFINITIONS})
+add_definitions(${LLVM_DEFINITIONS_LIST})
+llvm_map_components_to_libnames(llvm_libs support core irreader)
 
 add_library(
     core
@@ -63,6 +69,7 @@ target_link_libraries(
     referee
     core
     antlr4_shared
+    ${llvm_libs}
 )
 
 add_executable(

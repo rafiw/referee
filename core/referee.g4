@@ -37,6 +37,8 @@ string      : STRING;
 ID          : [a-zA-Z_][a-zA-Z0-9]*
             ;
 
+WHITESPACE  : [ \t\n]+ -> skip ;
+
 time        : '[' integer ':' integer ']'
             | '['         ':' integer ']'
             | '[' integer ':'         ']'
@@ -48,6 +50,15 @@ expression  : sign? integer                                     # ExprConst
             | boolean                                           # ExprConst
 
             | reference                                         # ExprRef
+
+            | expression '==' expression                        # ExprEq
+            | expression '!=' expression                        # ExprNe
+
+            | expression '<'  expression                        # ExprLt
+            | expression '<=' expression                        # ExprLe
+
+            | expression '>'  expression                        # ExprGt
+            | expression '>=' expression                        # ExprGe
 
             | expression '+' expression                         # ExprAdd
             | expression '-' expression                         # ExprSub
