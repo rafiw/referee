@@ -23,8 +23,8 @@
  */
 
 #pragma once
-#include "visitor.hpp"
-#include "syntax.hpp"
+
+#include "../syntax.hpp"
 
 class Canonic
 {

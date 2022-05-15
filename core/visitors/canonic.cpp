@@ -24,7 +24,7 @@
 
 #include "canonic.hpp"
 #include "negated.hpp"
-#include "factory.hpp"
+#include "../factory.hpp"
 
 struct CanonicImpl
     : Visitor< Expr

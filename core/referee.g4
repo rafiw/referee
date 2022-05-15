@@ -63,9 +63,9 @@ ID          : [a-zA-Z_][a-zA-Z0-9]*
 
 WHITESPACE  : [ \t\n]+ -> skip ;
 
-time        : '[' integer ':' integer ']'
-            | '['         ':' integer ']'
-            | '[' integer ':'         ']'
+time        : '[' expression ':' expression ']'                 # TimeFull
+            | '['            ':' expression ']'                 # TimeUpper
+            | '[' expression ':'         ']'                    # TimeLower
             ;
 
 expression  : sign? integer                                     # ExprConst
@@ -73,7 +73,9 @@ expression  : sign? integer                                     # ExprConst
             | string                                            # ExprConst
             | boolean                                           # ExprConst
 
-            | reference                                         # ExprRef
+            | dataID                                            # ExprData
+            | expression '.' mmbrID                             # ExprMmbr
+            | expression '[' expression ']'                     # ExprIndx
 
             | expression '=='  expression                       # ExprEq
             | expression '!='  expression                       # ExprNe
@@ -94,6 +96,8 @@ expression  : sign? integer                                     # ExprConst
             | expression '^'   expression                       # ExprXor
             | expression '=>'  expression                       # ExprImp
             | expression '<=>' expression                       # ExprEqu
+
+            | expression '?' expression ':' expression          # ExprTer
 
             | 'G'  time? '(' expression ')'                     # ExprG
             | 'F'  time? '(' expression ')'                     # ExprF
@@ -119,9 +123,7 @@ expression  : sign? integer                                     # ExprConst
             | '(' expression ')'                                # ExprParen
             ;
 
-reference   : dataID                                            # RefData
-            | reference '.' ID                                  # RefMmbr
-            | reference '[' expression ']'                      # RefElem
+mmbrID      : ID
             ;
 
 typeID      : ID
@@ -134,23 +136,27 @@ dataID      : ID
 itemList    : (ID (',' ID)*)?
             ;
 
-mmbrList    : (ID ':' typeID ';')*
+mmbrList    : (ID ':' type ';')*
             ;
 
 index       : integer
             ;
 
-type        : 'boolean'
-            | 'integer'
-            | 'floating'
-            | 'string'
-            | 'struct' '{' mmbrList '}'
-            | 'enum'   '{' itemList '}'
-            | typeID  ('[' index    ']')*
+size        : integer
             ;
 
-declType    : 'type' ID ':' type
+type        : 'boolean'                                         # TypeBool
+            | 'integer'                                         # TypeInteger
+            | 'number'                                          # TypeNumber
+            | 'string'                                          # TypeString
+            | 'struct' '{' mmbrList '}'                         # TypeStruct
+            | 'enum'   '{' itemList '}'                         # TypeEnum
+            | typeID                                            # TypeAlias
+            | typeID  ('[' size     ']')+                       # TypeArray              
             ;
 
-declData    : 'data' ID ':' type
+declType    : 'type' typeID ':' type
+            ;
+
+declData    : 'data' typeID ':' type
             ;

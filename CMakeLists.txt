@@ -73,8 +73,9 @@ llvm_map_components_to_libnames(llvm_libs support core irreader)
 
 add_library(
     core
-    core/canonic.cpp
-    core/negated.cpp
+    core/visitors/canonic.cpp
+    core/visitors/negated.cpp
+    core/visitors/typecalc.cpp
     core/syntax.cpp
     ${ANTLR4_SRC_FILES_referee_parser}
 )

@@ -226,6 +226,36 @@ using ExprSw    = Final<Temporal<SetOper<'Sw',  ExprBinary>>>;
 using ExprTs    = Final<Temporal<SetOper<'Ts',  ExprBinary>>>;
 using ExprTw    = Final<Temporal<SetOper<'Tw',  ExprBinary>>>;
 
+class ExprData final
+    : public Visitable<ExprNullary, ExprData>
+{
+public:
+    ExprData(std::string data)
+        : Visitable<ExprNullary, ExprData>()
+        , data(data)
+    {
+    }
+
+public:
+    std::string data;
+};
+
+class ExprMmbr final
+    : public Visitable<ExprUnary, ExprMmbr>
+{
+public:
+    ExprMmbr(Expr* base, std::string mmbr)
+        : Visitable<ExprUnary, ExprMmbr>(0, base)
+        , mmbr(mmbr)
+    {
+    }
+
+public:
+    std::string mmbr;
+};
+
+using ExprIndx  = Final<SetOper<'[]',  ExprBinary>>;
+
 
 class Type
     : public Visitable<>
@@ -237,7 +267,7 @@ public:
 class TypeVoid    : public Visitable<Type, TypeVoid> {};
 class TypeBoolean : public Visitable<Type, TypeBoolean> {}; 
 class TypeInteger : public Visitable<Type, TypeInteger> {}; 
-class TypeFlating : public Visitable<Type, TypeFlating> {}; 
+class TypeNumber  : public Visitable<Type, TypeNumber> {}; 
 class TypeString  : public Visitable<Type, TypeString> {}; 
 
 template<typename T>
@@ -250,8 +280,8 @@ public:
     {
     }
 
-    std::string const   name;
-    T* const            data;
+    std::string name;
+    T*          data;
 };
 
 class TypeStruct
@@ -260,7 +290,7 @@ class TypeStruct
 public:
     TypeStruct(std::vector<Named<Type>> members);
 
-    std::vector<Named<Type>> const  members;
+    std::vector<Named<Type>>    members;
 };
 
 class TypeArray
@@ -270,7 +300,7 @@ public:
     TypeArray(Type* type, unsigned size);
 
     Type* const     type;
-    unsigned const  size;   //  is size is 0, array is dynamic otherwise it's static
+    unsigned const  size;   //  if size is 0, array is dynamic otherwise it's static
 };
 
 class   TypeEnum

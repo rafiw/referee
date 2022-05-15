@@ -23,7 +23,7 @@
  */
 
 #include "gtest/gtest.h"
-#include "core/canonic.hpp"
+#include "core/visitors/canonic.hpp"
 #include "core/factory.hpp"
 #include <iostream>
 
