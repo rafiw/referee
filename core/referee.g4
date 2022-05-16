@@ -61,7 +61,14 @@ string      : STRING;
 ID          : [a-zA-Z_][a-zA-Z0-9]*
             ;
 
-WHITESPACE  : [ \t\n]+ -> skip ;
+WHITESPACE  : [ \t\n]+ -> skip
+            ;
+
+COMMENT     : '/*' .*? '*/' -> skip
+            ;
+
+LINE_COMMENT: '//' ~[\r\n]* -> skip
+            ;
 
 time        : '[' expression ':' expression ']'                 # TimeFull
             | '['            ':' expression ']'                 # TimeUpper
@@ -158,5 +165,5 @@ type        : 'boolean'                                         # TypeBool
 declType    : 'type' typeID ':' type
             ;
 
-declData    : 'data' typeID ':' type
+declData    : 'data' dataID ':' type
             ;

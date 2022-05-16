@@ -28,7 +28,7 @@ project(referee)
 
 add_compile_options(-Wno-multichar)
 add_compile_options(-g -ggdb)
-add_compile_options(-std=c++17)
+add_compile_options(-std=c++20)
 add_compile_options(-O0)
 
 enable_testing()
@@ -76,7 +76,9 @@ add_library(
     core/visitors/canonic.cpp
     core/visitors/negated.cpp
     core/visitors/typecalc.cpp
+    core/visitors/printer.cpp
     core/syntax.cpp
+    core/module.cpp
     ${ANTLR4_SRC_FILES_referee_parser}
 )
 

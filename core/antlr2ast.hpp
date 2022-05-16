@@ -29,6 +29,10 @@
 #include "refereeLexer.h"
 #include "refereeBaseVisitor.h"
 
+#include "visitors/typecalc.hpp"
+#include "visitors/printer.hpp"     //  TODO: remove
+#include "module.hpp"
+
 class Antlr2AST
     : public referee::refereeBaseVisitor
 {
@@ -38,26 +42,54 @@ private:
         auto lhs = ctxt->expression()[0]->accept(this);
         auto mid = ctxt->expression()[1]->accept(this);
         auto rhs = ctxt->expression()[2]->accept(this);
-        
-        return static_cast<Expr*>(Factory<Type>::create(std::any_cast<Expr*>(lhs), std::any_cast<Expr*>(mid), std::any_cast<Expr*>(rhs)));
+        auto res = static_cast<Expr*>(Factory<Type>::create(std::any_cast<Expr*>(lhs), std::any_cast<Expr*>(mid), std::any_cast<Expr*>(rhs)));
+                
+        res->position(position(ctxt));
+        return res;
     }
 
     template<typename Type, typename Ctxt>
     std::any    acceptBinary(Ctxt* ctxt) {
         auto lhs = ctxt->expression()[0]->accept(this);
         auto rhs = ctxt->expression()[1]->accept(this);
-        
-        return static_cast<Expr*>(Factory<Type>::create(std::any_cast<Expr*>(lhs), std::any_cast<Expr*>(rhs)));
+        auto res = static_cast<Expr*>(Factory<Type>::create(std::any_cast<Expr*>(lhs), std::any_cast<Expr*>(rhs)));
+
+        res->position(position(ctxt));
+        return res;
     }
 
     template<typename Type, typename Ctxt>
     std::any    acceptUnary(Ctxt* ctxt) {
         auto arg = ctxt->expression()->accept(this);
+        auto res = static_cast<Expr*>(Factory<Type>::create(std::any_cast<Expr*>(arg)));
         
-        return static_cast<Expr*>(Factory<Type>::create(std::any_cast<Expr*>(arg)));
+        res->position(position(ctxt));
+        return res;
     }
 
+    Position    position(antlr4::ParserRuleContext* rule)
+    {
+        auto    start   = rule->start;
+        auto    stop    = rule->stop;
+
+        return  Position(
+            Location(
+                start->getLine(),  
+                start->getCharPositionInLine()),
+            Location(
+                stop->getLine(),   
+                stop->getCharPositionInLine() + stop->getText().length())
+        );
+    }
+
+    Module* module  = nullptr;
+
 public:
+    Antlr2AST()
+        : module(Factory<Module>::create("main"))   // TODO: ?
+    {
+    }
+    
     std::any visitExprConst(referee::refereeParser::ExprConstContext*   ctx) override   { return static_cast<Expr*>(Factory<ExprTrue>::create()); }
 
     //  time
@@ -163,21 +195,17 @@ public:
         return m_name2type[name];
     }
 
-    std::any visitDeclType(     referee::refereeParser::DeclTypeContext*    ctx) override
-    {
-        auto name   = ctx->typeID()->getText();
-        auto type   = ctx->type()->accept(this);
-
-        m_name2type[name]   = std::any_cast<Type*>(type);
-
-        return m_name2type[name];
-    }
-
     std::any visitExprIndx( referee::refereeParser::ExprIndxContext*    ctx) override { return acceptBinary<ExprIndx>(ctx); }
 
     std::any visitExprData( referee::refereeParser::ExprDataContext*    ctx) override
     {
-        return static_cast<Expr*>(Factory<ExprData>::create(std::string(ctx->dataID()->getText())));
+        auto    name    = ctx->dataID()->getText();
+        auto    type    = module->get_data(name);
+        auto    expr    = static_cast<Expr*>(Factory<ExprData>::create(std::string(ctx->dataID()->getText())));
+
+        expr->type(type);
+
+        return expr;
     }
 
     std::any visitExprMmbr( referee::refereeParser::ExprMmbrContext*    ctx) override
@@ -186,4 +214,43 @@ public:
        
         return static_cast<Expr*>(Factory<ExprMmbr>::create(std::any_cast<Expr*>(base), std::string(ctx->mmbrID()->getText())));
     }
+
+    std::any visitStatement(referee::refereeParser::StatementContext*   ctx) override
+    {
+        if (ctx->expression())
+        {
+            auto    expr    = ctx->expression()->accept(this);
+
+            TypeCalc::make(std::any_cast<Expr*>(expr));
+            Printer::output(std::cout, std::any_cast<Expr*>(expr));
+        }
+
+        if (ctx->declaraion())
+        {
+            ctx->declaraion()->accept(this);
+        }
+
+        return nullptr;
+    }
+
+    std::any visitDeclType(referee::refereeParser::DeclTypeContext* ctx) override
+    {
+        auto    name    = ctx->typeID()->getText();
+        auto    type    = ctx->type()->accept(this);
+        
+        module->add_type(name, std::any_cast<Type*>(type));
+
+        return nullptr;
+    }
+
+    std::any visitDeclData(referee::refereeParser::DeclDataContext* ctx) override
+    {
+        auto    name    = ctx->dataID()->getText();
+        auto    type    = ctx->type()->accept(this);
+        
+        module->add_data(name, std::any_cast<Type*>(type));
+
+        return nullptr;
+    }
+
 };

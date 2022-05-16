@@ -43,6 +43,15 @@ public:
     virtual void visit(Type*) = 0;
 };
 
+class VisitorException
+    : public std::runtime_error
+{
+public:  
+    VisitorException(std::string message)
+        : std::runtime_error(message)
+    {   
+    }
+};
 
 template<typename Base = void, typename Type = void>
 class Visitable
@@ -81,15 +90,15 @@ private:
             {
                 Hack::accept(visitor);
             }
-            catch(std::exception& e)
+            catch(VisitorException& e)
             {
-                throw std::runtime_error(std::string(e.what()) + "\n" + error(visitor));
+                throw VisitorException(std::string(e.what()) + "\n" + error(visitor));
             }
         }
     }
 
     template<typename Hack = Base>
-    typename Hack::visitable  accept_impl(Visitor<>& visitor, float)
+    void accept_impl(Visitor<>& visitor, float)
     {
         Type* self  = dynamic_cast<Type*>(this);
         auto  temp  = dynamic_cast<Visitor<Type>*>(&visitor);
@@ -99,7 +108,7 @@ private:
         }
         else
         {
-            throw std::runtime_error(error(visitor));
+            throw VisitorException(error(visitor));
         }
     }
 
@@ -116,7 +125,6 @@ private:
 
         return os.str();
     }
-
 };
 
 template<>
@@ -124,6 +132,9 @@ class Visitable<void, void>
 {
 public:
     virtual ~Visitable() = default;
-    virtual void  accept(Visitor<>& visitor) {};
+    virtual void  accept(Visitor<>& visitor)
+    {
+        throw VisitorException("");
+    }
 };
 

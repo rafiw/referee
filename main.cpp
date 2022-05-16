@@ -81,5 +81,5 @@ int main(int argc, const char * argv[]) {
     llvm::verifyFunction(*function);
     TheModule->dump();
 
-    return 1;
+    return 0;
 }

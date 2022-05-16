@@ -28,6 +28,104 @@
 #include <map>
 #include <vector>
 
+struct Location
+{   
+    Location() = default;
+    Location(unsigned row, unsigned col): row(row), col(col) {}
+
+    unsigned    row = 0;
+    unsigned    col = 0;
+};
+
+struct Position
+{
+    Position() = default;
+    Position(Location beg, Location end): beg(beg), end(end) {}
+
+    Location    beg;
+    Location    end;
+};
+
+class Exception
+    : public std::exception
+{
+public:
+    Exception(Position position, std::string info)
+        : position(position)
+    {
+        std::ostringstream  os;
+
+        os << info << " at [" << position.beg.row << ":" << position.beg.col << " .. " << position.end.row << ":" << position.end.col << "]";
+
+        message     = os.str();
+    }
+
+    const char* what() const noexcept override 
+    {
+        return message.c_str();
+    }
+
+private:
+    Position    position;
+    std::string message;
+};
+
+class Type
+    : public Visitable<>
+{
+public:
+    virtual ~Type() = default;
+};
+
+class TypeVoid    : public Visitable<Type, TypeVoid> {};
+class TypeBoolean : public Visitable<Type, TypeBoolean> {}; 
+class TypeInteger : public Visitable<Type, TypeInteger> {}; 
+class TypeNumber  : public Visitable<Type, TypeNumber> {}; 
+class TypeString  : public Visitable<Type, TypeString> {}; 
+
+template<typename T>
+class Named
+{
+public:
+    Named(std::string name, T* data)
+        : name(name)
+        , data(data)
+    {
+    }
+
+    std::string name;
+    T*          data;
+};
+
+class TypeStruct
+    : public Visitable<Type, TypeStruct>
+{
+public:
+    TypeStruct(std::vector<Named<Type>> members);
+
+    std::vector<Named<Type>>    members;
+};
+
+class TypeArray
+    : public Visitable<Type, TypeArray>
+{
+public:
+    TypeArray(Type* type, unsigned size);
+
+    Type* const     type;
+    unsigned const  size;   //  if size is 0, array is dynamic otherwise it's static
+};
+
+class   TypeEnum
+    : public Visitable<Type, TypeEnum>
+{
+public:
+    TypeEnum(std::vector<std::string>   items);
+
+    std::vector<std::string> const  items;
+};
+
+
 class Expr
     : public Visitable<>
 {
@@ -35,6 +133,17 @@ public:
     virtual ~Expr() = default;
 
     virtual bool is_temporal() {return false;}
+
+    Type*   type()              {return _type;}
+    void    type(Type* type)    {_type = type;}
+
+    Position    position()      {return _position;}
+    void        position(Position position)
+                                {_position = position;}
+
+private:
+    Type*       _type   = nullptr;
+    Position    _position;
 };
 
 class   TimeInterval
@@ -208,23 +317,23 @@ using ExprEqu   = Final<SetOper<'<=>', ExprBinary>>;
 
 using ExprChoice= Final<SetOper<'?:',  ExprTernary>>;
 
-using ExprG     = Final<Temporal<SetOper<'G',   ExprUnary>>>;
-using ExprF     = Final<Temporal<SetOper<'F',   ExprUnary>>>;
-using ExprXs    = Final<Temporal<SetOper<'Xs',  ExprUnary>>>;
-using ExprXw    = Final<Temporal<SetOper<'Xw',  ExprUnary>>>;
-using ExprUs    = Final<Temporal<SetOper<'Us',  ExprBinary>>>;
-using ExprUw    = Final<Temporal<SetOper<'Uw',  ExprBinary>>>;
-using ExprRs    = Final<Temporal<SetOper<'Rs',  ExprBinary>>>;
-using ExprRw    = Final<Temporal<SetOper<'Rw',  ExprBinary>>>;
-
-using ExprH     = Final<Temporal<SetOper<'H',   ExprUnary>>>;
-using ExprO     = Final<Temporal<SetOper<'O',   ExprUnary>>>;
-using ExprYs    = Final<Temporal<SetOper<'Ys',  ExprUnary>>>;
-using ExprYw    = Final<Temporal<SetOper<'Yw',  ExprUnary>>>;
-using ExprSs    = Final<Temporal<SetOper<'Ss',  ExprBinary>>>;
-using ExprSw    = Final<Temporal<SetOper<'Sw',  ExprBinary>>>;
-using ExprTs    = Final<Temporal<SetOper<'Ts',  ExprBinary>>>;
-using ExprTw    = Final<Temporal<SetOper<'Tw',  ExprBinary>>>;
+using ExprG     = Final<SetOper<'G',   Temporal<ExprUnary>>>;
+using ExprF     = Final<SetOper<'F',   Temporal<ExprUnary>>>;
+using ExprXs    = Final<SetOper<'Xs',  Temporal<ExprUnary>>>;
+using ExprXw    = Final<SetOper<'Xw',  Temporal<ExprUnary>>>;
+using ExprUs    = Final<SetOper<'Us',  Temporal<ExprBinary>>>;
+using ExprUw    = Final<SetOper<'Uw',  Temporal<ExprBinary>>>;
+using ExprRs    = Final<SetOper<'Rs',  Temporal<ExprBinary>>>;
+using ExprRw    = Final<SetOper<'Rw',  Temporal<ExprBinary>>>;
+                                                
+using ExprH     = Final<SetOper<'H',   Temporal<ExprUnary>>>;
+using ExprO     = Final<SetOper<'O',   Temporal<ExprUnary>>>;
+using ExprYs    = Final<SetOper<'Ys',  Temporal<ExprUnary>>>;
+using ExprYw    = Final<SetOper<'Yw',  Temporal<ExprUnary>>>;
+using ExprSs    = Final<SetOper<'Ss',  Temporal<ExprBinary>>>;
+using ExprSw    = Final<SetOper<'Sw',  Temporal<ExprBinary>>>;
+using ExprTs    = Final<SetOper<'Ts',  Temporal<ExprBinary>>>;
+using ExprTw    = Final<SetOper<'Tw',  Temporal<ExprBinary>>>;
 
 class ExprData final
     : public Visitable<ExprNullary, ExprData>
@@ -257,62 +366,6 @@ public:
 using ExprIndx  = Final<SetOper<'[]',  ExprBinary>>;
 
 
-class Type
-    : public Visitable<>
-{
-public:
-    virtual ~Type() = default;
-};
-
-class TypeVoid    : public Visitable<Type, TypeVoid> {};
-class TypeBoolean : public Visitable<Type, TypeBoolean> {}; 
-class TypeInteger : public Visitable<Type, TypeInteger> {}; 
-class TypeNumber  : public Visitable<Type, TypeNumber> {}; 
-class TypeString  : public Visitable<Type, TypeString> {}; 
-
-template<typename T>
-class Named
-{
-public:
-    Named(std::string name, T* data)
-        : name(name)
-        , data(data)
-    {
-    }
-
-    std::string name;
-    T*          data;
-};
-
-class TypeStruct
-    : public Visitable<Type, TypeStruct>
-{
-public:
-    TypeStruct(std::vector<Named<Type>> members);
-
-    std::vector<Named<Type>>    members;
-};
-
-class TypeArray
-    : public Visitable<Type, TypeArray>
-{
-public:
-    TypeArray(Type* type, unsigned size);
-
-    Type* const     type;
-    unsigned const  size;   //  if size is 0, array is dynamic otherwise it's static
-};
-
-class   TypeEnum
-    : public Visitable<Type, TypeEnum>
-{
-public:
-    TypeEnum(std::vector<std::string>   items);
-
-    std::vector<std::string> const  items;
-};
-
-
 class Data
     : public Visitable<>
 {
@@ -340,10 +393,4 @@ class DataExpr
 {
 public:
     DataExpr(Expr* expr);
-};
-
-
-class Module
-{
-public:
 };
