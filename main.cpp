@@ -58,28 +58,35 @@ static std::map<std::string, llvm::Value *>   NamedValues;
 
 
 int main(int argc, const char * argv[]) {
-    std::string                 filename    = argv[1];
-    std::ifstream               stream(filename);
+    try {
+        std::string                 filename    = argv[1];
+        std::ifstream               stream(filename);
 
-    antlr4::ANTLRInputStream    input(stream);
-    referee::refereeLexer       lexer(&input);
-    antlr4::CommonTokenStream   tokens(&lexer);
-    referee::refereeParser      parser(&tokens);
-    Antlr2AST                   antlr2ast;
+        antlr4::ANTLRInputStream    input(stream);
+        referee::refereeLexer       lexer(&input);
+        antlr4::CommonTokenStream   tokens(&lexer);
+        referee::refereeParser      parser(&tokens);
+        Antlr2AST                   antlr2ast;
 
-    auto*   tree    = parser.program();
-    antlr2ast.visitProgram(tree);
+        auto*   tree    = parser.program();
+        antlr2ast.visitProgram(tree);
 
-    TheContext  = std::make_unique<llvm::LLVMContext>();
-    TheModule   = std::make_unique<llvm::Module>(filename, *TheContext);
-    Builder     = std::make_unique<llvm::IRBuilder<>>(*TheContext);
+        TheContext  = std::make_unique<llvm::LLVMContext>();
+        TheModule   = std::make_unique<llvm::Module>(filename, *TheContext);
+        Builder     = std::make_unique<llvm::IRBuilder<>>(*TheContext);
 
-    TheModule->setSourceFileName(filename);
+        TheModule->setSourceFileName(filename);
 
-    auto    funcType= llvm::FunctionType::get(Builder->getVoidTy(), false);
-    auto    function= llvm::Function::Create(funcType, llvm::Function::ExternalLinkage, "main", TheModule.get());
-    llvm::verifyFunction(*function);
-    TheModule->dump();
+        auto    funcType= llvm::FunctionType::get(Builder->getVoidTy(), false);
+        auto    function= llvm::Function::Create(funcType, llvm::Function::ExternalLinkage, "main", TheModule.get());
+        llvm::verifyFunction(*function);
+        TheModule->dump();
+    }
+    catch(std::exception& e)
+    {
+        std::cerr << "exception: " << e.what() << std::endl;
+        return 1;
+    }
 
     return 0;
 }

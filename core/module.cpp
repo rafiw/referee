@@ -24,9 +24,14 @@
 
 
 #include "module.hpp"
+#include "factory.hpp"
 
 Module::Module(std::string name)
 {
+    m_name2data["boolean"]  = Factory<TypeBoolean>::create();
+    m_name2data["integer"]  = Factory<TypeInteger>::create();
+    m_name2data["string"]   = Factory<TypeString>::create();
+    m_name2data["number"]   = Factory<TypeNumber>::create();
 }
 
 void    Module::add_type(std::string name, Type* type)

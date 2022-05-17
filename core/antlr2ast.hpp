@@ -32,6 +32,7 @@
 #include "visitors/typecalc.hpp"
 #include "visitors/printer.hpp"     //  TODO: remove
 #include "module.hpp"
+#include "utils.hpp"
 
 class Antlr2AST
     : public referee::refereeBaseVisitor
@@ -42,29 +43,77 @@ private:
         auto lhs = ctxt->expression()[0]->accept(this);
         auto mid = ctxt->expression()[1]->accept(this);
         auto rhs = ctxt->expression()[2]->accept(this);
-        auto res = static_cast<Expr*>(Factory<Type>::create(std::any_cast<Expr*>(lhs), std::any_cast<Expr*>(mid), std::any_cast<Expr*>(rhs)));
-                
-        res->position(position(ctxt));
-        return res;
+        
+        return  static_cast<Expr*>(Factory<Type>::create(
+            position(ctxt),
+            std::any_cast<Expr*>(lhs), 
+            std::any_cast<Expr*>(mid), 
+            std::any_cast<Expr*>(rhs)));
     }
 
     template<typename Type, typename Ctxt>
     std::any    acceptBinary(Ctxt* ctxt) {
         auto lhs = ctxt->expression()[0]->accept(this);
         auto rhs = ctxt->expression()[1]->accept(this);
-        auto res = static_cast<Expr*>(Factory<Type>::create(std::any_cast<Expr*>(lhs), std::any_cast<Expr*>(rhs)));
-
-        res->position(position(ctxt));
-        return res;
+        
+        return  static_cast<Expr*>(Factory<Type>::create(
+            position(ctxt),
+            std::any_cast<Expr*>(lhs), 
+            std::any_cast<Expr*>(rhs)));
     }
 
     template<typename Type, typename Ctxt>
     std::any    acceptUnary(Ctxt* ctxt) {
         auto arg = ctxt->expression()->accept(this);
-        auto res = static_cast<Expr*>(Factory<Type>::create(std::any_cast<Expr*>(arg)));
         
-        res->position(position(ctxt));
-        return res;
+        return  static_cast<Expr*>(Factory<Type>::create(
+            position(ctxt),
+            std::any_cast<Expr*>(arg)));
+    }
+
+    template<typename Type, typename Ctxt>
+    std::any    acceptTemporalBinary(Ctxt* ctxt) {
+        auto lhs = ctxt->expression()[0]->accept(this);
+        auto rhs = ctxt->expression()[1]->accept(this);
+
+        if(ctxt->time())
+        {
+            auto time= ctxt->time()->accept(this);
+
+            return  static_cast<Expr*>(Factory<Type>::create(
+                position(ctxt), 
+                std::any_cast<TimeInterval*>(time),
+                std::any_cast<Expr*>(lhs), 
+                std::any_cast<Expr*>(rhs)));
+        }
+        else
+        {
+            return  static_cast<Expr*>(Factory<Type>::create(
+                position(ctxt), 
+                std::any_cast<Expr*>(lhs), 
+                std::any_cast<Expr*>(rhs)));
+        }
+    }
+
+    template<typename Type, typename Ctxt>
+    std::any    acceptTemporalUnary(Ctxt* ctxt) {
+        auto arg = ctxt->expression()->accept(this);
+
+        if(ctxt->time())
+        {
+            auto time= ctxt->time()->accept(this);
+
+            return  static_cast<Expr*>(Factory<Type>::create(
+                position(ctxt), 
+                std::any_cast<TimeInterval*>(time),
+                std::any_cast<Expr*>(arg)));
+        }
+        else
+        {
+            return  static_cast<Expr*>(Factory<Type>::create(
+                position(ctxt), 
+                std::any_cast<Expr*>(arg)));
+        }
     }
 
     Position    position(antlr4::ParserRuleContext* rule)
@@ -90,26 +139,28 @@ public:
     {
     }
     
-    std::any visitExprConst(referee::refereeParser::ExprConstContext*   ctx) override   { return static_cast<Expr*>(Factory<ExprTrue>::create()); }
-
     //  time
     std::any visitTimeFull( referee::refereeParser::TimeFullContext*    ctx) override
     { 
         auto lo     = ctx->expression(0)->accept(this);
         auto hi     = ctx->expression(1)->accept(this);
-        return static_cast<TimeInterval*>(Factory<TimeInterval>::create(std::any_cast<Expr*>(lo), std::any_cast<Expr*>(hi)));
+        return static_cast<TimeInterval*>(Factory<TimeInterval>::create(
+            std::any_cast<Expr*>(lo), 
+            std::any_cast<Expr*>(hi)));
     }
 
     std::any visitTimeUpper(referee::refereeParser::TimeUpperContext*   ctx) override
     {
         auto hi     = ctx->expression()->accept(this);
-        return static_cast<TimeInterval*>(Factory<TimeUpperBound>::create(std::any_cast<Expr*>(hi)));
+        return static_cast<TimeInterval*>(Factory<TimeUpperBound>::create(
+            std::any_cast<Expr*>(hi)));
     }
 
     std::any visitTimeLower(referee::refereeParser::TimeLowerContext*   ctx) override
     {
         auto lo     = ctx->expression()->accept(this);
-        return static_cast<TimeInterval*>(Factory<TimeLowerBound>::create(std::any_cast<Expr*>(lo)));
+        return static_cast<TimeInterval*>(Factory<TimeLowerBound>::create(
+            std::any_cast<Expr*>(lo)));
     }
 
     //  comparison
@@ -137,33 +188,26 @@ public:
     std::any visitExprEqu(referee::refereeParser::ExprEquContext*  ctx) override { return acceptBinary<ExprEqu>(ctx); }
 
     //  temporal future
-    std::any visitExprF( referee::refereeParser::ExprFContext*     ctx) override { return acceptUnary<ExprF>(ctx); }
-    std::any visitExprG( referee::refereeParser::ExprGContext*     ctx) override { return acceptUnary<ExprG>(ctx); }
-    std::any visitExprXs(referee::refereeParser::ExprXsContext*    ctx) override { return acceptUnary<ExprXs>(ctx); }
-    std::any visitExprXw(referee::refereeParser::ExprXwContext*    ctx) override { return acceptUnary<ExprXw>(ctx); }
+    std::any visitExprF( referee::refereeParser::ExprFContext*     ctx) override { return acceptTemporalUnary<ExprF>(ctx); }
+    std::any visitExprG( referee::refereeParser::ExprGContext*     ctx) override { return acceptTemporalUnary<ExprG>(ctx); }
+    std::any visitExprXs(referee::refereeParser::ExprXsContext*    ctx) override { return acceptTemporalUnary<ExprXs>(ctx); }
+    std::any visitExprXw(referee::refereeParser::ExprXwContext*    ctx) override { return acceptTemporalUnary<ExprXw>(ctx); }
 
-    std::any visitExprUs(referee::refereeParser::ExprUsContext*    ctx) override { return acceptBinary<ExprUs>(ctx); }
-    std::any visitExprUw(referee::refereeParser::ExprUwContext*    ctx) override { return acceptBinary<ExprUw>(ctx); }
-    std::any visitExprRs(referee::refereeParser::ExprRsContext*    ctx) override { return acceptBinary<ExprRs>(ctx); }
-    std::any visitExprRw(referee::refereeParser::ExprRwContext*    ctx) override { return acceptBinary<ExprRw>(ctx); }
+    std::any visitExprUs(referee::refereeParser::ExprUsContext*    ctx) override { return acceptTemporalBinary<ExprUs>(ctx); }
+    std::any visitExprUw(referee::refereeParser::ExprUwContext*    ctx) override { return acceptTemporalBinary<ExprUw>(ctx); }
+    std::any visitExprRs(referee::refereeParser::ExprRsContext*    ctx) override { return acceptTemporalBinary<ExprRs>(ctx); }
+    std::any visitExprRw(referee::refereeParser::ExprRwContext*    ctx) override { return acceptTemporalBinary<ExprRw>(ctx); }
 
     //  temporal past
-    std::any visitExprO( referee::refereeParser::ExprOContext*     ctx) override { return acceptUnary<ExprO>(ctx); }
-    std::any visitExprH( referee::refereeParser::ExprHContext*     ctx) override { return acceptUnary<ExprH>(ctx); }
-    std::any visitExprYs(referee::refereeParser::ExprYsContext*    ctx) override { return acceptUnary<ExprYs>(ctx); }
-    std::any visitExprYw(referee::refereeParser::ExprYwContext*    ctx) override { return acceptUnary<ExprYw>(ctx); }
+    std::any visitExprO( referee::refereeParser::ExprOContext*     ctx) override { return acceptTemporalUnary<ExprO>(ctx); }
+    std::any visitExprH( referee::refereeParser::ExprHContext*     ctx) override { return acceptTemporalUnary<ExprH>(ctx); }
+    std::any visitExprYs(referee::refereeParser::ExprYsContext*    ctx) override { return acceptTemporalUnary<ExprYs>(ctx); }
+    std::any visitExprYw(referee::refereeParser::ExprYwContext*    ctx) override { return acceptTemporalUnary<ExprYw>(ctx); }
 
-    std::any visitExprSs(referee::refereeParser::ExprSsContext*    ctx) override { return acceptBinary<ExprSs>(ctx); }
-    std::any visitExprSw(referee::refereeParser::ExprSwContext*    ctx) override { return acceptBinary<ExprSw>(ctx); }
-    std::any visitExprTs(referee::refereeParser::ExprTsContext*    ctx) override { return acceptBinary<ExprTs>(ctx); }
-    std::any visitExprTw(referee::refereeParser::ExprTwContext*    ctx) override { return acceptBinary<ExprTw>(ctx); }
-
-    std::map<std::string, Type*>    m_name2type = {
-        {"boolean", Factory<TypeBoolean>::create()},
-        {"integer", Factory<TypeInteger>::create()},
-        {"string",  Factory<TypeString>::create()},
-        {"number",  Factory<TypeNumber>::create()}
-    };
+    std::any visitExprSs(referee::refereeParser::ExprSsContext*    ctx) override { return acceptTemporalBinary<ExprSs>(ctx); }
+    std::any visitExprSw(referee::refereeParser::ExprSwContext*    ctx) override { return acceptTemporalBinary<ExprSw>(ctx); }
+    std::any visitExprTs(referee::refereeParser::ExprTsContext*    ctx) override { return acceptTemporalBinary<ExprTs>(ctx); }
+    std::any visitExprTw(referee::refereeParser::ExprTwContext*    ctx) override { return acceptTemporalBinary<ExprTw>(ctx); }
 
     std::any visitTypeBool(     referee::refereeParser::TypeBoolContext*    ctx) override { return static_cast<Type*>(Factory<TypeBoolean>::create()); }
     std::any visitTypeInteger(  referee::refereeParser::TypeIntegerContext* ctx) override { return static_cast<Type*>(Factory<TypeInteger>::create()); }
@@ -185,14 +229,14 @@ public:
             members.push_back(Named<Type>(name, std::any_cast<Type*>(type)));
         }
 
-        return static_cast<Type*>(new TypeStruct(members));
+        return static_cast<Type*>(new TypeStruct(members)); //  TODO: use factory
     } 
     
     std::any visitTypeAlias(    referee::refereeParser::TypeAliasContext*   ctx) override 
     {
         auto name   = ctx->typeID()->getText();
 
-        return m_name2type[name];
+        return module->get_type(name);
     }
 
     std::any visitExprIndx( referee::refereeParser::ExprIndxContext*    ctx) override { return acceptBinary<ExprIndx>(ctx); }
@@ -208,11 +252,36 @@ public:
         return expr;
     }
 
+    std::any visitExprConst(referee::refereeParser::ExprConstContext*   ctx) override
+    {
+        if(ctx->integer() != nullptr)
+            return  static_cast<Expr*>(Factory<ExprConstInteger>::create(parse_integer(ctx->integer()->getText())));
+        
+        if(ctx->floating() != nullptr)
+            return  static_cast<Expr*>(Factory<ExprConstNumber>::create(parse_number(ctx->floating()->getText())));
+
+        if(ctx->boolean() != nullptr)
+            return  static_cast<Expr*>(Factory<ExprConstBoolean>::create(parse_boolean(ctx->boolean()->getText())));
+
+        if(ctx->string() != nullptr)
+            return  static_cast<Expr*>(Factory<ExprConstString>::create(parse_string(ctx->string()->getText())));
+
+        throw std::runtime_error(__PRETTY_FUNCTION__);
+        /*
+    SignContext *sign();
+    FloatingContext *floating();
+    StringContext *string();
+    BooleanContext *boolean();
+    */
+        return nullptr;
+    }
+
+
     std::any visitExprMmbr( referee::refereeParser::ExprMmbrContext*    ctx) override
     {
         auto base   = ctx->expression()->accept(this);
        
-        return static_cast<Expr*>(Factory<ExprMmbr>::create(std::any_cast<Expr*>(base), std::string(ctx->mmbrID()->getText())));
+        return static_cast<Expr*>(Factory<ExprMmbr>::create(position(ctx), std::any_cast<Expr*>(base), std::string(ctx->mmbrID()->getText())));
     }
 
     std::any visitStatement(referee::refereeParser::StatementContext*   ctx) override

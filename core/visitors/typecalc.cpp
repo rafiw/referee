@@ -28,8 +28,11 @@
 #include <exception>
 
 struct TypeCalcImpl
-    : Visitor< ExprTrue
-             , ExprFalse
+    : Visitor< ExprConstBoolean
+             , ExprConstInteger
+             , ExprConstNumber
+             , ExprConstString
+             , ExprMmbr
              , ExprEq
              , ExprNe
              , ExprGt
@@ -49,8 +52,6 @@ struct TypeCalcImpl
 
     Type*   make(Expr*          expr);
 
-    void    visit(ExprTrue*     expr) override;
-    void    visit(ExprFalse*    expr) override;
     void    visit(ExprEq*       expr) override;
     void    visit(ExprNe*       expr) override;
     void    visit(ExprGt*       expr) override;
@@ -63,8 +64,15 @@ struct TypeCalcImpl
     void    visit(ExprXor*      expr) override;
     void    visit(ExprImp*      expr) override;
     void    visit(ExprEqu*      expr) override;
-    void    visit(Temporal<ExprUnary>*    expr) override;
-    void    visit(Temporal<ExprBinary>*   expr) override;
+    void    visit(Temporal<ExprUnary>*  expr) override;
+    void    visit(Temporal<ExprBinary>* expr) override;
+
+    void    visit(ExprConstBoolean*     expr) override;
+    void    visit(ExprConstInteger*     expr) override;
+    void    visit(ExprConstNumber*      expr) override;
+    void    visit(ExprConstString*      expr) override;
+
+    void    visit(ExprMmbr*     expr) override;
 
     Type*    boolBool2Bool(  
                     Expr*       expr,
@@ -90,7 +98,7 @@ Type*   TypeCalcImpl::boolBool2Bool(
                     Expr*       rhs)
 {
     auto    typeLhs = TypeCalc::make(lhs);    
-    auto    typeRhs = TypeCalc::make(lhs);
+    auto    typeRhs = TypeCalc::make(rhs);
 
     if(typeLhs != typeBoolean || typeRhs != typeBoolean)
     {
@@ -120,7 +128,7 @@ Type*   TypeCalcImpl::nmbrNmbr2Bool(
                     Expr*       rhs)
 {
     auto    typeLhs = TypeCalc::make(lhs);    
-    auto    typeRhs = TypeCalc::make(lhs);
+    auto    typeRhs = TypeCalc::make(rhs);
 
     if(     (typeLhs == typeInteger || typeLhs == typeNumber)
         &&  (typeRhs == typeInteger || typeRhs == typeNumber)
@@ -133,9 +141,6 @@ Type*   TypeCalcImpl::nmbrNmbr2Bool(
     
     throw Exception(expr->position(), "bad type");
 }
-
-void    TypeCalcImpl::visit(ExprTrue*   expr) {type = typeBoolean;}
-void    TypeCalcImpl::visit(ExprFalse*  expr) {type = typeBoolean;}
 
 void    TypeCalcImpl::visit(ExprEq*     expr) {type = nmbrNmbr2Bool(expr, expr->lhs, expr->rhs);}
 void    TypeCalcImpl::visit(ExprNe*     expr) {type = nmbrNmbr2Bool(expr, expr->lhs, expr->rhs);}
@@ -158,6 +163,28 @@ void    TypeCalcImpl::visit(ExprImp*    expr) {type = boolBool2Bool(expr, expr->
 
 void    TypeCalcImpl::visit(Temporal<ExprUnary>*    expr) {type = bool2Bool(expr, expr->arg);}
 void    TypeCalcImpl::visit(Temporal<ExprBinary>*   expr) {type = boolBool2Bool(expr, expr->lhs, expr->rhs);}
+
+void    TypeCalcImpl::visit(ExprConstInteger*   expr)   {type = Factory<TypeInteger>::create();}
+void    TypeCalcImpl::visit(ExprConstNumber*    expr)   {type = Factory<TypeNumber>::create();}
+void    TypeCalcImpl::visit(ExprConstBoolean*   expr)   {type = Factory<TypeBoolean>::create();}
+void    TypeCalcImpl::visit(ExprConstString*    expr)   {type = Factory<TypeString>::create();}
+
+void    TypeCalcImpl::visit(ExprMmbr*   expr)
+{
+    auto    base    = dynamic_cast<TypeStruct*>(TypeCalc::make(expr->arg));
+
+    if(base == nullptr)
+    {
+        throw Exception(expr->position(), "bad type");
+    }
+
+    type    = base->member(expr->mmbr);
+
+    if(type == nullptr)
+    {
+        throw Exception(expr->position(), "no such a member");
+    }
+}
 
 Type*   TypeCalcImpl::make(Expr* expr)
 {

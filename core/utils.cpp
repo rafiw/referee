@@ -22,7 +22,55 @@
  *  SOFTWARE.
  */
 
-#pragma once
+#include "utils.hpp"
 
+#include <cmath>
 
+int64_t     parse_integer(  std::string const& text)
+{
+    int64_t res;
+    char*   err     = nullptr;
 
+    res = strtoll(text.c_str(), &err, 10);
+
+    if(     (err != nullptr && *err != 0) 
+        ||  (res == LLONG_MAX) 
+        ||  (res == LLONG_MIN))
+    {
+        throw std::runtime_error(__PRETTY_FUNCTION__);
+    }
+
+    return  res;
+}
+
+double      parse_number(   std::string const& text)
+{
+    double  res;
+    char*   err     = nullptr;
+
+    strtod(text.c_str(), &err);
+
+    if(     (err != nullptr && *err != 0)  
+        ||  (res == HUGE_VAL))
+    {
+        throw std::runtime_error(__PRETTY_FUNCTION__);
+    }
+
+    return  res;
+}
+
+std::string parse_string(   std::string const& text)
+{
+    return text.substr(1, text.length() - 2);
+}
+
+bool        parse_boolean(  std::string const& text)
+{
+    if(text == "true")
+        return true;
+
+    if(text == "false")
+        return false;
+
+    throw std::runtime_error(__PRETTY_FUNCTION__);
+}

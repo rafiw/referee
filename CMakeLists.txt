@@ -79,6 +79,7 @@ add_library(
     core/visitors/printer.cpp
     core/syntax.cpp
     core/module.cpp
+    core/utils.cpp
     ${ANTLR4_SRC_FILES_referee_parser}
 )
 

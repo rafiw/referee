@@ -22,47 +22,22 @@
  *  SOFTWARE.
  */
 
-#pragma once
+#pragma once 
 
-#include "position.hpp"
+struct Location
+{   
+    Location() = default;
+    Location(unsigned row, unsigned col): row(row), col(col) {}
 
-#include <tuple>
-#include <map>
-#include <iostream>
+    unsigned    row = 0;
+    unsigned    col = 0;
+};
 
-
-template<typename T>
-class Factory
+struct Position
 {
-public:
-    template<typename ... Args>
-    static T*  create(Args ... args)
-    {
-        auto    key = std::tuple<Args...>(args...);
-        auto&   obj = get<decltype(key), T>(key);
+    Position() = default;
+    Position(Location beg, Location end): beg(beg), end(end) {}
 
-        if(!obj)
-        {
-            obj = std::make_unique<T>(args...);
-        }
-
-        return obj.get();
-    }
-
-    template<typename ... Args>
-    static T*  create(Position position, Args ... args)
-    {
-        auto    obj = create(args...);
-        obj->position(position);
-        return obj;
-    }
-
-private:
-    template<typename Key, typename Val>
-    static std::unique_ptr<Val>&    get(Key const key)
-    {
-        static std::map<Key, std::unique_ptr<Val>>  storage;
-
-        return  storage[key];
-    }
+    Location    beg;
+    Location    end;
 };

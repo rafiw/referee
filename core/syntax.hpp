@@ -25,26 +25,10 @@
 #pragma once
 
 #include "visitor.hpp"
+#include "position.hpp"
+
 #include <map>
 #include <vector>
-
-struct Location
-{   
-    Location() = default;
-    Location(unsigned row, unsigned col): row(row), col(col) {}
-
-    unsigned    row = 0;
-    unsigned    col = 0;
-};
-
-struct Position
-{
-    Position() = default;
-    Position(Location beg, Location end): beg(beg), end(end) {}
-
-    Location    beg;
-    Location    end;
-};
 
 class Exception
     : public std::exception
@@ -103,7 +87,12 @@ class TypeStruct
 public:
     TypeStruct(std::vector<Named<Type>> members);
 
-    std::vector<Named<Type>>    members;
+    std::vector<Named<Type>>        members;
+
+    Type*   member(std::string name);
+
+private:
+    std::map<std::string, Type*>    _name2type;
 };
 
 class TypeArray
@@ -147,6 +136,7 @@ private:
 };
 
 class   TimeInterval
+    : public Visitable<Expr, TimeInterval>
 {
 public:
     TimeInterval(Expr* lo, Expr* hi);
@@ -156,14 +146,14 @@ public:
 };
 
 class   TimeLowerBound
-    : public TimeInterval
+    : public Visitable<TimeInterval, TimeLowerBound>
 {
 public:
     TimeLowerBound(Expr* lo);
 };
 
 class   TimeUpperBound
-    : public TimeInterval
+    : public Visitable<TimeInterval, TimeUpperBound>
 {
 public:
     TimeUpperBound(Expr* hi);
@@ -241,29 +231,22 @@ class Temporal
 {
 public:
     template<typename ... Args>
-    Temporal(TimeInterval* time, Args ... args)
-        : Visitable<Expr, Temporal<Expr>>(args...)
+    Temporal(int op, TimeInterval* time, Args ... args)
+        : Visitable<Expr, Temporal<Expr>>(op, args...)
         , time(time)
     {
     }
 
     template<typename ... Args>
-    Temporal(Args ... args, TimeInterval* time)
-        : Visitable<Expr, Temporal<Expr>>(args...)
-        , time(time)
-    {
-    }
-
-    template<typename ... Args>
-    Temporal(Args ... args)
-        : Visitable<Expr, Temporal<Expr>>(args...)
+    Temporal(int op, Args ... args)
+        : Visitable<Expr, Temporal<Expr>>(op, args...)
         , time(nullptr)
     {
     }
 
     bool is_temporal() override {return true;}
 
-    TimeInterval* const time = nullptr;
+    TimeInterval* time = nullptr;
 };
 
 template<int OP, typename Expr>
@@ -290,8 +273,10 @@ public:
     }
 };
 
-using ExprTrue  = Final<ExprConstTV<bool, true>>;
-using ExprFalse = Final<ExprConstTV<bool, false>>;
+using ExprConstInteger  = Final<ExprConstT<int64_t>>;
+using ExprConstNumber   = Final<ExprConstT<double>>;
+using ExprConstString   = Final<ExprConstT<std::string>>;
+using ExprConstBoolean  = Final<ExprConstT<bool>>;
 
 using ExprNeg   = Final<SetOper<'-',   ExprUnary>>;
 

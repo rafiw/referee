@@ -65,24 +65,39 @@ bool ExprTernary::is_temporal()
 }
 
 TimeInterval::TimeInterval(Expr* lo, Expr* hi)
-    : lo(lo)
+    : Visitable<Expr, TimeInterval>()
+    , lo(lo)
     , hi(hi)
 {
 }
 
 TimeLowerBound::TimeLowerBound(Expr* lo)
-    : TimeInterval(lo, nullptr)
+    : Visitable<TimeInterval, TimeLowerBound>(lo, nullptr)
 {
 }
 
 TimeUpperBound::TimeUpperBound(Expr* hi)
-    : TimeInterval(nullptr, hi)
+    : Visitable<TimeInterval, TimeUpperBound>(nullptr, hi)
 {
 }
 
 TypeStruct::TypeStruct(std::vector<Named<Type>> members)
     : members(members)
 {
+    for(auto member: members)
+    {
+        _name2type[member.name] = member.data;
+    }
+}
+
+Type*   TypeStruct::member(std::string name)
+{
+    if(_name2type.contains(name))
+    {
+        return _name2type[name];
+    }
+
+    return nullptr;
 }
 
 TypeArray::TypeArray(Type* type, unsigned size)

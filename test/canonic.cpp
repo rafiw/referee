@@ -33,8 +33,8 @@ class testCanonic
 public:
     void    SetUp()
     {
-        t   = Factory<ExprTrue>::create();
-        f   = Factory<ExprFalse>::create();
+        t   = Factory<ExprConstBoolean>::create(true);
+        f   = Factory<ExprConstBoolean>::create(false);
     }
 
     Expr*   t = nullptr;

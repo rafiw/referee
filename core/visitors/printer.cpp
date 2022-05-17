@@ -45,13 +45,18 @@ std::string multichar(int data)
 
 struct PrinterImpl
     : Visitor< Expr
-             , ExprTrue
-             , ExprFalse
              , ExprBinary
              , Temporal<ExprBinary>
              , ExprUnary
              , Temporal<ExprUnary>
-             , ExprData>
+             , ExprData
+             , ExprMmbr
+             , ExprConstBoolean
+             , ExprConstInteger
+             , ExprConstNumber
+             , TimeInterval
+             , TimeUpperBound
+             , TimeLowerBound>
 {
     PrinterImpl(std::ostream& os)
         : os(os)
@@ -61,13 +66,18 @@ struct PrinterImpl
     void    output(Expr* expr);
 
     void    visit(Expr*                 expr) override;
-    void    visit(ExprTrue*             expr) override;
-    void    visit(ExprFalse*            expr) override;
     void    visit(ExprBinary*           expr) override;
     void    visit(Temporal<ExprBinary>* expr) override;
     void    visit(ExprUnary*            expr) override;
     void    visit(Temporal<ExprUnary>*  expr) override;
     void    visit(ExprData*             expr) override;
+    void    visit(ExprMmbr*             expr) override;
+    void    visit(ExprConstInteger*     expr) override;
+    void    visit(ExprConstNumber*      expr) override;
+    void    visit(ExprConstBoolean*     expr) override;
+    void    visit(TimeInterval*         expr) override;
+    void    visit(TimeUpperBound*       expr) override;
+    void    visit(TimeLowerBound*       expr) override;
 
     std::ostream&   os;
 };
@@ -77,56 +87,95 @@ void    PrinterImpl::visit( Expr*           expr)
     os << "???";
 }
 
-void    PrinterImpl::visit( ExprTrue*               expr)
-{
-    os << "true";
-}
-
-void    PrinterImpl::visit( ExprFalse*              expr)
-{
-    os << "false";
-}
-
 void    PrinterImpl::visit( ExprUnary*              expr)
 {
-    std::cout << multichar(expr->op) << " ";
+    os << multichar(expr->op) << " ";
     expr->arg->accept(*this);}
 
 void    PrinterImpl::visit( ExprBinary*             expr)
 {
     expr->lhs->accept(*this);
-    std::cout << " " << multichar(expr->op) << " ";
+    os << " " << multichar(expr->op) << " ";
     expr->rhs->accept(*this);
 }
 
 void    PrinterImpl::visit( Temporal<ExprUnary>*    expr)
 {
-    std::cout << multichar(expr->op) << "(";
+    os << multichar(expr->op);
+    if(expr->time)
+        expr->time->accept(*this);
+    os << "(";
     expr->arg->accept(*this);
     os << ")";
 }
 
 void    PrinterImpl::visit( Temporal<ExprBinary>*   expr)
 {
-    std::cout << multichar(expr->op) << "(";
+    os << multichar(expr->op);
+    if(expr->time)
+        expr->time->accept(*this);
+    os << "(";
     expr->lhs->accept(*this);
     os << ", ";
     expr->rhs->accept(*this);
     os << ")";
 }
 
-void    PrinterImpl::visit( ExprData*               expr)
+void    PrinterImpl::visit( ExprData*   expr)
 {
     os << expr->data;
 }
 
+void    PrinterImpl::visit(ExprMmbr*    expr)
+{
+    expr->arg->accept(*this);
+    os << "." << expr->mmbr;
+}
 
+void    PrinterImpl::visit(ExprConstInteger*    expr)
+{
+    os << expr->value;
+}
+
+void    PrinterImpl::visit(ExprConstNumber*     expr)
+{
+    os << expr->value; 
+}
+
+void    PrinterImpl::visit(ExprConstBoolean*    expr)
+{
+    os << (expr->value ? "true" : "false"); 
+}
+
+void    PrinterImpl::visit(TimeInterval*         expr)
+{
+    os << "[";
+    expr->lo->accept(*this);
+    os << ":";
+    expr->hi->accept(*this);
+    os << "]";
+}
+
+void    PrinterImpl::visit(TimeUpperBound*       expr)
+{
+    os << "[";
+    os << ":";
+    expr->hi->accept(*this);
+    os << "]";
+}
+
+void    PrinterImpl::visit(TimeLowerBound*       expr)
+{
+    os << "[";
+    expr->lo->accept(*this);
+    os << ":";
+    os << "]";
+}
 
 void    PrinterImpl::output(Expr* expr)
 {
     expr->accept(*this);
 }
-
 
 std::ostream&   Printer::output(std::ostream& os, Expr* expr)
 {
@@ -134,5 +183,5 @@ std::ostream&   Printer::output(std::ostream& os, Expr* expr)
 
     impl.output(expr);
 
-    return os;
+    return os << std::endl;
 }
