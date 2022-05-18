@@ -176,6 +176,7 @@ public:
     std::any visitExprSub( referee::refereeParser::ExprSubContext* ctx) override { return acceptBinary<ExprSub>(ctx); }
     std::any visitExprMul( referee::refereeParser::ExprMulContext* ctx) override { return acceptBinary<ExprMul>(ctx); }
     std::any visitExprDiv( referee::refereeParser::ExprDivContext* ctx) override { return acceptBinary<ExprDiv>(ctx); }
+    std::any visitExprMod( referee::refereeParser::ExprModContext* ctx) override { return acceptBinary<ExprMod>(ctx); }
 
     //  ternary
     std::any visitExprTer( referee::refereeParser::ExprTerContext* ctx) override { return acceptTernary<ExprChoice>(ctx);}

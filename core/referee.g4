@@ -97,6 +97,7 @@ expression  : sign? integer                                     # ExprConst
             | expression '-'   expression                       # ExprSub
             | expression '*'   expression                       # ExprMul
             | expression '/'   expression                       # ExprDiv
+            | expression '%'   expression                       # ExprMod
 
             | expression '||'  expression                       # ExprOr
             | expression '&&'  expression                       # ExprAnd

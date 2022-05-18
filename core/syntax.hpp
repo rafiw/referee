@@ -284,6 +284,7 @@ using ExprAdd   = Final<SetOper<'+',   ExprBinary>>;
 using ExprSub   = Final<SetOper<'-',   ExprBinary>>;
 using ExprMul   = Final<SetOper<'*',   ExprBinary>>;
 using ExprDiv   = Final<SetOper<'/',   ExprBinary>>;
+using ExprMod   = Final<SetOper<'%',   ExprBinary>>;
 
 using ExprEq    = Final<SetOper<'==',  ExprBinary>>;
 using ExprNe    = Final<SetOper<'!=',  ExprBinary>>;
