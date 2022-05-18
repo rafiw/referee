@@ -52,7 +52,8 @@ struct TypeCalcImpl
              , ExprMod
              , Temporal<ExprUnary>
              , Temporal<ExprBinary>
-             , TimeInterval>
+             , TimeInterval
+             , ExprAt>
 {
     Type*   type    = nullptr;
 
@@ -76,6 +77,8 @@ struct TypeCalcImpl
     void    visit(ExprDiv*      expr) override;
     void    visit(ExprMul*      expr) override;
     void    visit(ExprMod*      expr) override;
+
+    void    visit(ExprAt*       expr) override;
 
     void    visit(Temporal<ExprUnary>*  expr) override;
     void    visit(Temporal<ExprBinary>* expr) override;
@@ -308,6 +311,11 @@ void    TypeCalcImpl::visit(TimeInterval*         time)
         throw std::runtime_error(__PRETTY_FUNCTION__);
 
     type = typeVoid;
+}
+
+void    TypeCalcImpl::visit(ExprAt*         expr)
+{
+    type = TypeCalc::make(expr->arg);
 }
 
 

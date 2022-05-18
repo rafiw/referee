@@ -77,6 +77,7 @@ add_library(
     core/visitors/negated.cpp
     core/visitors/typecalc.cpp
     core/visitors/printer.cpp
+    core/antlr2ast.cpp
     core/syntax.cpp
     core/module.cpp
     core/utils.cpp

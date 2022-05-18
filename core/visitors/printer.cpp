@@ -54,6 +54,7 @@ struct PrinterImpl
              , ExprConstBoolean
              , ExprConstInteger
              , ExprConstNumber
+             , ExprAt
              , TimeInterval
              , TimeUpperBound
              , TimeLowerBound>
@@ -75,6 +76,7 @@ struct PrinterImpl
     void    visit(ExprConstInteger*     expr) override;
     void    visit(ExprConstNumber*      expr) override;
     void    visit(ExprConstBoolean*     expr) override;
+    void    visit(ExprAt*               expr) override;
     void    visit(TimeInterval*         expr) override;
     void    visit(TimeUpperBound*       expr) override;
     void    visit(TimeLowerBound*       expr) override;
@@ -156,7 +158,7 @@ void    PrinterImpl::visit(TimeInterval*         expr)
     os << "]";
 }
 
-void    PrinterImpl::visit(TimeUpperBound*       expr)
+void    PrinterImpl::visit(TimeUpperBound*  expr)
 {
     os << "[";
     os << ":";
@@ -164,12 +166,18 @@ void    PrinterImpl::visit(TimeUpperBound*       expr)
     os << "]";
 }
 
-void    PrinterImpl::visit(TimeLowerBound*       expr)
+void    PrinterImpl::visit(TimeLowerBound*  expr)
 {
     os << "[";
     expr->lo->accept(*this);
     os << ":";
     os << "]";
+}
+
+void    PrinterImpl::visit(ExprAt*          expr)
+{
+    os << expr->name;
+    expr->arg->accept(*this);
 }
 
 void    PrinterImpl::output(Expr* expr)

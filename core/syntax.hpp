@@ -320,6 +320,22 @@ using ExprSs    = Final<SetOper<'Ss',  Temporal<ExprBinary>>>;
 using ExprSw    = Final<SetOper<'Sw',  Temporal<ExprBinary>>>;
 using ExprTs    = Final<SetOper<'Ts',  Temporal<ExprBinary>>>;
 using ExprTw    = Final<SetOper<'Tw',  Temporal<ExprBinary>>>;
+using ExprInt   = Final<SetOper<'I',   Temporal<ExprBinary>>>;
+
+class ExprAt final
+    : public Visitable<SetOper<'@', ExprUnary>, ExprAt>
+{
+public:
+    ExprAt(std::string name, Expr* expr)
+        : Visitable<SetOper<'@', ExprUnary>, ExprAt>(expr)
+        , name(name)
+    {
+    }
+
+public:
+    std::string name;
+};
+
 
 class ExprData final
     : public Visitable<ExprNullary, ExprData>

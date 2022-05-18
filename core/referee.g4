@@ -67,7 +67,7 @@ WHITESPACE  : [ \t\n]+ -> skip
 COMMENT     : '/*' .*? '*/' -> skip
             ;
 
-LINE_COMMENT: '//' ~[\r\n]* -> skip
+LINE_COMMENT: ('//'|'#') ~[\r\n]* -> skip
             ;
 
 time        : '[' expression ':' expression ']'                 # TimeFull
@@ -129,6 +129,8 @@ expression  : sign? integer                                     # ExprConst
             | 'I'  time? '(' expression ')'                     # ExprInt
 
             | '(' expression ')'                                # ExprParen
+
+            |  ID '@' expression                                # ExprAt
             ;
 
 mmbrID      : ID
