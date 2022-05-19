@@ -311,6 +311,8 @@ using ExprConstNumber   = Final<ExprConstT<double>>;
 using ExprConstString   = Final<ExprConstT<std::string>>;
 using ExprConstBoolean  = Final<ExprConstT<bool>>;
 
+using ExprParen = Final<SetOper<'()',  ExprUnary>>;
+
 using ExprNeg   = Final<SetOper<'-',   ExprUnary>>;
 
 using ExprAdd   = Final<SetOper<'+',   ExprBinary>>;

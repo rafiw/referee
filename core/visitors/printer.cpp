@@ -46,6 +46,7 @@ std::string multichar(int data)
 struct PrinterImpl
     : Visitor< Expr
              , ExprBinary
+             , ExprParen
              , Temporal<ExprBinary>
              , ExprUnary
              , Temporal<ExprUnary>
@@ -70,6 +71,7 @@ struct PrinterImpl
     void    visit(Expr*                 expr) override;
     void    visit(ExprBinary*           expr) override;
     void    visit(Temporal<ExprBinary>* expr) override;
+    void    visit(ExprParen*            expr) override;
     void    visit(ExprUnary*            expr) override;
     void    visit(Temporal<ExprUnary>*  expr) override;
     void    visit(ExprContext*          expr) override;
@@ -91,10 +93,20 @@ void    PrinterImpl::visit( Expr*           expr)
     os << "???";
 }
 
+void    PrinterImpl::visit( ExprParen*              expr)
+{
+    os << "(";
+    expr->arg->accept(*this);
+    os << ")";
+}
+
+
 void    PrinterImpl::visit( ExprUnary*              expr)
 {
     os << multichar(expr->op) << " ";
-    expr->arg->accept(*this);}
+    expr->arg->accept(*this);
+}
+
 
 void    PrinterImpl::visit( ExprBinary*             expr)
 {

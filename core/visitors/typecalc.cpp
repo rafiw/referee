@@ -32,6 +32,7 @@ struct TypeCalcImpl
              , ExprConstInteger
              , ExprConstNumber
              , ExprConstString
+             , ExprParen
              , ExprMmbr
              , ExprEq
              , ExprNe
@@ -59,38 +60,33 @@ struct TypeCalcImpl
 
     Type*   make(Expr*          expr);
 
-    void    visit(ExprEq*       expr) override;
-    void    visit(ExprNe*       expr) override;
-    void    visit(ExprGt*       expr) override;
-    void    visit(ExprGe*       expr) override;
-    void    visit(ExprLt*       expr) override;
-    void    visit(ExprLe*       expr) override;
-    void    visit(ExprNot*      expr) override;
-    void    visit(ExprOr*       expr) override;
-    void    visit(ExprAnd*      expr) override;
-    void    visit(ExprXor*      expr) override;
-    void    visit(ExprImp*      expr) override;
-    void    visit(ExprEqu*      expr) override;
-
-    void    visit(ExprAdd*      expr) override;
-    void    visit(ExprSub*      expr) override;
-    void    visit(ExprDiv*      expr) override;
-    void    visit(ExprMul*      expr) override;
-    void    visit(ExprMod*      expr) override;
-
-    void    visit(ExprAt*       expr) override;
-
-    void    visit(Temporal<ExprUnary>*  expr) override;
-    void    visit(Temporal<ExprBinary>* expr) override;
-
+    void    visit(ExprAdd*              expr) override;
+    void    visit(ExprAnd*              expr) override;
+    void    visit(ExprAt*               expr) override;
     void    visit(ExprConstBoolean*     expr) override;
     void    visit(ExprConstInteger*     expr) override;
     void    visit(ExprConstNumber*      expr) override;
     void    visit(ExprConstString*      expr) override;
-
+    void    visit(ExprDiv*              expr) override;
+    void    visit(ExprEq*               expr) override;
+    void    visit(ExprEqu*              expr) override;
+    void    visit(ExprGe*               expr) override;
+    void    visit(ExprGt*               expr) override;
+    void    visit(ExprImp*              expr) override;
+    void    visit(ExprLe*               expr) override;
+    void    visit(ExprLt*               expr) override;
+    void    visit(ExprMmbr*             expr) override;
+    void    visit(ExprMod*              expr) override;
+    void    visit(ExprMul*              expr) override;
+    void    visit(ExprNe*               expr) override;
+    void    visit(ExprNot*              expr) override;
+    void    visit(ExprOr*               expr) override;
+    void    visit(ExprParen*            expr) override;
+    void    visit(ExprSub*              expr) override;
+    void    visit(ExprXor*              expr) override;
+    void    visit(Temporal<ExprBinary>* expr) override;
+    void    visit(Temporal<ExprUnary>*  expr) override;
     void    visit(TimeInterval*         time) override;
-
-    void    visit(ExprMmbr*     expr) override;
 
     Type*    boolBool2Bool(  
                     Expr*       expr,
@@ -110,6 +106,228 @@ struct TypeCalcImpl
     Type*   typeString  = Factory<TypeString>::create();
     Type*   typeVoid    = Factory<TypeVoid>::create();
 };
+
+void    TypeCalcImpl::visit(ExprAdd*                expr)
+{
+    auto    lhs = TypeCalc::make(expr->lhs);
+    auto    rhs = TypeCalc::make(expr->rhs);
+
+    if(lhs != typeInteger && lhs != typeNumber && rhs != typeInteger && rhs != typeNumber)
+    {
+        throw Exception(expr->position(), "bad type");
+    }
+
+    if(lhs == rhs)
+        type    = lhs;
+    else 
+        type    = typeNumber;
+}
+
+void    TypeCalcImpl::visit(ExprAnd*                expr)
+{
+    type = boolBool2Bool(expr, expr->lhs, expr->rhs);
+}
+
+void    TypeCalcImpl::visit(ExprAt*                 expr)
+{
+    type = TypeCalc::make(expr->arg);
+}
+
+void    TypeCalcImpl::visit(ExprConstBoolean*       expr)
+{
+    type = Factory<TypeBoolean>::create();
+}
+
+void    TypeCalcImpl::visit(ExprConstInteger*       expr)
+{
+    type = Factory<TypeInteger>::create();
+}
+
+void    TypeCalcImpl::visit(ExprConstNumber*        expr)
+{
+    type = Factory<TypeNumber>::create();
+}
+
+void    TypeCalcImpl::visit(ExprConstString*        expr)
+{
+    type = Factory<TypeString>::create();
+}
+
+void    TypeCalcImpl::visit(ExprDiv*                expr)
+{
+    auto    lhs = TypeCalc::make(expr->lhs);
+    auto    rhs = TypeCalc::make(expr->rhs);
+
+    if(lhs != typeInteger && lhs != typeNumber && rhs != typeInteger && rhs != typeNumber)
+    {
+        throw Exception(expr->position(), "bad type");
+    }
+
+    if(lhs == rhs)
+        type    = lhs;
+    else 
+        type    = typeNumber;
+}
+
+void    TypeCalcImpl::visit(ExprEq*                 expr)
+{
+    type = nmbrNmbr2Bool(expr, expr->lhs, expr->rhs);
+}
+
+void    TypeCalcImpl::visit(ExprEqu*                expr)
+{
+    type = boolBool2Bool(expr, expr->lhs, expr->rhs);
+}
+
+void    TypeCalcImpl::visit(ExprGe*                 expr)
+{
+    type = nmbrNmbr2Bool(expr, expr->lhs, expr->rhs);
+}
+
+void    TypeCalcImpl::visit(ExprGt*                 expr)
+{
+    type = nmbrNmbr2Bool(expr, expr->lhs, expr->rhs);
+}
+
+void    TypeCalcImpl::visit(ExprImp*                expr)
+{
+    type = boolBool2Bool(expr, expr->lhs, expr->rhs);
+}
+
+void    TypeCalcImpl::visit(ExprLe*                 expr)
+{
+    type = nmbrNmbr2Bool(expr, expr->lhs, expr->rhs);
+}
+
+void    TypeCalcImpl::visit(ExprLt*                 expr)
+{
+    type = nmbrNmbr2Bool(expr, expr->lhs, expr->rhs);
+}
+
+void    TypeCalcImpl::visit(ExprMmbr*               expr)
+{
+    auto    base    = dynamic_cast<TypeComposite*>(TypeCalc::make(expr->arg));
+
+    if(base == nullptr)
+    {
+        throw Exception(expr->position(), "bad type");
+    }
+
+    type    = base->member(expr->mmbr);
+
+    if(type == nullptr)
+    {
+        throw Exception(expr->position(), "no such a member");
+    }
+}
+
+
+void    TypeCalcImpl::visit(ExprMod*                expr)
+{
+    auto    lhs = TypeCalc::make(expr->lhs);
+    auto    rhs = TypeCalc::make(expr->rhs);
+
+    if(lhs != typeInteger && rhs != typeInteger)
+    {
+        throw Exception(expr->position(), "bad type");
+    }
+
+    type    = typeInteger;
+}
+
+
+void    TypeCalcImpl::visit(ExprMul*                expr)
+{
+    auto    lhs = TypeCalc::make(expr->lhs);
+    auto    rhs = TypeCalc::make(expr->rhs);
+
+    if(lhs != typeInteger && lhs != typeNumber && rhs != typeInteger && rhs != typeNumber)
+    {
+        throw Exception(expr->position(), "bad type");
+    }
+
+    if(lhs == rhs)
+        type    = lhs;
+    else 
+        type    = typeNumber;
+}
+
+void    TypeCalcImpl::visit(ExprNe*                 expr)
+{
+    type = nmbrNmbr2Bool(expr, expr->lhs, expr->rhs);
+}
+
+void    TypeCalcImpl::visit(ExprNot*                expr)
+{
+    type = bool2Bool(expr, expr->arg);
+}
+
+void    TypeCalcImpl::visit(ExprOr*                 expr)
+{
+    type = boolBool2Bool(expr, expr->lhs, expr->rhs);
+}
+
+void    TypeCalcImpl::visit(ExprParen*              expr)
+{
+    type    = TypeCalc::make(expr->arg);
+}
+
+void    TypeCalcImpl::visit(ExprSub*                expr)
+{
+    auto    lhs = TypeCalc::make(expr->lhs);
+    auto    rhs = TypeCalc::make(expr->rhs);
+
+    if(lhs != typeInteger && lhs != typeNumber && rhs != typeInteger && rhs != typeNumber)
+    {
+        throw Exception(expr->position(), "bad type");
+    }
+
+    if(lhs == rhs)
+        type    = lhs;
+    else 
+        type    = typeNumber;
+}
+
+void    TypeCalcImpl::visit(ExprXor*                expr)
+{   
+    type = boolBool2Bool(expr, expr->lhs, expr->rhs);
+}
+
+void    TypeCalcImpl::visit(Temporal<ExprBinary>*   expr)
+{
+    if(expr->time)
+    {
+        TypeCalc::make(expr->time);
+    }
+
+    type = boolBool2Bool(expr, expr->lhs, expr->rhs);
+}
+
+void    TypeCalcImpl::visit(Temporal<ExprUnary>*    expr)
+{
+    if(expr->time)
+    {
+        TypeCalc::make(expr->time);
+    }
+
+    type = bool2Bool(expr, expr->arg);
+}
+
+
+void    TypeCalcImpl::visit(TimeInterval*           time)
+{
+    auto    lo  = time->lo ? TypeCalcImpl::make(time->lo) : typeInteger;
+    auto    hi  = time->hi ? TypeCalcImpl::make(time->hi) : typeInteger;
+    
+    if (lo != typeInteger)
+        throw std::runtime_error(__PRETTY_FUNCTION__);
+
+    if (hi != typeInteger)
+        throw std::runtime_error(__PRETTY_FUNCTION__);
+
+    type = typeVoid;
+}
+
 
 Type*   TypeCalcImpl::boolBool2Bool(  
                     Expr*       expr,
@@ -160,164 +378,6 @@ Type*   TypeCalcImpl::nmbrNmbr2Bool(
     
     throw Exception(expr->position(), "bad type");
 }
-
-void    TypeCalcImpl::visit(ExprEq*     expr) {type = nmbrNmbr2Bool(expr, expr->lhs, expr->rhs);}
-void    TypeCalcImpl::visit(ExprNe*     expr) {type = nmbrNmbr2Bool(expr, expr->lhs, expr->rhs);}
-
-void    TypeCalcImpl::visit(ExprGt*     expr) {type = nmbrNmbr2Bool(expr, expr->lhs, expr->rhs);}
-void    TypeCalcImpl::visit(ExprGe*     expr) {type = nmbrNmbr2Bool(expr, expr->lhs, expr->rhs);}
-
-void    TypeCalcImpl::visit(ExprLt*     expr) {type = nmbrNmbr2Bool(expr, expr->lhs, expr->rhs);}
-void    TypeCalcImpl::visit(ExprLe*     expr) {type = nmbrNmbr2Bool(expr, expr->lhs, expr->rhs);}
-
-void    TypeCalcImpl::visit(ExprNot*    expr) {type = bool2Bool(expr, expr->arg);}
-
-void    TypeCalcImpl::visit(ExprOr*     expr) {type = boolBool2Bool(expr, expr->lhs, expr->rhs);}
-void    TypeCalcImpl::visit(ExprAnd*    expr) {type = boolBool2Bool(expr, expr->lhs, expr->rhs);}
-
-void    TypeCalcImpl::visit(ExprXor*    expr) {type = boolBool2Bool(expr, expr->lhs, expr->rhs);}
-void    TypeCalcImpl::visit(ExprEqu*    expr) {type = boolBool2Bool(expr, expr->lhs, expr->rhs);}
-
-void    TypeCalcImpl::visit(ExprImp*    expr) {type = boolBool2Bool(expr, expr->lhs, expr->rhs);}
-
-void    TypeCalcImpl::visit(Temporal<ExprUnary>*    expr)
-{
-    if(expr->time)
-    {
-        TypeCalc::make(expr->time);
-    }
-
-    type = bool2Bool(expr, expr->arg);
-}
-
-void    TypeCalcImpl::visit(Temporal<ExprBinary>*   expr)
-{
-    if(expr->time)
-    {
-        TypeCalc::make(expr->time);
-    }
-
-    type = boolBool2Bool(expr, expr->lhs, expr->rhs);
-}
-
-void    TypeCalcImpl::visit(ExprConstInteger*   expr)   {type = Factory<TypeInteger>::create();}
-void    TypeCalcImpl::visit(ExprConstNumber*    expr)   {type = Factory<TypeNumber>::create();}
-void    TypeCalcImpl::visit(ExprConstBoolean*   expr)   {type = Factory<TypeBoolean>::create();}
-void    TypeCalcImpl::visit(ExprConstString*    expr)   {type = Factory<TypeString>::create();}
-
-void    TypeCalcImpl::visit(ExprAdd*      expr)
-{
-    auto    lhs = TypeCalc::make(expr->lhs);
-    auto    rhs = TypeCalc::make(expr->rhs);
-
-    if(lhs != typeInteger && lhs != typeNumber && rhs != typeInteger && rhs != typeNumber)
-    {
-        throw Exception(expr->position(), "bad type");
-    }
-
-    if(lhs == rhs)
-        type    = lhs;
-    else 
-        type    = typeNumber;
-}
-
-void    TypeCalcImpl::visit(ExprSub*      expr)
-{
-    auto    lhs = TypeCalc::make(expr->lhs);
-    auto    rhs = TypeCalc::make(expr->rhs);
-
-    if(lhs != typeInteger && lhs != typeNumber && rhs != typeInteger && rhs != typeNumber)
-    {
-        throw Exception(expr->position(), "bad type");
-    }
-
-    if(lhs == rhs)
-        type    = lhs;
-    else 
-        type    = typeNumber;
-}
-
-void    TypeCalcImpl::visit(ExprDiv*      expr)
-{
-    auto    lhs = TypeCalc::make(expr->lhs);
-    auto    rhs = TypeCalc::make(expr->rhs);
-
-    if(lhs != typeInteger && lhs != typeNumber && rhs != typeInteger && rhs != typeNumber)
-    {
-        throw Exception(expr->position(), "bad type");
-    }
-
-    if(lhs == rhs)
-        type    = lhs;
-    else 
-        type    = typeNumber;
-}
-
-void    TypeCalcImpl::visit(ExprMul*      expr)
-{
-    auto    lhs = TypeCalc::make(expr->lhs);
-    auto    rhs = TypeCalc::make(expr->rhs);
-
-    if(lhs != typeInteger && lhs != typeNumber && rhs != typeInteger && rhs != typeNumber)
-    {
-        throw Exception(expr->position(), "bad type");
-    }
-
-    if(lhs == rhs)
-        type    = lhs;
-    else 
-        type    = typeNumber;
-}
-
-void    TypeCalcImpl::visit(ExprMod*      expr)
-{
-    auto    lhs = TypeCalc::make(expr->lhs);
-    auto    rhs = TypeCalc::make(expr->rhs);
-
-    if(lhs != typeInteger && rhs != typeInteger)
-    {
-        throw Exception(expr->position(), "bad type");
-    }
-
-    type    = typeInteger;
-}
-
-void    TypeCalcImpl::visit(ExprMmbr*   expr)
-{
-    auto    base    = dynamic_cast<TypeStruct*>(TypeCalc::make(expr->arg));
-
-    if(base == nullptr)
-    {
-        throw Exception(expr->position(), "bad type");
-    }
-
-    type    = base->member(expr->mmbr);
-
-    if(type == nullptr)
-    {
-        throw Exception(expr->position(), "no such a member");
-    }
-}
-
-void    TypeCalcImpl::visit(TimeInterval*         time)
-{
-    auto    lo  = time->lo ? TypeCalcImpl::make(time->lo) : typeInteger;
-    auto    hi  = time->hi ? TypeCalcImpl::make(time->hi) : typeInteger;
-    
-    if (lo != typeInteger)
-        throw std::runtime_error(__PRETTY_FUNCTION__);
-
-    if (hi != typeInteger)
-        throw std::runtime_error(__PRETTY_FUNCTION__);
-
-    type = typeVoid;
-}
-
-void    TypeCalcImpl::visit(ExprAt*         expr)
-{
-    type = TypeCalc::make(expr->arg);
-}
-
 
 Type*   TypeCalcImpl::make(Expr* expr)
 {

@@ -64,6 +64,7 @@ public:
     std::any visitExprNe(       referee::refereeParser::ExprNeContext*      ctx) override;
     std::any visitExprO(        referee::refereeParser::ExprOContext*       ctx) override;
     std::any visitExprOr(       referee::refereeParser::ExprOrContext*      ctx) override;
+    std::any visitExprParen(    referee::refereeParser::ExprParenContext*   ctx) override;
     std::any visitExprRs(       referee::refereeParser::ExprRsContext*      ctx) override;
     std::any visitExprRw(       referee::refereeParser::ExprRwContext*      ctx) override;
     std::any visitExprSs(       referee::refereeParser::ExprSsContext*      ctx) override;

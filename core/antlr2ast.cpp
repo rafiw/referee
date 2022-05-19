@@ -161,9 +161,12 @@ std::any Antlr2AST::visitExprAnd(       referee::refereeParser::ExprAndContext* 
 std::any Antlr2AST::visitExprAt(        referee::refereeParser::ExprAtContext*      ctx)
 {
     auto    name    = ctx->ID()->getText();
+    
+    module->push_context(name);
     auto    expr    = ctx->expression()->accept(this);
+    module->pop_context();
 
-    return ExprAt(name, std::any_cast<Expr*>(expr));
+    return static_cast<Expr*>(build<ExprAt>(ctx, name, std::any_cast<Expr*>(expr)));
 }
 
 std::any Antlr2AST::visitExprConst(     referee::refereeParser::ExprConstContext*   ctx)
@@ -309,9 +312,10 @@ std::any Antlr2AST::visitExprLt(        referee::refereeParser::ExprLtContext*  
 
 std::any Antlr2AST::visitExprMmbr(      referee::refereeParser::ExprMmbrContext*    ctx)
 {
+    auto name   = ctx->mmbrID()->getText();
     auto base   = ctx->expression()->accept(this);
 
-    return static_cast<Expr*>(build<ExprMmbr>(ctx, std::any_cast<Expr*>(base), std::string(ctx->mmbrID()->getText())));
+    return static_cast<Expr*>(build<ExprMmbr>(ctx, std::any_cast<Expr*>(base), name));
 }
 
 std::any Antlr2AST::visitExprMod(       referee::refereeParser::ExprModContext*     ctx)
@@ -338,6 +342,12 @@ std::any Antlr2AST::visitExprOr(        referee::refereeParser::ExprOrContext*  
 {
     return acceptBinary<ExprOr>(ctx);
 }
+
+std::any Antlr2AST::visitExprParen(     referee::refereeParser::ExprParenContext*   ctx)
+{
+    return acceptUnary<ExprParen>(ctx);
+}
+
 
 std::any Antlr2AST::visitExprRs(        referee::refereeParser::ExprRsContext*      ctx)
 {
