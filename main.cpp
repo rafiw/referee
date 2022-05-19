@@ -82,6 +82,10 @@ int main(int argc, const char * argv[]) {
         llvm::verifyFunction(*function);
         TheModule->dump();
     }
+    catch(Exception& e)
+    {
+        std::cerr << "exception: " << e.what() << std::endl;
+    }
     catch(std::exception& e)
     {
         std::cerr << "exception: " << e.what() << std::endl;

@@ -69,3 +69,18 @@ Type*   Module::get_data(std::string name)
     }
     return m_name2data[name];
 }
+
+void    Module::push_context(std::string name)
+{
+    m_context.push_back(name);
+}
+
+void    Module::pop_context()
+{
+    m_context.pop_back();
+}
+
+bool    Module::has_context(std::string name)
+{
+    return std::find(m_context.begin(), m_context.end(), name) != m_context.end();
+}

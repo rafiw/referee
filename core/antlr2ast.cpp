@@ -1,18 +1,18 @@
 /*
  *  MIT License
- *  
+ *
  *  Copyright (c) 2022 Michael Rolnik
- *  
+ *
  *  Permission is hereby granted, free of charge, to any person obtaining a copy
  *  of this software and associated documentation files (the "Software"), to deal
  *  in the Software without restriction, including without limitation the rights
  *  to use, copy, modify, merge, publish, distribute, sublicense, and/or sell
  *  copies of the Software, and to permit persons to whom the Software is
  *  furnished to do so, subject to the following conditions:
- *  
+ *
  *  The above copyright notice and this permission notice shall be included in all
  *  copies or substantial portions of the Software.
- *  
+ *
  *  THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR
  *  IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY,
  *  FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO EVENT SHALL THE
@@ -40,11 +40,10 @@ std::any    Antlr2AST::acceptTernary(Ctxt* ctxt) {
     auto lhs = ctxt->expression()[0]->accept(this);
     auto mid = ctxt->expression()[1]->accept(this);
     auto rhs = ctxt->expression()[2]->accept(this);
-    
-    return  static_cast<Expr*>(Factory<Type>::create(
-        position(ctxt),
-        std::any_cast<Expr*>(lhs), 
-        std::any_cast<Expr*>(mid), 
+
+    return  static_cast<Expr*>(build<Type>(ctxt,
+        std::any_cast<Expr*>(lhs),
+        std::any_cast<Expr*>(mid),
         std::any_cast<Expr*>(rhs)));
 }
 
@@ -52,19 +51,17 @@ template<typename Type, typename Ctxt>
 std::any    Antlr2AST::acceptBinary(Ctxt* ctxt) {
     auto lhs = ctxt->expression()[0]->accept(this);
     auto rhs = ctxt->expression()[1]->accept(this);
-    
-    return  static_cast<Expr*>(Factory<Type>::create(
-        position(ctxt),
-        std::any_cast<Expr*>(lhs), 
+
+    return  static_cast<Expr*>(build<Type>(ctxt,
+        std::any_cast<Expr*>(lhs),
         std::any_cast<Expr*>(rhs)));
 }
 
 template<typename Type, typename Ctxt>
 std::any    Antlr2AST::acceptUnary(Ctxt* ctxt) {
     auto arg = ctxt->expression()->accept(this);
-    
-    return  static_cast<Expr*>(Factory<Type>::create(
-        position(ctxt),
+
+    return  static_cast<Expr*>(build<Type>(ctxt,
         std::any_cast<Expr*>(arg)));
 }
 
@@ -77,17 +74,16 @@ std::any    Antlr2AST::acceptTemporalBinary(Ctxt* ctxt) {
     {
         auto time= ctxt->time()->accept(this);
 
-        return  static_cast<Expr*>(Factory<Type>::create(
-            position(ctxt), 
+        return  static_cast<Expr*>(build<Type>(ctxt,
             std::any_cast<TimeInterval*>(time),
-            std::any_cast<Expr*>(lhs), 
+            std::any_cast<Expr*>(lhs),
             std::any_cast<Expr*>(rhs)));
     }
     else
     {
         return  static_cast<Expr*>(Factory<Type>::create(
-            position(ctxt), 
-            std::any_cast<Expr*>(lhs), 
+            position(ctxt),
+            std::any_cast<Expr*>(lhs),
             std::any_cast<Expr*>(rhs)));
     }
 }
@@ -100,17 +96,21 @@ std::any    Antlr2AST::acceptTemporalUnary(Ctxt* ctxt) {
     {
         auto time= ctxt->time()->accept(this);
 
-        return  static_cast<Expr*>(Factory<Type>::create(
-            position(ctxt), 
+        return  static_cast<Expr*>(build<Type>(ctxt,
             std::any_cast<TimeInterval*>(time),
             std::any_cast<Expr*>(arg)));
     }
     else
     {
-        return  static_cast<Expr*>(Factory<Type>::create(
-            position(ctxt), 
+        return  static_cast<Expr*>(build<Type>(ctxt,
             std::any_cast<Expr*>(arg)));
     }
+}
+
+template<typename Type, typename ... Args>
+Type*       Antlr2AST::build(antlr4::ParserRuleContext* rule, Args ... args)
+{
+    return  Factory<Type>::create(position(rule), args...);
 }
 
 Position    Antlr2AST::position(antlr4::ParserRuleContext* rule)
@@ -120,10 +120,10 @@ Position    Antlr2AST::position(antlr4::ParserRuleContext* rule)
 
     return  Position(
         Location(
-            start->getLine(),  
+            start->getLine(),
             start->getCharPositionInLine()),
         Location(
-            stop->getLine(),   
+            stop->getLine(),
             stop->getCharPositionInLine() + stop->getText().length())
     );
 }
@@ -132,7 +132,7 @@ std::any Antlr2AST::visitDeclData(      referee::refereeParser::DeclDataContext*
 {
     auto    name    = ctx->dataID()->getText();
     auto    type    = ctx->type()->accept(this);
-    
+
     module->add_data(name, std::any_cast<Type*>(type));
 
     return nullptr;
@@ -142,7 +142,7 @@ std::any Antlr2AST::visitDeclType(      referee::refereeParser::DeclTypeContext*
 {
     auto    name    = ctx->typeID()->getText();
     auto    type    = ctx->type()->accept(this);
-    
+
     module->add_type(name, std::any_cast<Type*>(type));
 
     return nullptr;
@@ -169,16 +169,16 @@ std::any Antlr2AST::visitExprAt(        referee::refereeParser::ExprAtContext*  
 std::any Antlr2AST::visitExprConst(     referee::refereeParser::ExprConstContext*   ctx)
 {
     if(ctx->integer() != nullptr)
-        return  static_cast<Expr*>(Factory<ExprConstInteger>::create(parse_integer(ctx->integer()->getText())));
-    
+        return  static_cast<Expr*>(build<ExprConstInteger>(ctx, parse_integer(ctx->integer()->getText())));
+
     if(ctx->floating() != nullptr)
-        return  static_cast<Expr*>(Factory<ExprConstNumber>::create(parse_number(ctx->floating()->getText())));
+        return  static_cast<Expr*>(build<ExprConstNumber>(ctx, parse_number(ctx->floating()->getText())));
 
     if(ctx->boolean() != nullptr)
-        return  static_cast<Expr*>(Factory<ExprConstBoolean>::create(parse_boolean(ctx->boolean()->getText())));
+        return  static_cast<Expr*>(build<ExprConstBoolean>(ctx, parse_boolean(ctx->boolean()->getText())));
 
     if(ctx->string() != nullptr)
-        return  static_cast<Expr*>(Factory<ExprConstString>::create(parse_string(ctx->string()->getText())));
+        return  static_cast<Expr*>(build<ExprConstString>(ctx, parse_string(ctx->string()->getText())));
 
     throw std::runtime_error(__PRETTY_FUNCTION__);
     /*
@@ -193,12 +193,25 @@ BooleanContext *boolean();
 std::any Antlr2AST::visitExprData(      referee::refereeParser::ExprDataContext*    ctx)
 {
     auto    name    = ctx->dataID()->getText();
-    auto    type    = module->get_data(name);
-    auto    expr    = static_cast<Expr*>(Factory<ExprData>::create(std::string(ctx->dataID()->getText())));
 
-    expr->type(type);
+    if(module->has_context(name))
+    {
+        auto    expr    = static_cast<Expr*>(build<ExprContext>(ctx, name));
+        auto    type    = build<TypeContext>(ctx, module);
 
-    return expr;
+        expr->type(type);
+
+        return  expr;
+    }
+    else
+    {
+        auto    type    = module->get_data(name);
+        auto    expr    = static_cast<Expr*>(build<ExprData>(ctx, name));
+
+        expr->type(type);
+
+        return expr;
+    }
 }
 
 std::any Antlr2AST::visitExprDiv(       referee::refereeParser::ExprDivContext*     ctx)
@@ -261,7 +274,7 @@ std::any Antlr2AST::visitExprInt(       referee::refereeParser::ExprIntContext* 
         lhs = Factory<ExprConstBoolean>::create(true);
         rhs = ctx->expression()[0]->accept(this);
     }
-    else 
+    else
     {
         lhs = ctx->expression()[0]->accept(this);
         rhs = ctx->expression()[1]->accept(this);
@@ -271,17 +284,15 @@ std::any Antlr2AST::visitExprInt(       referee::refereeParser::ExprIntContext* 
     {
         auto time= ctx->time()->accept(this);
 
-        return  static_cast<Expr*>(Factory<ExprInt>::create(
-            position(ctx), 
+        return  static_cast<Expr*>(build<ExprInt>(ctx,
             std::any_cast<TimeInterval*>(time),
-            std::any_cast<Expr*>(lhs), 
+            std::any_cast<Expr*>(lhs),
             std::any_cast<Expr*>(rhs)));
     }
     else
     {
-        return  static_cast<Expr*>(Factory<ExprInt>::create(
-            position(ctx), 
-            std::any_cast<Expr*>(lhs), 
+        return  static_cast<Expr*>(build<ExprInt>(ctx,
+            std::any_cast<Expr*>(lhs),
             std::any_cast<Expr*>(rhs)));
     }
 }
@@ -299,8 +310,8 @@ std::any Antlr2AST::visitExprLt(        referee::refereeParser::ExprLtContext*  
 std::any Antlr2AST::visitExprMmbr(      referee::refereeParser::ExprMmbrContext*    ctx)
 {
     auto base   = ctx->expression()->accept(this);
-   
-    return static_cast<Expr*>(Factory<ExprMmbr>::create(position(ctx), std::any_cast<Expr*>(base), std::string(ctx->mmbrID()->getText())));
+
+    return static_cast<Expr*>(build<ExprMmbr>(ctx, std::any_cast<Expr*>(base), std::string(ctx->mmbrID()->getText())));
 }
 
 std::any Antlr2AST::visitExprMod(       referee::refereeParser::ExprModContext*     ctx)
@@ -325,7 +336,7 @@ std::any Antlr2AST::visitExprO(         referee::refereeParser::ExprOContext*   
 
 std::any Antlr2AST::visitExprOr(        referee::refereeParser::ExprOrContext*      ctx)
 {
-    return acceptBinary<ExprOr>(ctx); 
+    return acceptBinary<ExprOr>(ctx);
 }
 
 std::any Antlr2AST::visitExprRs(        referee::refereeParser::ExprRsContext*      ctx)
@@ -345,12 +356,12 @@ std::any Antlr2AST::visitExprSs(        referee::refereeParser::ExprSsContext*  
 
 std::any Antlr2AST::visitExprSub(       referee::refereeParser::ExprSubContext*     ctx)
 {
-    return acceptBinary<ExprSub>(ctx); 
+    return acceptBinary<ExprSub>(ctx);
 }
 
 std::any Antlr2AST::visitExprSw(        referee::refereeParser::ExprSwContext*      ctx)
 {
-    return acceptTemporalBinary<ExprSw>(ctx); 
+    return acceptTemporalBinary<ExprSw>(ctx);
 }
 
 std::any Antlr2AST::visitExprTer(       referee::refereeParser::ExprTerContext*     ctx)
@@ -375,7 +386,7 @@ std::any Antlr2AST::visitExprUs(        referee::refereeParser::ExprUsContext*  
 
 std::any Antlr2AST::visitExprUw(        referee::refereeParser::ExprUwContext*      ctx)
 {
-    return acceptTemporalBinary<ExprUw>(ctx); 
+    return acceptTemporalBinary<ExprUw>(ctx);
 }
 
 std::any Antlr2AST::visitExprXor(       referee::refereeParser::ExprXorContext*     ctx)
@@ -385,22 +396,22 @@ std::any Antlr2AST::visitExprXor(       referee::refereeParser::ExprXorContext* 
 
 std::any Antlr2AST::visitExprXs(        referee::refereeParser::ExprXsContext*      ctx)
 {
-    return acceptTemporalUnary<ExprXs>(ctx); 
+    return acceptTemporalUnary<ExprXs>(ctx);
 }
 
 std::any Antlr2AST::visitExprXw(        referee::refereeParser::ExprXwContext*      ctx)
 {
-    return acceptTemporalUnary<ExprXw>(ctx); 
+    return acceptTemporalUnary<ExprXw>(ctx);
 }
 
 std::any Antlr2AST::visitExprYs(        referee::refereeParser::ExprYsContext*      ctx)
 {
-    return acceptTemporalUnary<ExprYs>(ctx); 
+    return acceptTemporalUnary<ExprYs>(ctx);
 }
 
 std::any Antlr2AST::visitExprYw(        referee::refereeParser::ExprYwContext*      ctx)
 {
-    return acceptTemporalUnary<ExprYw>(ctx); 
+    return acceptTemporalUnary<ExprYw>(ctx);
 }
 
 std::any Antlr2AST::visitStatement(     referee::refereeParser::StatementContext*   ctx)
@@ -422,26 +433,22 @@ std::any Antlr2AST::visitStatement(     referee::refereeParser::StatementContext
 }
 
 std::any Antlr2AST::visitTimeFull(      referee::refereeParser::TimeFullContext*    ctx)
-{ 
+{
     auto lo     = ctx->expression(0)->accept(this);
     auto hi     = ctx->expression(1)->accept(this);
-    return static_cast<TimeInterval*>(Factory<TimeInterval>::create(
-        std::any_cast<Expr*>(lo), 
-        std::any_cast<Expr*>(hi)));
+    return static_cast<TimeInterval*>(build<TimeInterval>(ctx, std::any_cast<Expr*>(lo), std::any_cast<Expr*>(hi)));
 }
 
 std::any Antlr2AST::visitTimeLower(     referee::refereeParser::TimeLowerContext*   ctx)
 {
     auto lo     = ctx->expression()->accept(this);
-    return static_cast<TimeInterval*>(Factory<TimeLowerBound>::create(
-        std::any_cast<Expr*>(lo)));
+    return static_cast<TimeInterval*>(build<TimeLowerBound>(ctx, std::any_cast<Expr*>(lo)));
 }
 
 std::any Antlr2AST::visitTimeUpper(     referee::refereeParser::TimeUpperContext*   ctx)
 {
     auto hi     = ctx->expression()->accept(this);
-    return static_cast<TimeInterval*>(Factory<TimeUpperBound>::create(
-        std::any_cast<Expr*>(hi)));
+    return static_cast<TimeInterval*>(build<TimeUpperBound>(ctx, std::any_cast<Expr*>(hi)));
 }
 
 std::any Antlr2AST::visitTypeAlias(     referee::refereeParser::TypeAliasContext*   ctx)
@@ -453,22 +460,34 @@ std::any Antlr2AST::visitTypeAlias(     referee::refereeParser::TypeAliasContext
 
 std::any Antlr2AST::visitTypeBool(      referee::refereeParser::TypeBoolContext*    ctx)
 {
-    return static_cast<Type*>(Factory<TypeBoolean>::create()); 
+    return static_cast<Type*>(build<TypeBoolean>(ctx));
+}
+
+std::any Antlr2AST::visitTypeEnum(      referee::refereeParser::TypeEnumContext*    ctx)
+{
+    std::vector<std::string>    items;
+
+    for(auto it: ctx->itemList()->ID())
+    {
+        items.push_back(it->getText());
+    }
+
+    return static_cast<Type*>(build<TypeEnum>(ctx, items));
 }
 
 std::any Antlr2AST::visitTypeInteger(   referee::refereeParser::TypeIntegerContext* ctx)
 {
-    return static_cast<Type*>(Factory<TypeInteger>::create()); 
+    return static_cast<Type*>(build<TypeInteger>(ctx));
 }
 
 std::any Antlr2AST::visitTypeNumber(    referee::refereeParser::TypeNumberContext*  ctx)
 {
-    return static_cast<Type*>(Factory<TypeNumber>::create()); 
+    return static_cast<Type*>(build<TypeNumber>(ctx));
 }
 
 std::any Antlr2AST::visitTypeString(    referee::refereeParser::TypeStringContext*  ctx)
 {
-    return static_cast<Type*>(Factory<TypeString>::create()); 
+    return static_cast<Type*>(build<TypeString>(ctx));
 }
 
 std::any Antlr2AST::visitTypeStruct(    referee::refereeParser::TypeStructContext*  ctx)
@@ -488,5 +507,5 @@ std::any Antlr2AST::visitTypeStruct(    referee::refereeParser::TypeStructContex
     }
 
     return static_cast<Type*>(new TypeStruct(members)); //  TODO: use factory
-} 
+}
 

@@ -23,6 +23,8 @@
  */
 
 #include "syntax.hpp"
+#include "module.hpp"
+#include "factory.hpp"
 
 ExprNullary::ExprNullary()
 {
@@ -81,6 +83,16 @@ TimeUpperBound::TimeUpperBound(Expr* hi)
 {
 }
 
+TypeContext::TypeContext(Module* module)
+    : _module(module)
+{
+}
+
+Type*   TypeContext::member(std::string member)
+{
+    return  _module->get_data(member);
+}
+
 TypeStruct::TypeStruct(std::vector<Named<Type>> members)
     : members(members)
 {
@@ -109,4 +121,14 @@ TypeArray::TypeArray(Type* type, unsigned size)
 TypeEnum::TypeEnum(std::vector<std::string>   items)
     : items(items)
 {
+}
+
+Type*   TypeEnum::member(std::string name)
+{
+    if(std::find(items.begin(), items.end(), name) != items.end())
+    {
+        return  Factory<TypeBoolean>::create();
+    }
+
+    return  nullptr;
 }

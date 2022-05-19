@@ -49,6 +49,7 @@ struct PrinterImpl
              , Temporal<ExprBinary>
              , ExprUnary
              , Temporal<ExprUnary>
+             , ExprContext
              , ExprData
              , ExprMmbr
              , ExprConstBoolean
@@ -71,6 +72,7 @@ struct PrinterImpl
     void    visit(Temporal<ExprBinary>* expr) override;
     void    visit(ExprUnary*            expr) override;
     void    visit(Temporal<ExprUnary>*  expr) override;
+    void    visit(ExprContext*          expr) override;
     void    visit(ExprData*             expr) override;
     void    visit(ExprMmbr*             expr) override;
     void    visit(ExprConstInteger*     expr) override;
@@ -123,12 +125,17 @@ void    PrinterImpl::visit( Temporal<ExprBinary>*   expr)
     os << ")";
 }
 
-void    PrinterImpl::visit( ExprData*   expr)
+void    PrinterImpl::visit( ExprContext*   expr)
 {
-    os << expr->data;
+    os << expr->name;
 }
 
-void    PrinterImpl::visit(ExprMmbr*    expr)
+void    PrinterImpl::visit( ExprData*       expr)
+{
+    os << expr->name;
+}
+
+void    PrinterImpl::visit(ExprMmbr*        expr)
 {
     expr->arg->accept(*this);
     os << "." << expr->mmbr;

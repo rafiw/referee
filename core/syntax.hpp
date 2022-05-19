@@ -30,6 +30,22 @@
 #include <map>
 #include <vector>
 
+class Module;
+
+class Base
+    : public Visitable<>
+{
+public:
+    virtual ~Base() = default;
+
+    Position    position()      {return _position;}
+    void        position(Position position)
+                                {_position = position;}
+
+private:
+    Position    _position;
+}; 
+
 class Exception
     : public std::exception
 {
@@ -55,17 +71,27 @@ private:
 };
 
 class Type
-    : public Visitable<>
+    : public Visitable<Base, Type>
 {
-public:
-    virtual ~Type() = default;
 };
 
-class TypeVoid    : public Visitable<Type, TypeVoid> {};
-class TypeBoolean : public Visitable<Type, TypeBoolean> {}; 
-class TypeInteger : public Visitable<Type, TypeInteger> {}; 
-class TypeNumber  : public Visitable<Type, TypeNumber> {}; 
-class TypeString  : public Visitable<Type, TypeString> {}; 
+class TypePrimitive
+    : public Visitable<Type, TypePrimitive>
+{
+};
+
+class TypeComposite
+    : public Visitable<Type, TypePrimitive>
+{
+public:
+    virtual Type*   member(std::string name) = 0;
+};
+
+class TypeVoid    : public Visitable<TypePrimitive, TypeVoid> {};
+class TypeBoolean : public Visitable<TypePrimitive, TypeBoolean> {}; 
+class TypeInteger : public Visitable<TypePrimitive, TypeInteger> {}; 
+class TypeNumber  : public Visitable<TypePrimitive, TypeNumber> {}; 
+class TypeString  : public Visitable<TypePrimitive, TypeString> {}; 
 
 template<typename T>
 class Named
@@ -81,15 +107,27 @@ public:
     T*          data;
 };
 
+class TypeContext
+    : public Visitable<TypeComposite, TypeContext>
+{
+public:
+    TypeContext(Module* module);
+
+    Type*   member(std::string name) override;
+
+private:
+    Module* const   _module;
+};
+
 class TypeStruct
-    : public Visitable<Type, TypeStruct>
+    : public Visitable<TypeComposite, TypeStruct>
 {
 public:
     TypeStruct(std::vector<Named<Type>> members);
 
     std::vector<Named<Type>>        members;
 
-    Type*   member(std::string name);
+    Type*   member(std::string name) override;
 
 private:
     std::map<std::string, Type*>    _name2type;
@@ -106,33 +144,28 @@ public:
 };
 
 class   TypeEnum
-    : public Visitable<Type, TypeEnum>
+    : public Visitable<TypeComposite, TypeEnum>
 {
 public:
     TypeEnum(std::vector<std::string>   items);
 
+    Type*   member(std::string name) override;
+
     std::vector<std::string> const  items;
-};
+};   
 
 
 class Expr
-    : public Visitable<>
+    : public Visitable<Base, Expr>
 {
 public:
-    virtual ~Expr() = default;
-
     virtual bool is_temporal() {return false;}
 
     Type*   type()              {return _type;}
     void    type(Type* type)    {_type = type;}
 
-    Position    position()      {return _position;}
-    void        position(Position position)
-                                {_position = position;}
-
 private:
     Type*       _type   = nullptr;
-    Position    _position;
 };
 
 class   TimeInterval
@@ -246,7 +279,7 @@ public:
 
     bool is_temporal() override {return true;}
 
-    TimeInterval* time = nullptr;
+    TimeInterval* const time    = nullptr;
 };
 
 template<int OP, typename Expr>
@@ -341,14 +374,28 @@ class ExprData final
     : public Visitable<ExprNullary, ExprData>
 {
 public:
-    ExprData(std::string data)
+    ExprData(std::string name)
         : Visitable<ExprNullary, ExprData>()
-        , data(data)
+        , name(name)
     {
     }
 
 public:
-    std::string data;
+    std::string const   name;
+};
+
+class ExprContext final
+    : public Visitable<ExprNullary, ExprContext>
+{
+public:
+    ExprContext(std::string name)
+        : Visitable<ExprNullary, ExprContext>()
+        , name(name)
+    {
+    }
+
+public:
+    std::string const   name;
 };
 
 class ExprMmbr final
@@ -362,7 +409,7 @@ public:
     }
 
 public:
-    std::string mmbr;
+    std::string const   mmbr;
 };
 
 using ExprIndx  = Final<SetOper<'[]',  ExprBinary>>;

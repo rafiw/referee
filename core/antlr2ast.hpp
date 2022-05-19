@@ -35,26 +35,6 @@
 class Antlr2AST
     : public referee::refereeBaseVisitor
 {
-private:
-    template<typename Type, typename Ctxt>
-    std::any    acceptTernary(Ctxt* ctxt);
-
-    template<typename Type, typename Ctxt>
-    std::any    acceptBinary(Ctxt* ctxt);
-
-    template<typename Type, typename Ctxt>
-    std::any    acceptUnary(Ctxt* ctxt);
-
-    template<typename Type, typename Ctxt>
-    std::any    acceptTemporalBinary(Ctxt* ctxt);
-
-    template<typename Type, typename Ctxt>
-    std::any    acceptTemporalUnary(Ctxt* ctxt);
-
-    Position    position(antlr4::ParserRuleContext* rule);
-
-    Module* module  = nullptr;
-
 public:
     Antlr2AST();
     
@@ -105,8 +85,33 @@ public:
     std::any visitTimeUpper(    referee::refereeParser::TimeUpperContext*   ctx) override;
     std::any visitTypeAlias(    referee::refereeParser::TypeAliasContext*   ctx) override;
     std::any visitTypeBool(     referee::refereeParser::TypeBoolContext*    ctx) override;
+    std::any visitTypeEnum(     referee::refereeParser::TypeEnumContext*    ctx) override;
     std::any visitTypeInteger(  referee::refereeParser::TypeIntegerContext* ctx) override;
     std::any visitTypeNumber(   referee::refereeParser::TypeNumberContext*  ctx) override;
     std::any visitTypeString(   referee::refereeParser::TypeStringContext*  ctx) override;
     std::any visitTypeStruct(   referee::refereeParser::TypeStructContext*  ctx) override;
+
+
+private:
+    template<typename Type, typename Ctxt>
+    std::any    acceptTernary(Ctxt* ctxt);
+
+    template<typename Type, typename Ctxt>
+    std::any    acceptBinary(Ctxt* ctxt);
+
+    template<typename Type, typename Ctxt>
+    std::any    acceptUnary(Ctxt* ctxt);
+
+    template<typename Type, typename Ctxt>
+    std::any    acceptTemporalBinary(Ctxt* ctxt);
+
+    template<typename Type, typename Ctxt>
+    std::any    acceptTemporalUnary(Ctxt* ctxt);
+
+    template<typename Type, typename ... Args> 
+    Type*       build(antlr4::ParserRuleContext* rule, Args ... args);
+
+    Position    position(antlr4::ParserRuleContext* rule);
+
+    Module* module  = nullptr;
 };
