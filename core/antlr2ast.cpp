@@ -26,6 +26,8 @@
 
 #include "visitors/typecalc.hpp"
 #include "visitors/printer.hpp"     //  TODO: remove
+#include "visitors/rewrite.hpp"     //  TODO: remove
+#include "visitors/canonic.hpp"     //  TODO: remove
 #include "module.hpp"
 #include "utils.hpp"
 #include "factory.hpp"
@@ -137,6 +139,7 @@ std::any Antlr2AST::visitDeclData(      referee::refereeParser::DeclDataContext*
 
     return nullptr;
 }
+
 
 std::any Antlr2AST::visitDeclType(      referee::refereeParser::DeclTypeContext*    ctx)
 {
@@ -424,14 +427,23 @@ std::any Antlr2AST::visitExprYw(        referee::refereeParser::ExprYwContext*  
     return acceptTemporalUnary<ExprYw>(ctx);
 }
 
+std::any Antlr2AST::visitProgram(       referee::refereeParser::ProgramContext*     ctx)
+{
+    visitChildren(ctx);
+    return module;
+}
+
 std::any Antlr2AST::visitStatement(     referee::refereeParser::StatementContext*   ctx)
 {
     if (ctx->expression())
     {
-        auto    expr    = ctx->expression()->accept(this);
+        auto    expr    = std::any_cast<Expr*>(ctx->expression()->accept(this));
 
-        TypeCalc::make(std::any_cast<Expr*>(expr));
-        Printer::output(std::cout, std::any_cast<Expr*>(expr));
+        TypeCalc::make(expr);
+        Printer::output(std::cout, expr);
+
+        auto    temp    = Rewrite::make(Canonic::make(expr));
+        Printer::output(std::cout, temp);
     }
 
     if (ctx->declaraion())

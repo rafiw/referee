@@ -69,21 +69,21 @@ struct PrinterImpl
     void    output(Expr* expr);
 
     void    visit(Expr*                 expr) override;
+    void    visit(ExprAt*               expr) override;
     void    visit(ExprBinary*           expr) override;
-    void    visit(Temporal<ExprBinary>* expr) override;
-    void    visit(ExprParen*            expr) override;
-    void    visit(ExprUnary*            expr) override;
-    void    visit(Temporal<ExprUnary>*  expr) override;
+    void    visit(ExprConstBoolean*     expr) override;
+    void    visit(ExprConstInteger*     expr) override;
+    void    visit(ExprConstNumber*      expr) override;
     void    visit(ExprContext*          expr) override;
     void    visit(ExprData*             expr) override;
     void    visit(ExprMmbr*             expr) override;
-    void    visit(ExprConstInteger*     expr) override;
-    void    visit(ExprConstNumber*      expr) override;
-    void    visit(ExprConstBoolean*     expr) override;
-    void    visit(ExprAt*               expr) override;
+    void    visit(ExprParen*            expr) override;
+    void    visit(ExprUnary*            expr) override;
+    void    visit(Temporal<ExprBinary>* expr) override;
+    void    visit(Temporal<ExprUnary>*  expr) override;
     void    visit(TimeInterval*         expr) override;
-    void    visit(TimeUpperBound*       expr) override;
     void    visit(TimeLowerBound*       expr) override;
+    void    visit(TimeUpperBound*       expr) override;
 
     std::ostream&   os;
 };
@@ -195,7 +195,7 @@ void    PrinterImpl::visit(TimeLowerBound*  expr)
 
 void    PrinterImpl::visit(ExprAt*          expr)
 {
-    os << expr->name;
+    os << expr->name << "@";
     expr->arg->accept(*this);
 }
 

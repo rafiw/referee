@@ -268,6 +268,7 @@ public:
         : Visitable<Expr, Temporal<Expr>>(op, args...)
         , time(time)
     {
+        //  assert(time != nullptr);    //  TODO: put it back
     }
 
     template<typename ... Args>

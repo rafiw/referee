@@ -31,6 +31,7 @@
 #include "factory.hpp"
 #include "syntax.hpp"
 #include "visitors/canonic.hpp"
+#include "visitors/compile.hpp"
 
 #include "antlr4-runtime/antlr4-runtime.h"
 #include "refereeParser.h"
@@ -69,18 +70,34 @@ int main(int argc, const char * argv[]) {
         Antlr2AST                   antlr2ast;
 
         auto*   tree    = parser.program();
-        antlr2ast.visitProgram(tree);
+        auto*   module  = std::any_cast<Module*>(antlr2ast.visitProgram(tree));
 
         TheContext  = std::make_unique<llvm::LLVMContext>();
         TheModule   = std::make_unique<llvm::Module>(filename, *TheContext);
         Builder     = std::make_unique<llvm::IRBuilder<>>(*TheContext);
 
         TheModule->setSourceFileName(filename);
-
+#if 0
+        //llvm::StructType::create(llvm::getGlobalContext(), members_array_ref, struct_name, false)
+        auto intType            = llvm::IntegerType::get(*TheContext, 32); // 32 bits integer
+        auto myStructType       = llvm::StructType::create(*TheContext, "myStruct"); // Create opaque type
+        auto myStructPtrType    = llvm::PointerType::get(myStructType, 0); // Initialise the pointer type now
+        myStructType->setBody({ intType, myStructPtrType }, /* packed */ false);
+        myStructType->print(llvm::errs());
+#endif
         auto    funcType= llvm::FunctionType::get(Builder->getVoidTy(), false);
         auto    function= llvm::Function::Create(funcType, llvm::Function::ExternalLinkage, "main", TheModule.get());
         llvm::verifyFunction(*function);
         TheModule->dump();
+
+
+        for(auto name: module->get_type_names())
+        {
+            auto    type    = module->get_type(name);
+            std::cout << name << std::endl << "    ";
+            Compile::make(TheContext.get(), TheModule.get(), type)->print(llvm::outs());
+            std::cout << std::endl;
+        }
     }
     catch(Exception& e)
     {

@@ -37,7 +37,7 @@ class Antlr2AST
 {
 public:
     Antlr2AST();
-    
+
     std::any visitDeclData(     referee::refereeParser::DeclDataContext*    ctx) override;
     std::any visitDeclType(     referee::refereeParser::DeclTypeContext*    ctx) override;
     std::any visitExprAdd(      referee::refereeParser::ExprAddContext*     ctx) override;
@@ -80,6 +80,7 @@ public:
     std::any visitExprXw(       referee::refereeParser::ExprXwContext*      ctx) override;
     std::any visitExprYs(       referee::refereeParser::ExprYsContext*      ctx) override;
     std::any visitExprYw(       referee::refereeParser::ExprYwContext*      ctx) override;
+    std::any visitProgram(      referee::refereeParser::ProgramContext*     ctx) override;
     std::any visitStatement(    referee::refereeParser::StatementContext*   ctx) override;
     std::any visitTimeFull(     referee::refereeParser::TimeFullContext*    ctx) override;
     std::any visitTimeLower(    referee::refereeParser::TimeLowerContext*   ctx) override;

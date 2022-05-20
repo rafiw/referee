@@ -24,30 +24,11 @@
 
 #pragma once
 
-#include "syntax.hpp"
+#include "../syntax.hpp"
 
-#include <map>
-#include <set>
-#include <string>
-
-class Module
+class Rewrite
 {
 public:
-    Module(std::string name);
-
-    void    add_type(std::string name, Type* type);
-    void    add_data(std::string name, Type* data);
-
-    Type*   get_type(std::string name);
-    Type*   get_data(std::string name);
-    std::vector<std::string>    get_type_names();
-
-    void    push_context(std::string name);
-    void    pop_context();
-    bool    has_context(std::string name);
-
-private:
-    std::map<std::string, Type*>    m_name2type;
-    std::map<std::string, Type*>    m_name2data;
-    std::vector<std::string>        m_context;
+    static Expr*            make(Expr*          expr);
+    static TimeInterval*    make(TimeInterval*  time);
 };

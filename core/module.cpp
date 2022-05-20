@@ -70,6 +70,19 @@ Type*   Module::get_data(std::string name)
     return m_name2data[name];
 }
 
+std::vector<std::string>    Module::get_type_names()
+{
+    std::vector<std::string>    names;
+    
+    for(auto iter: m_name2type)
+    {
+        names.push_back(iter.first);
+    }
+
+    return names;
+}
+
+
 void    Module::push_context(std::string name)
 {
     m_context.push_back(name);

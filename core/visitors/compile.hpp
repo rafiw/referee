@@ -24,30 +24,25 @@
 
 #pragma once
 
-#include "syntax.hpp"
+#include "../syntax.hpp"
 
-#include <map>
-#include <set>
-#include <string>
+#include "llvm/ADT/APFloat.h"
+#include "llvm/ADT/STLExtras.h"
+#include "llvm/IR/BasicBlock.h"
+#include "llvm/IR/Constants.h"
+#include "llvm/IR/DerivedTypes.h"
+#include "llvm/IR/Function.h"
+#include "llvm/IR/IRBuilder.h"
+#include "llvm/IR/LLVMContext.h"
+#include "llvm/IR/Module.h"
+#include "llvm/IR/Type.h"
+#include "llvm/IR/Verifier.h"
 
-class Module
+#include <iostream>
+
+class Compile
 {
 public:
-    Module(std::string name);
-
-    void    add_type(std::string name, Type* type);
-    void    add_data(std::string name, Type* data);
-
-    Type*   get_type(std::string name);
-    Type*   get_data(std::string name);
-    std::vector<std::string>    get_type_names();
-
-    void    push_context(std::string name);
-    void    pop_context();
-    bool    has_context(std::string name);
-
-private:
-    std::map<std::string, Type*>    m_name2type;
-    std::map<std::string, Type*>    m_name2data;
-    std::vector<std::string>        m_context;
+    static llvm::Type*  make(llvm::LLVMContext* context, llvm::Module* module, Type* type);
+    static void make(llvm::LLVMContext* context, llvm::Module* module, Expr* expr);
 };

@@ -73,10 +73,12 @@ llvm_map_components_to_libnames(llvm_libs support core irreader)
 
 add_library(
     core
+    core/visitors/compile.cpp
     core/visitors/canonic.cpp
     core/visitors/negated.cpp
     core/visitors/typecalc.cpp
     core/visitors/printer.cpp
+    core/visitors/rewrite.cpp
     core/antlr2ast.cpp
     core/syntax.cpp
     core/module.cpp
