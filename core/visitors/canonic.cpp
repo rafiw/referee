@@ -29,6 +29,7 @@
 struct CanonicImpl
     : Visitor< Expr
              , ExprConstBoolean
+             , ExprAt
              , ExprNot
              , ExprOr
              , ExprAnd
@@ -61,6 +62,8 @@ struct CanonicImpl
 
     void        visit(Expr*   expr) override;
     void        visit(ExprConstBoolean* expr) override;
+
+    void        visit(ExprAt*       expr) override;
     void        visit(ExprNot*      expr) override;
     void        visit(ExprOr*       expr) override;
     void        visit(ExprAnd*      expr) override;
@@ -87,6 +90,7 @@ struct CanonicImpl
 
 void    CanonicImpl::visit(Expr*  expr) {canonic = expr;}
 void    CanonicImpl::visit(ExprConstBoolean*    expr) {canonic = expr;}
+void    CanonicImpl::visit(ExprAt*     expr)  {canonic = Factory<ExprAt>::create(expr->name, make(expr->arg));}
 void    CanonicImpl::visit(ExprNot*     expr) {canonic = Negated::make(expr->arg);}
 void    CanonicImpl::visit(ExprOr*      expr) {canonic = Factory<ExprOr>::create(make(expr->lhs), make(expr->rhs));}
 void    CanonicImpl::visit(ExprAnd*     expr) {canonic = Factory<ExprAnd>::create(make(expr->lhs), make(expr->rhs));}

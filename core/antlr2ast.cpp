@@ -174,8 +174,10 @@ std::any Antlr2AST::visitExprAt(        referee::refereeParser::ExprAtContext*  
 
 std::any Antlr2AST::visitExprConst(     referee::refereeParser::ExprConstContext*   ctx)
 {
+    //  TODO: add sign
+    
     if(ctx->integer() != nullptr)
-        return  static_cast<Expr*>(build<ExprConstInteger>(ctx, parse_integer(ctx->integer()->getText())));
+        return  ctx->integer()->accept(this);
 
     if(ctx->floating() != nullptr)
         return  static_cast<Expr*>(build<ExprConstNumber>(ctx, parse_number(ctx->floating()->getText())));
@@ -211,8 +213,9 @@ std::any Antlr2AST::visitExprData(      referee::refereeParser::ExprDataContext*
     }
     else
     {
+        auto    base    = static_cast<Expr*>(build<ExprContext>(ctx, "__curr__"));
         auto    type    = module->get_data(name);
-        auto    expr    = static_cast<Expr*>(build<ExprData>(ctx, name));
+        auto    expr    = static_cast<Expr*>(build<ExprMmbr>(ctx, base, name));
 
         expr->type(type);
 
@@ -301,6 +304,20 @@ std::any Antlr2AST::visitExprInt(       referee::refereeParser::ExprIntContext* 
             std::any_cast<Expr*>(lhs),
             std::any_cast<Expr*>(rhs)));
     }
+}
+
+std::any Antlr2AST::visitInteger(       referee::refereeParser::IntegerContext*     ctx)
+{
+    if(ctx->BININT())
+        return  static_cast<Expr*>(build<ExprConstInteger>(ctx, parse_binint(ctx->BININT()->getText())));
+    if(ctx->OCTINT())
+        return  static_cast<Expr*>(build<ExprConstInteger>(ctx, parse_octint(ctx->OCTINT()->getText())));
+    if(ctx->INTEGER())
+        return  static_cast<Expr*>(build<ExprConstInteger>(ctx, parse_decint(ctx->INTEGER()->getText())));
+    if(ctx->HEXINT())
+        return  static_cast<Expr*>(build<ExprConstInteger>(ctx, parse_hexint(ctx->HEXINT()->getText())));
+
+    throw std::runtime_error(__PRETTY_FUNCTION__);
 }
 
 std::any Antlr2AST::visitExprLe(        referee::refereeParser::ExprLeContext*      ctx)
@@ -480,11 +497,6 @@ std::any Antlr2AST::visitTypeAlias(     referee::refereeParser::TypeAliasContext
     return module->get_type(name);
 }
 
-std::any Antlr2AST::visitTypeBool(      referee::refereeParser::TypeBoolContext*    ctx)
-{
-    return static_cast<Type*>(build<TypeBoolean>(ctx));
-}
-
 std::any Antlr2AST::visitTypeEnum(      referee::refereeParser::TypeEnumContext*    ctx)
 {
     std::vector<std::string>    items;
@@ -495,21 +507,6 @@ std::any Antlr2AST::visitTypeEnum(      referee::refereeParser::TypeEnumContext*
     }
 
     return static_cast<Type*>(build<TypeEnum>(ctx, items));
-}
-
-std::any Antlr2AST::visitTypeInteger(   referee::refereeParser::TypeIntegerContext* ctx)
-{
-    return static_cast<Type*>(build<TypeInteger>(ctx));
-}
-
-std::any Antlr2AST::visitTypeNumber(    referee::refereeParser::TypeNumberContext*  ctx)
-{
-    return static_cast<Type*>(build<TypeNumber>(ctx));
-}
-
-std::any Antlr2AST::visitTypeString(    referee::refereeParser::TypeStringContext*  ctx)
-{
-    return static_cast<Type*>(build<TypeString>(ctx));
 }
 
 std::any Antlr2AST::visitTypeStruct(    referee::refereeParser::TypeStructContext*  ctx)

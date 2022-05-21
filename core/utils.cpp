@@ -26,12 +26,12 @@
 
 #include <cmath>
 
-int64_t     parse_integer(  std::string const& text)
+int64_t     parse_integer(  std::string const& text, unsigned base)
 {
     int64_t res;
     char*   err     = nullptr;
 
-    res = strtoll(text.c_str(), &err, 10);
+    res = strtoll(text.c_str(), &err, base);
 
     if(     (err != nullptr && *err != 0) 
         ||  (res == LLONG_MAX) 
@@ -42,6 +42,11 @@ int64_t     parse_integer(  std::string const& text)
 
     return  res;
 }
+
+int64_t     parse_binint(   std::string const& text) { return parse_integer(text,  2);}
+int64_t     parse_octint(   std::string const& text) { return parse_integer(text,  8);}
+int64_t     parse_decint(   std::string const& text) { return parse_integer(text, 10);}
+int64_t     parse_hexint(   std::string const& text) { return parse_integer(text, 16);}
 
 double      parse_number(   std::string const& text)
 {

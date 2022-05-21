@@ -29,6 +29,7 @@
 struct NegatedImpl
     : Visitor< Expr
              , ExprConstBoolean
+             , ExprAt
              , ExprEq
              , ExprNe
              , ExprGt
@@ -56,7 +57,8 @@ struct NegatedImpl
              , ExprSs
              , ExprSw
              , ExprTs
-             , ExprTw>
+             , ExprTw
+             , ExprParen>
 {
     Expr* negated = nullptr;
 
@@ -64,6 +66,7 @@ struct NegatedImpl
 
     void    visit(Expr*   expr) override;
     void    visit(ExprConstBoolean* expr) override;
+    void    visit(ExprAt*       expr) override;
     void    visit(ExprEq*       expr) override;
     void    visit(ExprNe*       expr) override;
     void    visit(ExprGt*       expr) override;
@@ -92,11 +95,14 @@ struct NegatedImpl
     void    visit(ExprSw*       expr) override;
     void    visit(ExprTs*       expr) override;
     void    visit(ExprTw*       expr) override;
+    void    visit(ExprParen*    expr) override;
 };
 
 void    NegatedImpl::visit(Expr* expr) {negated = Factory<ExprNot>::create(expr);}
 
 void    NegatedImpl::visit(ExprConstBoolean*    expr) {negated = Factory<ExprConstBoolean>::create(!expr->value);}
+
+void    NegatedImpl::visit(ExprAt*     expr) {negated = Factory<ExprAt>::create(expr->name, make(expr->arg));}
 
 void    NegatedImpl::visit(ExprEq*     expr) {negated = Factory<ExprNe>::create(Canonic::make(expr->lhs), Canonic::make(expr->rhs));}
 void    NegatedImpl::visit(ExprNe*     expr) {negated = Factory<ExprEq>::create(Canonic::make(expr->lhs), Canonic::make(expr->rhs));}
@@ -134,6 +140,8 @@ void    NegatedImpl::visit(ExprSs*     expr) {negated = Factory<ExprTw>::create(
 void    NegatedImpl::visit(ExprSw*     expr) {negated = Factory<ExprTs>::create(expr->time, make(expr->lhs), make(expr->rhs));}
 void    NegatedImpl::visit(ExprTs*     expr) {negated = Factory<ExprSw>::create(expr->time, make(expr->lhs), make(expr->rhs));}
 void    NegatedImpl::visit(ExprTw*     expr) {negated = Factory<ExprSs>::create(expr->time, make(expr->lhs), make(expr->rhs));}
+
+void    NegatedImpl::visit(ExprParen*  expr) {negated = Factory<ExprParen>::create(make(expr->arg));}
 
 Expr* NegatedImpl::make(Expr* expr)
 {

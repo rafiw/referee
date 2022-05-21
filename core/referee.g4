@@ -44,8 +44,15 @@ BOOLEAN     : 'true'
             ;
 boolean     : BOOLEAN;
 
+BININT      : '0'[bB][0-1]+;
+OCTINT      : '0'[oO][0-7]+;
+HEXINT      : '0'[xX][0-9a-fA-F]+;
+
 INTEGER     : [1-9][0-9]* ;
-integer     : INTEGER;
+integer     : INTEGER
+            | BININT
+            | OCTINT
+            | HEXINT;
 
 FLOATING    : [1-9][0-9]*'.'[0-9]* 
             | '0'?'.'[0-9]+
@@ -155,11 +162,7 @@ index       : integer
 size        : integer
             ;
 
-type        : 'boolean'                                         # TypeBool
-            | 'integer'                                         # TypeInteger
-            | 'number'                                          # TypeNumber
-            | 'string'                                          # TypeString
-            | 'struct' '{' mmbrList '}'                         # TypeStruct
+type        : 'struct' '{' mmbrList '}'                         # TypeStruct
             | 'enum'   '{' itemList '}'                         # TypeEnum
             | typeID                                            # TypeAlias
             | typeID  ('[' size     ']')+                       # TypeArray              

@@ -28,10 +28,12 @@
 
 Module::Module(std::string name)
 {
-    m_name2data["boolean"]  = Factory<TypeBoolean>::create();
-    m_name2data["integer"]  = Factory<TypeInteger>::create();
-    m_name2data["string"]   = Factory<TypeString>::create();
-    m_name2data["number"]   = Factory<TypeNumber>::create();
+    m_name2type["boolean"]  = Factory<TypeBoolean>::create();
+    m_name2type["integer"]  = Factory<TypeInteger>::create();
+    m_name2type["string"]   = Factory<TypeString>::create();
+    m_name2type["number"]   = Factory<TypeNumber>::create();
+
+    m_name2data["__time__"] = Factory<TypeInteger>::create();
 }
 
 void    Module::add_type(std::string name, Type* type)
@@ -73,7 +75,7 @@ Type*   Module::get_data(std::string name)
 std::vector<std::string>    Module::get_type_names()
 {
     std::vector<std::string>    names;
-    
+
     for(auto iter: m_name2type)
     {
         names.push_back(iter.first);

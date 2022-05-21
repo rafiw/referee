@@ -56,6 +56,7 @@ public:
     std::any visitExprImp(      referee::refereeParser::ExprImpContext*     ctx) override;
     std::any visitExprIndx(     referee::refereeParser::ExprIndxContext*    ctx) override;
     std::any visitExprInt(      referee::refereeParser::ExprIntContext*     ctx) override;
+    std::any visitInteger(      referee::refereeParser::IntegerContext*     ctx) override;
     std::any visitExprLe(       referee::refereeParser::ExprLeContext*      ctx) override;
     std::any visitExprLt(       referee::refereeParser::ExprLtContext*      ctx) override;
     std::any visitExprMmbr(     referee::refereeParser::ExprMmbrContext*    ctx) override;
@@ -86,11 +87,7 @@ public:
     std::any visitTimeLower(    referee::refereeParser::TimeLowerContext*   ctx) override;
     std::any visitTimeUpper(    referee::refereeParser::TimeUpperContext*   ctx) override;
     std::any visitTypeAlias(    referee::refereeParser::TypeAliasContext*   ctx) override;
-    std::any visitTypeBool(     referee::refereeParser::TypeBoolContext*    ctx) override;
     std::any visitTypeEnum(     referee::refereeParser::TypeEnumContext*    ctx) override;
-    std::any visitTypeInteger(  referee::refereeParser::TypeIntegerContext* ctx) override;
-    std::any visitTypeNumber(   referee::refereeParser::TypeNumberContext*  ctx) override;
-    std::any visitTypeString(   referee::refereeParser::TypeStringContext*  ctx) override;
     std::any visitTypeStruct(   referee::refereeParser::TypeStructContext*  ctx) override;
 
 

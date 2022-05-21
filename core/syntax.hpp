@@ -38,12 +38,12 @@ class Base
 public:
     virtual ~Base() = default;
 
-    Position    position()      {return _position;}
-    void        position(Position position)
-                                {_position = position;}
+    Position    where()     {return _where;}
+    void        where(Position where)
+                            {_where = where;}
 
 private:
-    Position    _position;
+    Position    _where;
 }; 
 
 class Exception

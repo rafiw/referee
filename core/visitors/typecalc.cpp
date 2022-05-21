@@ -114,7 +114,7 @@ void    TypeCalcImpl::visit(ExprAdd*                expr)
 
     if(lhs != typeInteger && lhs != typeNumber && rhs != typeInteger && rhs != typeNumber)
     {
-        throw Exception(expr->position(), "bad type");
+        throw Exception(expr->where(), "bad type");
     }
 
     if(lhs == rhs)
@@ -160,7 +160,7 @@ void    TypeCalcImpl::visit(ExprDiv*                expr)
 
     if(lhs != typeInteger && lhs != typeNumber && rhs != typeInteger && rhs != typeNumber)
     {
-        throw Exception(expr->position(), "bad type");
+        throw Exception(expr->where(), "bad type");
     }
 
     if(lhs == rhs)
@@ -210,14 +210,14 @@ void    TypeCalcImpl::visit(ExprMmbr*               expr)
 
     if(base == nullptr)
     {
-        throw Exception(expr->position(), "bad type");
+        throw Exception(expr->where(), "bad type");
     }
 
     type    = base->member(expr->mmbr);
 
     if(type == nullptr)
     {
-        throw Exception(expr->position(), "no such a member");
+        throw Exception(expr->where(), "no such a member");
     }
 }
 
@@ -229,7 +229,7 @@ void    TypeCalcImpl::visit(ExprMod*                expr)
 
     if(lhs != typeInteger && rhs != typeInteger)
     {
-        throw Exception(expr->position(), "bad type");
+        throw Exception(expr->where(), "bad type");
     }
 
     type    = typeInteger;
@@ -243,7 +243,7 @@ void    TypeCalcImpl::visit(ExprMul*                expr)
 
     if(lhs != typeInteger && lhs != typeNumber && rhs != typeInteger && rhs != typeNumber)
     {
-        throw Exception(expr->position(), "bad type");
+        throw Exception(expr->where(), "bad type");
     }
 
     if(lhs == rhs)
@@ -279,7 +279,7 @@ void    TypeCalcImpl::visit(ExprSub*                expr)
 
     if(lhs != typeInteger && lhs != typeNumber && rhs != typeInteger && rhs != typeNumber)
     {
-        throw Exception(expr->position(), "bad type");
+        throw Exception(expr->where(), "bad type");
     }
 
     if(lhs == rhs)
@@ -339,7 +339,7 @@ Type*   TypeCalcImpl::boolBool2Bool(
 
     if(typeLhs != typeBoolean || typeRhs != typeBoolean)
     {
-        throw Exception(expr->position(), "bad type");
+        throw Exception(expr->where(), "bad type");
     }
 
     return  typeBoolean;
@@ -353,7 +353,7 @@ Type*   TypeCalcImpl::bool2Bool(
 
     if(typeArg != typeBoolean)
     {
-        throw Exception(expr->position(), "bad type");
+        throw Exception(expr->where(), "bad type");
     }
 
     return  typeBoolean;
@@ -376,7 +376,7 @@ Type*   TypeCalcImpl::nmbrNmbr2Bool(
         return  typeBoolean;
     }
     
-    throw Exception(expr->position(), "bad type");
+    throw Exception(expr->where(), "bad type");
 }
 
 Type*   TypeCalcImpl::make(Expr* expr)
