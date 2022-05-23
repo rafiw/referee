@@ -1,0 +1,3 @@
+[submodule "submodules/cmake-scripts"]
+	path = submodules/cmake-scripts
+	url = git@github.com:StableCoder/cmake-scripts.git

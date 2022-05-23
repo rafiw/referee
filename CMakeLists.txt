@@ -26,6 +26,9 @@ cmake_minimum_required(VERSION 3.16)
 
 project(referee)
 
+set(CMAKE_MODULE_PATH "${CMAKE_SOURCE_DIR}/submodules/cmake-scripts")
+include(code-coverage)
+
 add_compile_options(-Wno-multichar)
 add_compile_options(-g -ggdb)
 add_compile_options(-std=c++20)
@@ -36,6 +39,8 @@ enable_testing()
 find_package(antlr4-runtime   REQUIRED)
 find_package(antlr4-generator REQUIRED)
 find_package(LLVM             REQUIRED CONFIG)
+
+add_code_coverage()
 
 set(ANTLR4_JAR_LOCATION /opt/homebrew/Cellar/antlr/4.10.1/antlr-4.10.1-complete.jar)
 
@@ -114,3 +119,6 @@ target_link_libraries(
     gtest_main
     pthread)
 add_test(tests tests)
+
+target_code_coverage(tests)
+target_code_coverage(referee)
