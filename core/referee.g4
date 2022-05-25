@@ -29,6 +29,7 @@ program     : (statement ';')*
 
 statement   : declaraion
             | expression
+            | ps_pattern
             ;
 
 declaraion  : declType
@@ -138,6 +139,159 @@ expression  : sign? integer                                     # ExprConst
             | '(' expression ')'                                # ExprParen
 
             |  ID '@' expression                                # ExprAt
+            ;
+
+ps_pattern  : (pshead ',')+ psbody
+            ;
+
+
+after           : 'after'           ;
+afterwards      : 'afterwards'      ;
+always          : 'always'          ;
+and             : 'and'             ;
+at              : 'at'              ;
+becomes         : 'becomes'         ;
+been            : 'been'            ;
+before          : 'before'          ;
+between         : 'between'         ;
+by              : 'by'              ;
+case            : 'case'            ;
+continually     : 'continually'     ;
+eventually      : 'eventually'      ;
+every           : 'every'           ;
+followed        : 'followed'        ;
+for             : 'for'             ;
+globally        : 'globally'        ;
+has             : 'has'             ;
+have            : 'have'            ;
+holding         : 'holding'         ;
+holds           : 'holds'           ;
+if              : 'if'              ;
+in              : 'in'              ;
+interruption    : 'interruption'    ;
+is              : 'is'              ;
+it              : 'it'              ;
+least           : 'least'           ;
+less            : 'less'            ;
+long            : 'long'            ;
+microseconds    : 'microseconds'    ;
+milliseconds    : 'milliseconds'    ;
+minutes         : 'minutes'         ;
+must            : 'must'            ;
+nanoseconds     : 'nanoseconds'     ;
+never           : 'never'           ;
+occured         : 'occured'         ;
+occurred        : 'occurred'        ;
+once            : 'once'            ;
+remains         : 'remains'         ;
+repeatedly      : 'repeatedly'      ;
+response        : 'response'        ;
+run             : 'run'             ;
+satisfied       : 'satisfied'       ;
+seconds         : 'seconds'         ;
+so              : 'so'              ;
+than            : 'than'            ;
+that            : 'that'            ;
+the             : 'the'             ;
+then            : 'then'            ;
+until           : 'until'           ;
+while           : 'while'           ;
+within          : 'within'          ;
+without         : 'without'         ;
+
+number      : integer
+            | floating
+            ;
+
+exprP       : expression ;
+exprS       : expression ;
+exprT       : expression ;
+exprZ       : expression ;
+
+
+pshead      : globally
+            | before  expression
+            | after   expression
+            | while   expression
+            | between expression and   expression
+            | after   expression until expression
+            ;
+specUniversality        : it is always the case that expression holds? timeBound?                                         
+                        ;
+specAbsence             : it is never the case that  expression holds? timeBound?                                         
+                        ;
+specExistence           : exprP eventually holds? timeBound?                                                                   
+                        ;
+specTransientState      : exprP holds after number units                                                                  
+                        ;
+specSteadyState         : P=expression holds in the long run                                                                 
+                        ;
+specMinimunDuration     : once exprP (becomes satisfied)? it remains so for at least number units          
+                        ;
+specMaximumDuration     : once exprP (becomes satisfied)? it remains so for less than number units         
+                        ;
+specRecurrence          : exprP holds? repeatedly (every number units)?                                                   
+                        ;
+specPrecedence          : if exprP holds? ',' then it must have been the case that exprS (has occurred)? intervalBound? before it?                                                
+                        ;
+specPrecedenceChain12   : if exprS and afterwards exprT timeBound? holds? ',' then it must have been the case that exprP (has occurred)? intervalBound? before it?       
+                        ;
+specPrecedenceChain21   : if exprP holds? ',' then it must have been the case that exprS and afterwards exprT upperTimeBound? (have occurred)? intervalBound? before it? 
+                        ;
+specResponse            : if exprP (has occurred)? ',' then in response exprS (eventually holds)? timeBound? constraint?  
+                        ;
+specResponseChain12     : if exprP (has occurred)? ',' then in response timeBound? constraint? exprS followed by exprT timeBound? constraint? (eventually holds)? 
+                        ;
+specResponseChain21     : if exprS followed by exprT timeBound? constraint? (have occurred)? ',' then in response exprP (eventually holds)? timeBound? constraint? 
+                        ;
+specResponseInvariance  : if exprP (has occurred)? ',' then in response exprS holds? continually timeBound?  
+                        ;
+specUntil               : exprP holds? without interruption until exprS holds? timeBound?                        
+                        ;
+
+psbody      : specUniversality
+            | specAbsence
+            | specExistence
+            | specTransientState
+            | specSteadyState
+            | specMinimunDuration
+            | specMaximumDuration
+            | specRecurrence
+            | specPrecedence
+            | specPrecedenceChain12
+            | specPrecedenceChain21
+            | specResponse
+            | specResponseChain12
+            | specResponseChain21
+            | specResponseInvariance
+            | specUntil
+            ;
+
+constraint  : without exprZ holding in between
+            ;
+
+timeBound   : upperTimeBound
+            | lowerTimeBound 
+            | intervalBound
+            ;
+
+upperTimeBound
+            : within number units
+            ;
+
+lowerTimeBound
+            : after  number units
+            ;
+
+intervalBound
+            : between number and number units
+            ;
+
+units       : nanoseconds
+            | microseconds
+            | milliseconds
+            | seconds
+            | minutes
             ;
 
 mmbrID      : ID

@@ -122,3 +122,11 @@ add_test(tests tests)
 
 target_code_coverage(tests)
 target_code_coverage(referee)
+
+
+add_executable(
+    rdb
+    rdb/database.cpp
+)
+
+

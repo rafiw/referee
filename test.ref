@@ -1,0 +1,44 @@
+type ABC: struct {
+    a: integer;
+    b: number;
+    c: boolean;
+    d: struct {
+        x: integer;
+    };
+};
+
+data abc: ABC;
+data alpha: boolean;
+data beta: boolean;
+
+x@(x.abc.a != 2);
+
+G(((true)));
+F(2 == abc.a);
+F(false == abc.c);
+Us(alpha, abc.a != abc.b);
+Us[1:3](alpha, beta);
+Rw[1:3](alpha, beta);
+
+
+
+type Button:    enum {DEPRESSED, RELEASED};
+type State:     enum {ON, OFF};
+type Door:      enum {OPENED, CLOSED};
+
+data button:    Button;
+data lock:      State;
+data alarm:     State;
+data door:      Door;
+
+F(button.DEPRESSED);
+
+before button.DEPRESSED, lock.ON eventually holds after 100 milliseconds;   
+globally, it is never the case that door.CLOSED && alarm.ON;    
+while door.OPEN, it is always the case that alarm.ON after 30 seconds;  
+globally, if button.DEPRESSED, then in response lock.ON after 100 milliseconds;
+globally, once lock.ON becomes satisfied it remains so for at least 2 seconds;    
+globally, once lock.ON becomes satisfied it remains so for less than 2.1 seconds; 
+between door.CLOSED and lock.OFF, it is always the case that door.CLOSED;   
+after lock.ON, if door.OPEN, then it must have been the case that lock.OFF has occurred before it; 
+after lock.ON, if lock.OFF, then it must have been the case that button.DEPRESSED has occurred before; 
