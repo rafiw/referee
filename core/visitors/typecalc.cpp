@@ -53,7 +53,7 @@ struct TypeCalcImpl
              , ExprMod
              , Temporal<ExprUnary>
              , Temporal<ExprBinary>
-             , TimeInterval
+             , Time
              , ExprAt>
 {
     Type*   type    = nullptr;
@@ -86,7 +86,7 @@ struct TypeCalcImpl
     void    visit(ExprXor*              expr) override;
     void    visit(Temporal<ExprBinary>* expr) override;
     void    visit(Temporal<ExprUnary>*  expr) override;
-    void    visit(TimeInterval*         time) override;
+    void    visit(Time*                 time) override;
 
     Type*    boolBool2Bool(  
                     Expr*       expr,
@@ -314,7 +314,7 @@ void    TypeCalcImpl::visit(Temporal<ExprUnary>*    expr)
 }
 
 
-void    TypeCalcImpl::visit(TimeInterval*           time)
+void    TypeCalcImpl::visit(Time*                   time)
 {
     auto    lo  = time->lo ? TypeCalcImpl::make(time->lo) : typeInteger;
     auto    hi  = time->hi ? TypeCalcImpl::make(time->hi) : typeInteger;

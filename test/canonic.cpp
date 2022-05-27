@@ -72,16 +72,16 @@ TEST_F(testCanonic, NotFalse)
 
 TEST_F(testCanonic, G)
 {
-    TimeInterval*   time= nullptr;
-    auto            inp = Factory<ExprG>::create(time, t);
-    auto            exp = Factory<ExprRw>::create(time, f, t);
+    Time*   time= nullptr;
+    auto    inp = Factory<ExprG>::create(time, t);
+    auto    exp = Factory<ExprRw>::create(time, f, t);
     EXPECT_EQ(Canonic::make(inp), exp);
 }
 
 TEST_F(testCanonic, F)
 {
-    TimeInterval*   time= nullptr;
-    auto            inp = Factory<ExprF>::create(time, f);
-    auto            exp = Factory<ExprUs>::create(time, t, f);
+    Time*   time= nullptr;
+    auto    inp = Factory<ExprF>::create(time, f);
+    auto    exp = Factory<ExprUs>::create(time, t, f);
     EXPECT_EQ(Canonic::make(inp), exp);
 }

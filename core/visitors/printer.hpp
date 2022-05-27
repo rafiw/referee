@@ -30,5 +30,5 @@
 class Printer
 {
 public:
-    static std::ostream&    output(std::ostream& os, Expr* expr);
+    static std::ostream&    output(std::ostream& os, Base* base);
 };

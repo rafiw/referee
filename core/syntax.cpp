@@ -66,20 +66,20 @@ bool ExprTernary::is_temporal()
     return lhs->is_temporal() || mhs->is_temporal() || rhs->is_temporal();
 }
 
-TimeInterval::TimeInterval(Expr* lo, Expr* hi)
-    : Visitable<Expr, TimeInterval>()
+Time::Time(Expr* lo, Expr* hi)
+    : Visitable<Expr, Time>()
     , lo(lo)
     , hi(hi)
 {
 }
 
-TimeLowerBound::TimeLowerBound(Expr* lo)
-    : Visitable<TimeInterval, TimeLowerBound>(lo, nullptr)
+TimeMin::TimeMin(Expr* lo)
+    : Visitable<Time, TimeMin>(lo, nullptr)
 {
 }
 
-TimeUpperBound::TimeUpperBound(Expr* hi)
-    : Visitable<TimeInterval, TimeUpperBound>(nullptr, hi)
+TimeMax::TimeMax(Expr* hi)
+    : Visitable<Time, TimeMax>(nullptr, hi)
 {
 }
 

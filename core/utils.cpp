@@ -53,7 +53,7 @@ double      parse_number(   std::string const& text)
     double  res;
     char*   err     = nullptr;
 
-    strtod(text.c_str(), &err);
+    res = strtod(text.c_str(), &err);
 
     if(     (err != nullptr && *err != 0)  
         ||  (res == HUGE_VAL))

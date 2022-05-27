@@ -57,16 +57,33 @@ struct PrinterImpl
              , ExprConstInteger
              , ExprConstNumber
              , ExprAt
-             , TimeInterval
-             , TimeUpperBound
-             , TimeLowerBound>
+             , Time
+             , TimeMax
+             , TimeMin
+             , SpecUniversality
+             , SpecAbsence
+             , SpecExistence
+             , SpecTransientState
+             , SpecSteadyState
+             , SpecMinimunDuration
+             , SpecMaximumDuration
+             , SpecRecurrence
+             , SpecPrecedence
+             , SpecPrecedenceChain12
+             , SpecPrecedenceChain21
+             , SpecResponse
+             , SpecResponseChain12
+             , SpecResponseChain21
+             , SpecResponseInvariance
+             , SpecUntil>
 {
     PrinterImpl(std::ostream& os)
         : os(os)
     {
     }
     
-    void    output(Expr* expr);
+    void            output( Base*   base);
+    std::string     make(   Base*   base);
 
     void    visit(Expr*                 expr) override;
     void    visit(ExprAt*               expr) override;
@@ -81,9 +98,26 @@ struct PrinterImpl
     void    visit(ExprUnary*            expr) override;
     void    visit(Temporal<ExprBinary>* expr) override;
     void    visit(Temporal<ExprUnary>*  expr) override;
-    void    visit(TimeInterval*         expr) override;
-    void    visit(TimeLowerBound*       expr) override;
-    void    visit(TimeUpperBound*       expr) override;
+    void    visit(Time*                 expr) override;
+    void    visit(TimeMin*              expr) override;
+    void    visit(TimeMax*              expr) override;
+
+    void    visit(SpecUniversality*         spec) override;
+    void    visit(SpecAbsence*              spec) override;
+    void    visit(SpecExistence*            spec) override;
+    void    visit(SpecTransientState*       spec) override;
+    void    visit(SpecSteadyState*          spec) override;
+    void    visit(SpecMinimunDuration*      spec) override;
+    void    visit(SpecMaximumDuration*      spec) override;
+    void    visit(SpecRecurrence*           spec) override;
+    void    visit(SpecPrecedence*           spec) override;
+    void    visit(SpecPrecedenceChain12*    spec) override;
+    void    visit(SpecPrecedenceChain21*    spec) override;
+    void    visit(SpecResponse*             spec) override;
+    void    visit(SpecResponseChain12*      spec) override;
+    void    visit(SpecResponseChain21*      spec) override;
+    void    visit(SpecResponseInvariance*   spec) override;
+    void    visit(SpecUntil*                spec) override;
 
     std::ostream&   os;
 };
@@ -168,7 +202,7 @@ void    PrinterImpl::visit(ExprConstBoolean*    expr)
     os << (expr->value ? "true" : "false"); 
 }
 
-void    PrinterImpl::visit(TimeInterval*         expr)
+void    PrinterImpl::visit(Time*                expr)
 {
     os << "[";
     expr->lo->accept(*this);
@@ -177,7 +211,7 @@ void    PrinterImpl::visit(TimeInterval*         expr)
     os << "]";
 }
 
-void    PrinterImpl::visit(TimeUpperBound*  expr)
+void    PrinterImpl::visit(TimeMax*             expr)
 {
     os << "[";
     os << ":";
@@ -185,7 +219,7 @@ void    PrinterImpl::visit(TimeUpperBound*  expr)
     os << "]";
 }
 
-void    PrinterImpl::visit(TimeLowerBound*  expr)
+void    PrinterImpl::visit(TimeMin*             expr)
 {
     os << "[";
     expr->lo->accept(*this);
@@ -193,22 +227,115 @@ void    PrinterImpl::visit(TimeLowerBound*  expr)
     os << "]";
 }
 
-void    PrinterImpl::visit(ExprAt*          expr)
+void    PrinterImpl::visit(ExprAt*              expr)
 {
     os << expr->name << "@";
     expr->arg->accept(*this);
-}
+}                  
 
-void    PrinterImpl::output(Expr* expr)
+void    PrinterImpl::output(Base*               base)
 {
-    expr->accept(*this);
+    base->accept(*this);
 }
 
-std::ostream&   Printer::output(std::ostream& os, Expr* expr)
+void    PrinterImpl::visit(SpecUniversality*         spec)
+{
+    os  <<  "it is always the case that " << make(spec->P) << " holds " << make(spec->tP);
+}
+
+void    PrinterImpl::visit(SpecAbsence*              spec)
+{
+    os  <<  "it is never the case that  " << make(spec->P) << " holds " << make(spec->tP);
+}
+
+void    PrinterImpl::visit(SpecExistence*            spec)
+{
+    os  <<  make(spec->P) << " eventually holds " << make(spec->tP);
+}
+
+void    PrinterImpl::visit(SpecTransientState*       spec)
+{
+    os  <<  make(spec->P) << " holds after " << make(spec->tP) << " nanoseconds";
+}
+
+void    PrinterImpl::visit(SpecSteadyState*          spec)
+{
+    os  <<  make(spec->P) << " holds in the long run";
+}
+
+void    PrinterImpl::visit(SpecMinimunDuration*      spec)
+{
+    os  <<  "once " << make(spec->P) << " becomes satisfied it remains so for at least " << make(spec->tP) << " nanoseconds";
+}
+
+void    PrinterImpl::visit(SpecMaximumDuration*      spec)
+{
+    os  <<  "once " << make(spec->P) << " becomes satisfied it remains so for less than " << make(spec->tP) << " nanoseconds";
+}
+
+void    PrinterImpl::visit(SpecRecurrence*           spec)
+{
+    os  <<  make(spec->P) << " holds repeatedly every " << make(spec->tP) << " nanoseconds";
+}
+
+void    PrinterImpl::visit(SpecPrecedence*           spec)
+{
+    os  <<  "if " << make(spec->P) << " holds, then it must have been the case that " << make(spec->S) << " has occurred " << make(spec->tPT) << " before it";
+}
+
+void    PrinterImpl::visit(SpecPrecedenceChain12*    spec)
+{
+    os  <<  "if " << make(spec->S) << " and afterwards " << make(spec->T) << " " << make(spec->tST) << " holds, then it must have been the case that " << make(spec->P) << " has occurred " << make(spec->tPS) << " before it";
+}
+
+void    PrinterImpl::visit(SpecPrecedenceChain21*    spec)
+{
+    os  <<  "if " << make(spec->P) << " holds, then it must have been the case that " << make(spec->S) << " and afterwards " << make(spec->T) << " " << make(spec->tST) << " have occurred " << make(spec->tPS) << " before it";
+}
+
+void    PrinterImpl::visit(SpecResponse*             spec)
+{
+    os  <<  "if " << make(spec->P) << " has occurred, then in response " << make(spec->S) << " eventually holds " << make(spec->tPT) << " " << make(spec->cPS);
+}
+
+void    PrinterImpl::visit(SpecResponseChain12*      spec)
+{
+    os  <<  "if " << make(spec->P) << " has occurred, then in response " << make(spec->tPS) << " " << make(spec->cPS) << " " << make(spec->S) << " followed by " << make(spec->T) << " " << make(spec->tST) << " " << make(spec->cST) << " eventually holds";
+}
+
+void    PrinterImpl::visit(SpecResponseChain21*      spec)
+{
+    os  <<  "if " << make(spec->S) << " followed by " << make(spec->T) << " " << make(spec->tST) << " " << make(spec->cST) << " have occurred, then in response " << make(spec->P) << " eventually holds " << make(spec->tTP) << " " << make(spec->cTP) << "";
+}
+
+void    PrinterImpl::visit(SpecResponseInvariance*   spec)
+{
+    os  <<  "if " << make(spec->P) << " has occurred, then in response " << make(spec->S) << " holds continually " << make(spec->t);
+}
+
+void    PrinterImpl::visit(SpecUntil*                spec)
+{
+    os  <<  make(spec->P) << " holds without interruption until " << make(spec->S) << " holds " << make(spec->t);
+}
+
+std::string PrinterImpl::make(  Base*   base)
+{
+    std::ostringstream  os;
+
+    if(base != nullptr)
+    {
+        Printer::output(os, base);
+    }
+
+    return  os.str();
+}
+
+
+std::ostream&   Printer::output(std::ostream& os, Base* base)
 {
     PrinterImpl impl(os);
 
-    impl.output(expr);
+    impl.output(base);
 
     return os << std::endl;
 }

@@ -86,14 +86,14 @@ Wrapper     Sw(Expr* lhs, Expr* rhs)                { return Wrapper(Factory<Exp
 Wrapper     Ts(Expr* lhs, Expr* rhs)                { return Wrapper(Factory<ExprTs>::create( lhs, rhs));}
 Wrapper     Tw(Expr* lhs, Expr* rhs)                { return Wrapper(Factory<ExprTw>::create( lhs, rhs));}
 
-Wrapper     Us(TimeInterval* time, Expr* lhs, Expr* rhs)    { return Wrapper(Factory<ExprUs>::create( time, lhs, rhs));}
-Wrapper     Uw(TimeInterval* time, Expr* lhs, Expr* rhs)    { return Wrapper(Factory<ExprUw>::create( time, lhs, rhs));}
-Wrapper     Rs(TimeInterval* time, Expr* lhs, Expr* rhs)    { return Wrapper(Factory<ExprRs>::create( time, lhs, rhs));}
-Wrapper     Rw(TimeInterval* time, Expr* lhs, Expr* rhs)    { return Wrapper(Factory<ExprRw>::create( time, lhs, rhs));}
-Wrapper     Ss(TimeInterval* time, Expr* lhs, Expr* rhs)    { return Wrapper(Factory<ExprSs>::create( time, lhs, rhs));}
-Wrapper     Sw(TimeInterval* time, Expr* lhs, Expr* rhs)    { return Wrapper(Factory<ExprSw>::create( time, lhs, rhs));}
-Wrapper     Ts(TimeInterval* time, Expr* lhs, Expr* rhs)    { return Wrapper(Factory<ExprTs>::create( time, lhs, rhs));}
-Wrapper     Tw(TimeInterval* time, Expr* lhs, Expr* rhs)    { return Wrapper(Factory<ExprTw>::create( time, lhs, rhs));}
+Wrapper     Us(Time* time, Expr* lhs, Expr* rhs)    { return Wrapper(Factory<ExprUs>::create( time, lhs, rhs));}
+Wrapper     Uw(Time* time, Expr* lhs, Expr* rhs)    { return Wrapper(Factory<ExprUw>::create( time, lhs, rhs));}
+Wrapper     Rs(Time* time, Expr* lhs, Expr* rhs)    { return Wrapper(Factory<ExprRs>::create( time, lhs, rhs));}
+Wrapper     Rw(Time* time, Expr* lhs, Expr* rhs)    { return Wrapper(Factory<ExprRw>::create( time, lhs, rhs));}
+Wrapper     Ss(Time* time, Expr* lhs, Expr* rhs)    { return Wrapper(Factory<ExprSs>::create( time, lhs, rhs));}
+Wrapper     Sw(Time* time, Expr* lhs, Expr* rhs)    { return Wrapper(Factory<ExprSw>::create( time, lhs, rhs));}
+Wrapper     Ts(Time* time, Expr* lhs, Expr* rhs)    { return Wrapper(Factory<ExprTs>::create( time, lhs, rhs));}
+Wrapper     Tw(Time* time, Expr* lhs, Expr* rhs)    { return Wrapper(Factory<ExprTw>::create( time, lhs, rhs));}
 
 Wrapper     At(std::string name, Expr* arg)         { return Wrapper(Factory<ExprAt>::create( name, arg));}
 

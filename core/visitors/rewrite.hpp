@@ -29,6 +29,6 @@
 class Rewrite
 {
 public:
-    static Expr*            make(Expr*          expr);
-    static TimeInterval*    make(TimeInterval*  time);
+    static Expr*    make(Expr*  expr);
+    static Time*    make(Time*  time);
 };

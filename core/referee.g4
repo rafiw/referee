@@ -29,7 +29,7 @@ program     : (statement ';')*
 
 statement   : declaraion
             | expression
-            | ps_pattern
+            | specPattern
             ;
 
 declaraion  : declType
@@ -141,7 +141,7 @@ expression  : sign? integer                                     # ExprConst
             |  ID '@' expression                                # ExprAt
             ;
 
-ps_pattern  : (pshead ',')+ psbody
+specPattern : (pshead ',')+ psbody
             ;
 
 
@@ -207,6 +207,7 @@ exprP       : expression ;
 exprS       : expression ;
 exprT       : expression ;
 exprZ       : expression ;
+exprN       : expression ;
 
 
 pshead      : globally
@@ -216,37 +217,37 @@ pshead      : globally
             | between expression and   expression
             | after   expression until expression
             ;
-specUniversality        : it is always the case that expression holds? timeBound?                                         
+specUniversality        : it is always the case that exprP holds? timeBound                                         
                         ;
-specAbsence             : it is never the case that  expression holds? timeBound?                                         
+specAbsence             : it is never the case that  exprP holds? timeBound                                         
                         ;
-specExistence           : exprP eventually holds? timeBound?                                                                   
+specExistence           : exprP eventually holds? timeBound                                                                   
                         ;
-specTransientState      : exprP holds after number units                                                                  
+specTransientState      : exprP holds after exprN units                                                                  
                         ;
-specSteadyState         : P=expression holds in the long run                                                                 
+specSteadyState         : exprP holds in the long run                                                                 
                         ;
-specMinimunDuration     : once exprP (becomes satisfied)? it remains so for at least number units          
+specMinimunDuration     : once exprP (becomes satisfied)? it remains so for at least exprN units          
                         ;
-specMaximumDuration     : once exprP (becomes satisfied)? it remains so for less than number units         
+specMaximumDuration     : once exprP (becomes satisfied)? it remains so for less than exprN units         
                         ;
-specRecurrence          : exprP holds? repeatedly (every number units)?                                                   
+specRecurrence          : exprP holds? repeatedly (every exprN units)?                                                   
                         ;
-specPrecedence          : if exprP holds? ',' then it must have been the case that exprS (has occurred)? intervalBound? before it?                                                
+specPrecedence          : if exprP holds? ',' then it must have been the case that exprS (has occurred)? intervalBound before it?                                                
                         ;
-specPrecedenceChain12   : if exprS and afterwards exprT timeBound? holds? ',' then it must have been the case that exprP (has occurred)? intervalBound? before it?       
+specPrecedenceChain12   : if exprS and afterwards exprT upperTimeBound holds? ',' then it must have been the case that exprP (has occurred)? intervalBound before it?       
                         ;
-specPrecedenceChain21   : if exprP holds? ',' then it must have been the case that exprS and afterwards exprT upperTimeBound? (have occurred)? intervalBound? before it? 
+specPrecedenceChain21   : if exprP holds? ',' then it must have been the case that exprS and afterwards exprT upperTimeBound (have occurred)? intervalBound before it? 
                         ;
-specResponse            : if exprP (has occurred)? ',' then in response exprS (eventually holds)? timeBound? constraint?  
+specResponse            : if exprP (has occurred)? ',' then in response exprS (eventually holds)? timeBound constraint  
                         ;
-specResponseChain12     : if exprP (has occurred)? ',' then in response timeBound? constraint? exprS followed by exprT timeBound? constraint? (eventually holds)? 
+specResponseChain12     : if exprP (has occurred)? ',' then in response timeBound constraint exprS followed by exprT timeBound constraint (eventually holds)? 
                         ;
-specResponseChain21     : if exprS followed by exprT timeBound? constraint? (have occurred)? ',' then in response exprP (eventually holds)? timeBound? constraint? 
+specResponseChain21     : if exprS followed by exprT timeBound constraint (have occurred)? ',' then in response exprP (eventually holds)? timeBound constraint 
                         ;
-specResponseInvariance  : if exprP (has occurred)? ',' then in response exprS holds? continually timeBound?  
+specResponseInvariance  : if exprP (has occurred)? ',' then in response exprS holds? continually timeBound
                         ;
-specUntil               : exprP holds? without interruption until exprS holds? timeBound?                        
+specUntil               : exprP holds? without interruption until exprS holds? timeBound                        
                         ;
 
 psbody      : specUniversality
@@ -268,6 +269,7 @@ psbody      : specUniversality
             ;
 
 constraint  : without exprZ holding in between
+            | /* no constraint */
             ;
 
 timeBound   : upperTimeBound
@@ -276,15 +278,19 @@ timeBound   : upperTimeBound
             ;
 
 upperTimeBound
-            : within number units
+            : within exprN units
             ;
 
 lowerTimeBound
-            : after  number units
+            : after  exprN units
             ;
 
 intervalBound
-            : between number and number units
+            : between exprN and exprN units
+            | noTimeBound
+            ;
+            
+noTimeBound : /* no time bound */
             ;
 
 units       : nanoseconds

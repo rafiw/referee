@@ -168,28 +168,28 @@ private:
     Type*       _type   = nullptr;
 };
 
-class   TimeInterval
-    : public Visitable<Expr, TimeInterval>
+class   Time
+    : public Visitable<Expr, Time>
 {
 public:
-    TimeInterval(Expr* lo, Expr* hi);
+    Time(Expr* lo, Expr* hi);
 
     Expr* const lo;
     Expr* const hi;
 };
 
-class   TimeLowerBound
-    : public Visitable<TimeInterval, TimeLowerBound>
+class   TimeMin
+    : public Visitable<Time, TimeMin>
 {
 public:
-    TimeLowerBound(Expr* lo);
+    TimeMin(Expr* lo);
 };
 
-class   TimeUpperBound
-    : public Visitable<TimeInterval, TimeUpperBound>
+class   TimeMax
+    : public Visitable<Time, TimeMax>
 {
 public:
-    TimeUpperBound(Expr* hi);
+    TimeMax(Expr* hi);
 };
 
 class ExprNullary
@@ -264,7 +264,7 @@ class Temporal
 {
 public:
     template<typename ... Args>
-    Temporal(int op, TimeInterval* time, Args ... args)
+    Temporal(int op, Time* time, Args ... args)
         : Visitable<Expr, Temporal<Expr>>(op, args...)
         , time(time)
     {
@@ -280,7 +280,7 @@ public:
 
     bool is_temporal() override {return true;}
 
-    TimeInterval* const time    = nullptr;
+    Time* const time    = nullptr;
 };
 
 template<int OP, typename Expr>
@@ -446,3 +446,239 @@ class DataExpr
 public:
     DataExpr(Expr* expr);
 };
+
+class Spec
+    : public Visitable<Base, Spec>
+{
+
+};
+
+class SpecUniversality
+    : public Visitable<Spec, SpecUniversality>
+{
+public:    
+    SpecUniversality(Expr* p, Time* tP)
+        : P(p), tP(tP)
+    {
+    }
+
+    Expr*   P;
+    Time*   tP;
+};
+
+class SpecAbsence
+    : public Visitable<Spec, SpecAbsence>
+{
+public:  
+    SpecAbsence(Expr* p, Time* tP)
+        : P(p), tP(tP)
+    {
+    }
+
+    Expr*   P;
+    Time*   tP;  
+};
+
+class SpecExistence
+    : public Visitable<Spec, SpecExistence>
+{
+public:    
+    SpecExistence(Expr* p, Time* tP)
+        : P(p), tP(tP)
+    {
+    }
+
+    Expr*   P;
+    Time*   tP; 
+};
+
+class SpecTransientState
+    : public Visitable<Spec, SpecTransientState>
+{
+public:    
+    SpecTransientState(Expr* p, Time* tP)
+        : P(p), tP(tP)
+    {
+    }
+
+    Expr*   P;
+    Time*   tP;  
+};
+
+class SpecSteadyState
+    : public Visitable<Spec, SpecSteadyState>
+{
+public:    
+    SpecSteadyState(Expr* p)
+        : P(p)
+    {
+    }
+
+    Expr*   P;
+};
+
+class SpecMinimunDuration
+    : public Visitable<Spec, SpecMinimunDuration>
+{
+public:    
+    SpecMinimunDuration(Expr* p, Time* tP)
+        : P(p), tP(tP)
+    {
+    }
+
+    Expr*   P;
+    Time*   tP;  
+};
+
+class SpecMaximumDuration
+    : public Visitable<Spec, SpecMaximumDuration>
+{
+public:    
+    SpecMaximumDuration(Expr* p, Time* tP)
+        : P(p), tP(tP)
+    {
+    }
+
+    Expr*   P;
+    Time*   tP;  
+};
+
+class SpecRecurrence
+    : public Visitable<Spec, SpecRecurrence>
+{
+public:    
+    SpecRecurrence(Expr* p, Time* tP)
+        : P(p), tP(tP)
+    {
+    }
+
+    Expr*   P;
+    Time*   tP;  
+};
+
+class SpecPrecedence
+    : public Visitable<Spec, SpecPrecedence>
+{
+public:  
+    SpecPrecedence(Expr* p, Expr* s, Time* tPT)
+        : P(p), S(s), tPT(tPT)
+    {
+    }
+
+    Expr*   P;
+    Expr*   S;
+    Time*   tPT;    
+};
+
+class SpecPrecedenceChain12
+    : public Visitable<Spec, SpecPrecedenceChain12>
+{
+public:    
+    SpecPrecedenceChain12(Expr* S, Expr* T, Expr* P, Time* tST, Time* tPS)
+        : S(S), T(T), P(P), tST(tST), tPS(tPS)
+    {
+    }
+
+    Expr*   S;
+    Expr*   T;
+    Expr*   P;
+    Time*   tST;    //  time between S and T  
+    Time*   tPS;    //  time between P and S
+};
+
+class SpecPrecedenceChain21
+    : public Visitable<Spec, SpecPrecedenceChain21>
+{
+public:   
+    SpecPrecedenceChain21(Expr* P, Expr* S, Expr* T, Time* tST, Time* tPS)
+        : P(P), S(S), T(T), tST(tST), tPS(tPS)
+    {
+    }
+
+    Expr*   P;
+    Expr*   S;
+    Expr*   T;
+    Time*   tST;    //  time between S and T  
+    Time*   tPS;    //  time between P and S 
+};
+
+class SpecResponse
+    : public Visitable<Spec, SpecResponse>
+{
+public:    
+    SpecResponse(Expr* P, Expr* S, Time* tPT, Expr* cPS)
+        : P(P), S(S), tPT(tPT), cPS(cPS)
+    {
+    }
+
+    Expr*   P;
+    Expr*   S;
+    Time*   tPT;  
+    Expr*   cPS;
+};
+
+class SpecResponseChain12
+    : public Visitable<Spec, SpecResponseChain12>
+{
+public:  
+    SpecResponseChain12(Expr* P, Expr* S, Expr* T, Time* tPS, Time* tST, Expr* cPS, Expr* cST)
+        : P(P), S(S), T(T), tST(tST), tPS(tPS), cST(tST), cPS(cPS)
+    {
+    }
+
+    Expr*   P;
+    Expr*   S;
+    Expr*   T;
+    Time*   tPS;    //  time between P and S   
+    Time*   tST;    //  time between S and T  
+    Expr*   cPS;
+    Expr*   cST;
+};
+
+class SpecResponseChain21
+    : public Visitable<Spec, SpecResponseChain21>
+{
+public:    
+    SpecResponseChain21(Expr* S, Expr* T, Expr* P, Time* tST, Time* tTP, Expr* cPS, Expr* cTP)
+        : S(S), T(T), P(P), tST(tST), tTP(tTP), cST(tST), cTP(cTP)
+    {
+    }
+
+    Expr*   S;
+    Expr*   T;
+    Expr*   P;
+    Time*   tST;    //  time between S and T  
+    Time*   tTP;    //  time between T and P
+    Expr*   cST;
+    Expr*   cTP;
+};
+
+class SpecResponseInvariance
+    : public Visitable<Spec, SpecResponseInvariance>
+{
+public:  
+    SpecResponseInvariance(Expr* P, Expr* S, Time* t)
+        : P(P), S(S), t(t)
+    {
+    }
+
+    Expr*   P;
+    Expr*   S;
+    Time*   t;    
+};
+
+class SpecUntil
+    : public Visitable<Spec, SpecUntil>
+{
+public:    
+    SpecUntil(Expr* P, Expr* S, Time* t)
+        : P(P), S(S), t(t)
+    {
+    }
+
+    Expr*   P;
+    Expr*   S;
+    Time*   t;    
+};
+
+

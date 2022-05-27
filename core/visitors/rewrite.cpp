@@ -76,14 +76,14 @@ struct RewriteImpl
              , ExprXw
              , ExprYs
              , ExprYw
-             , TimeInterval
-             , TimeLowerBound
-             , TimeUpperBound>
+             , Time
+             , TimeMin
+             , TimeMax>
 
 {
 public:
-    Expr*           make(   Expr*           expr);
-    TimeInterval*   make(   TimeInterval*   time);
+    Expr*   make(   Expr*           expr);
+    Time*   make(   Time*           time);
 
     void    visit(ExprAdd*          expr) override;
     void    visit(ExprAnd*          expr) override;
@@ -132,13 +132,13 @@ public:
     void    visit(ExprYs*           expr) override;
     void    visit(ExprYw*           expr) override;
 
-    void    visit(TimeInterval*     expr) override;
-    void    visit(TimeLowerBound*   expr) override;
-    void    visit(TimeUpperBound*   expr) override;
+    void    visit(Time*             expr) override;
+    void    visit(TimeMin*          expr) override;
+    void    visit(TimeMax*          expr) override;
 
 private:
-    Expr*           m_expr  = nullptr;
-    TimeInterval*   m_time  = nullptr;
+    Expr*   m_expr  = nullptr;
+    Time*   m_time  = nullptr;
 };
 
 void    RewriteImpl::visit( ExprAdd*            expr)
@@ -615,24 +615,24 @@ void    RewriteImpl::visit( ExprYw*             expr)
         make(expr->arg));
 }
 
-void    RewriteImpl::visit(TimeInterval*        expr)
+void    RewriteImpl::visit( Time*               expr)
 {
-    m_time = Factory<TimeInterval>::create(
+    m_time = Factory<Time>::create(
         expr->where(),
         make(expr->lo),
         make(expr->hi));
 }
 
-void    RewriteImpl::visit(TimeLowerBound*      expr)
+void    RewriteImpl::visit(TimeMin*             expr)
 {
-    m_time = Factory<TimeLowerBound>::create(
+    m_time = Factory<TimeMin>::create(
         expr->where(),
         make(expr->lo));
 }
 
-void    RewriteImpl::visit(TimeUpperBound*      expr)
+void    RewriteImpl::visit(TimeMax*             expr)
 {
-    m_time = Factory<TimeUpperBound>::create(
+    m_time = Factory<TimeMax>::create(
         expr->where(),
         make(expr->hi));
 }
@@ -644,7 +644,7 @@ Expr*   RewriteImpl::make(Expr* expr)
     return  m_expr;
 }
 
-TimeInterval*   RewriteImpl::make(TimeInterval* time)
+Time*   RewriteImpl::make(Time* time)
 {
     if(time)
     {
@@ -662,7 +662,7 @@ Expr*   Rewrite::make(Expr* expr)
     return  impl.make(expr);
 }
 
-TimeInterval*   Rewrite::make(TimeInterval* time)
+Time*   Rewrite::make(Time* time)
 {
     RewriteImpl impl;
 

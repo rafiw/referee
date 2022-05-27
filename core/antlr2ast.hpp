@@ -90,6 +90,35 @@ public:
     std::any visitTypeEnum(     referee::refereeParser::TypeEnumContext*    ctx) override;
     std::any visitTypeStruct(   referee::refereeParser::TypeStructContext*  ctx) override;
 
+    std::any visitUnits(                    referee::refereeParser::UnitsContext*                   ctx) override;
+
+    //std::any visitPsbody(                   referee::refereeParser::PsbodyContext*                  ctx) override;
+    std::any visitSpecPattern(              referee::refereeParser::SpecPatternContext*             ctx) override;
+    std::any visitConstraint(               referee::refereeParser::ConstraintContext*              ctx) override;
+
+    std::any visitSpecUniversality(         referee::refereeParser::SpecUniversalityContext*        ctx) override;
+    std::any visitSpecAbsence(              referee::refereeParser::SpecAbsenceContext*             ctx) override;
+    std::any visitSpecExistence(            referee::refereeParser::SpecExistenceContext*           ctx) override;
+    std::any visitSpecTransientState(       referee::refereeParser::SpecTransientStateContext*      ctx) override;
+    std::any visitSpecSteadyState(          referee::refereeParser::SpecSteadyStateContext*         ctx) override;
+    std::any visitSpecMinimunDuration(      referee::refereeParser::SpecMinimunDurationContext*     ctx) override;
+    std::any visitSpecMaximumDuration(      referee::refereeParser::SpecMaximumDurationContext*     ctx) override;
+    std::any visitSpecRecurrence(           referee::refereeParser::SpecRecurrenceContext*          ctx) override;
+    std::any visitSpecPrecedence(           referee::refereeParser::SpecPrecedenceContext*          ctx) override;
+    std::any visitSpecPrecedenceChain12(    referee::refereeParser::SpecPrecedenceChain12Context*   ctx) override;
+    std::any visitSpecPrecedenceChain21(    referee::refereeParser::SpecPrecedenceChain21Context*   ctx) override;
+    std::any visitSpecResponse(             referee::refereeParser::SpecResponseContext*            ctx) override;
+    std::any visitSpecResponseChain12(      referee::refereeParser::SpecResponseChain12Context*     ctx) override;
+    std::any visitSpecResponseChain21(      referee::refereeParser::SpecResponseChain21Context*     ctx) override;
+    std::any visitSpecResponseInvariance(   referee::refereeParser::SpecResponseInvarianceContext*  ctx) override;
+    std::any visitSpecUntil(                referee::refereeParser::SpecUntilContext*               ctx) override;
+
+    std::any visitTimeBound(                referee::refereeParser::TimeBoundContext*               ctx) override;
+    std::any visitUpperTimeBound(           referee::refereeParser::UpperTimeBoundContext*          ctx) override;
+    std::any visitLowerTimeBound(           referee::refereeParser::LowerTimeBoundContext*          ctx) override;
+    std::any visitIntervalBound(            referee::refereeParser::IntervalBoundContext*           ctx) override;
+    std::any visitNoTimeBound(              referee::refereeParser::NoTimeBoundContext*             ctx) override;
+
 
 private:
     template<typename Type, typename Ctxt>
