@@ -606,14 +606,14 @@ class SpecResponse
     : public Visitable<Spec, SpecResponse>
 {
 public:    
-    SpecResponse(Expr* P, Expr* S, Time* tPT, Expr* cPS)
-        : P(P), S(S), tPT(tPT), cPS(cPS)
+    SpecResponse(Expr* P, Expr* S, Time* tPS, Expr* cPS)
+        : P(P), S(S), tPS(tPS), cPS(cPS)
     {
     }
 
     Expr*   P;
     Expr*   S;
-    Time*   tPT;  
+    Time*   tPS;  
     Expr*   cPS;
 };
 
@@ -657,28 +657,28 @@ class SpecResponseInvariance
     : public Visitable<Spec, SpecResponseInvariance>
 {
 public:  
-    SpecResponseInvariance(Expr* P, Expr* S, Time* t)
-        : P(P), S(S), t(t)
+    SpecResponseInvariance(Expr* P, Expr* S, Time* tPS)
+        : P(P), S(S), tPS(tPS)
     {
     }
 
     Expr*   P;
     Expr*   S;
-    Time*   t;    
+    Time*   tPS;    
 };
 
 class SpecUntil
     : public Visitable<Spec, SpecUntil>
 {
 public:    
-    SpecUntil(Expr* P, Expr* S, Time* t)
-        : P(P), S(S), t(t)
+    SpecUntil(Expr* P, Expr* S, Time* tPS)
+        : P(P), S(S), tPS(tPS)
     {
     }
 
     Expr*   P;
     Expr*   S;
-    Time*   t;    
+    Time*   tPS;    
 };
 
 

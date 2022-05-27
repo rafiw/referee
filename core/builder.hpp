@@ -70,7 +70,15 @@ Wrapper     operator>   (Wrapper lhs, Wrapper rhs)  { return Wrapper(Factory<Exp
 Wrapper     operator&&  (Wrapper lhs, Wrapper rhs)  { return Wrapper(Factory<ExprAnd>::create(lhs.get(), rhs.get())).paren();}
 Wrapper     operator||  (Wrapper lhs, Wrapper rhs)  { return Wrapper(Factory<ExprOr>::create( lhs.get(), rhs.get())).paren();}
 
+Wrapper     operator>>  (Wrapper lhs, Wrapper rhs)  { return Wrapper(Factory<ExprImp>::create( lhs.get(), rhs.get())).paren();}
+
 Wrapper     operator!   (Wrapper arg)               { return Wrapper(Factory<ExprNot>::create(arg.get())).paren();}
+
+Wrapper     G(Expr* arg)                            { return Wrapper(Factory<ExprG>::create( arg));}
+Wrapper     F(Expr* arg)                            { return Wrapper(Factory<ExprF>::create( arg));}
+
+Wrapper     G(Time* time, Expr* arg)                { return Wrapper(Factory<ExprG>::create( time, arg));}
+Wrapper     F(Time* time, Expr* arg)                { return Wrapper(Factory<ExprF>::create( time, arg));}
 
 Wrapper     Xs(Expr* arg)                           { return Wrapper(Factory<ExprXs>::create( arg));}
 Wrapper     Xw(Expr* arg)                           { return Wrapper(Factory<ExprXw>::create( arg));}

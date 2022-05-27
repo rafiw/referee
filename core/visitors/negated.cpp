@@ -23,7 +23,6 @@
  */
 
 #include "negated.hpp"
-#include "canonic.hpp"
 #include "../factory.hpp"
 
 struct NegatedImpl
@@ -60,9 +59,9 @@ struct NegatedImpl
              , ExprTw
              , ExprParen>
 {
-    Expr* negated = nullptr;
+    Expr*   m_negated   = nullptr;
 
-    Expr* make(Expr* expr);
+    Expr*   negated(Expr*   expr);
 
     void    visit(Expr*   expr) override;
     void    visit(ExprConstBoolean* expr) override;
@@ -98,62 +97,61 @@ struct NegatedImpl
     void    visit(ExprParen*    expr) override;
 };
 
-void    NegatedImpl::visit(Expr* expr) {negated = Factory<ExprNot>::create(expr);}
+void    NegatedImpl::visit(Expr*        expr) {m_negated = Factory<ExprNot>::create(expr);}
 
-void    NegatedImpl::visit(ExprConstBoolean*    expr) {negated = Factory<ExprConstBoolean>::create(!expr->value);}
+void    NegatedImpl::visit(ExprConstBoolean*    expr) {m_negated = Factory<ExprConstBoolean>::create(!expr->value);}
 
-void    NegatedImpl::visit(ExprAt*     expr) {negated = Factory<ExprAt>::create(expr->name, make(expr->arg));}
+void    NegatedImpl::visit(ExprAt*     expr) {m_negated = Factory<ExprAt>::create(expr->name, negated(expr->arg));}
 
-void    NegatedImpl::visit(ExprEq*     expr) {negated = Factory<ExprNe>::create(Canonic::make(expr->lhs), Canonic::make(expr->rhs));}
-void    NegatedImpl::visit(ExprNe*     expr) {negated = Factory<ExprEq>::create(Canonic::make(expr->lhs), Canonic::make(expr->rhs));}
+void    NegatedImpl::visit(ExprEq*     expr) {m_negated = Factory<ExprNe>::create((expr->lhs), expr->rhs);}
+void    NegatedImpl::visit(ExprNe*     expr) {m_negated = Factory<ExprEq>::create((expr->lhs), expr->rhs);}
 
-void    NegatedImpl::visit(ExprGt*     expr) {negated = Factory<ExprLe>::create(Canonic::make(expr->lhs), Canonic::make(expr->rhs));}
-void    NegatedImpl::visit(ExprGe*     expr) {negated = Factory<ExprLt>::create(Canonic::make(expr->lhs), Canonic::make(expr->rhs));}
+void    NegatedImpl::visit(ExprGt*     expr) {m_negated = Factory<ExprLe>::create((expr->lhs), expr->rhs);}
+void    NegatedImpl::visit(ExprGe*     expr) {m_negated = Factory<ExprLt>::create((expr->lhs), expr->rhs);}
 
-void    NegatedImpl::visit(ExprLt*     expr) {negated = Factory<ExprGe>::create(Canonic::make(expr->lhs), Canonic::make(expr->rhs));}
-void    NegatedImpl::visit(ExprLe*     expr) {negated = Factory<ExprGt>::create(Canonic::make(expr->lhs), Canonic::make(expr->rhs));}
+void    NegatedImpl::visit(ExprLt*     expr) {m_negated = Factory<ExprGe>::create((expr->lhs), expr->rhs);}
+void    NegatedImpl::visit(ExprLe*     expr) {m_negated = Factory<ExprGt>::create((expr->lhs), expr->rhs);}
 
-void    NegatedImpl::visit(ExprNot*    expr) {negated = Canonic::make(expr->arg);}
+void    NegatedImpl::visit(ExprNot*    expr) {m_negated = (expr->arg);}
 
-void    NegatedImpl::visit(ExprOr*     expr) {negated = Factory<ExprAnd>::create(make(expr->lhs), make(expr->rhs));}
-void    NegatedImpl::visit(ExprAnd*    expr) {negated = Factory<ExprOr>::create(make(expr->lhs), make(expr->rhs));}
+void    NegatedImpl::visit(ExprOr*     expr) {m_negated = Factory<ExprAnd>::create(negated(expr->lhs), negated(expr->rhs));}
+void    NegatedImpl::visit(ExprAnd*    expr) {m_negated = Factory<ExprOr>::create(negated(expr->lhs), negated(expr->rhs));}
 
-void    NegatedImpl::visit(ExprXor*    expr) {negated = Factory<ExprEqu>::create(Canonic::make(expr->lhs), Canonic::make(expr->rhs));}
-void    NegatedImpl::visit(ExprEqu*    expr) {negated = Factory<ExprXor>::create(Canonic::make(expr->lhs), Canonic::make(expr->rhs));}
+void    NegatedImpl::visit(ExprXor*    expr) {m_negated = Factory<ExprEqu>::create(expr->lhs, expr->rhs);}
+void    NegatedImpl::visit(ExprEqu*    expr) {m_negated = Factory<ExprXor>::create(expr->lhs, expr->rhs);}
 
-void    NegatedImpl::visit(ExprImp*    expr) {negated = Factory<ExprAnd>::create(Canonic::make(expr->lhs), make(expr->rhs));}
+void    NegatedImpl::visit(ExprImp*    expr) {m_negated = Factory<ExprAnd>::create(expr->lhs, negated(expr->rhs));}
 
-void    NegatedImpl::visit(ExprG*      expr) {negated = Factory<ExprF>::create(expr->time, make(expr->arg));}
-void    NegatedImpl::visit(ExprF*      expr) {negated = Factory<ExprG>::create(expr->time, make(expr->arg));}
-void    NegatedImpl::visit(ExprXs*     expr) {negated = Factory<ExprXw>::create(expr->time, make(expr->arg));}
-void    NegatedImpl::visit(ExprXw*     expr) {negated = Factory<ExprXs>::create(expr->time, make(expr->arg));}
-void    NegatedImpl::visit(ExprUs*     expr) {negated = Factory<ExprRw>::create(expr->time, make(expr->lhs), make(expr->rhs));}
-void    NegatedImpl::visit(ExprUw*     expr) {negated = Factory<ExprRs>::create(expr->time, make(expr->lhs), make(expr->rhs));}
-void    NegatedImpl::visit(ExprRs*     expr) {negated = Factory<ExprUw>::create(expr->time, make(expr->lhs), make(expr->rhs));}
-void    NegatedImpl::visit(ExprRw*     expr) {negated = Factory<ExprUs>::create(expr->time, make(expr->lhs), make(expr->rhs));}
+void    NegatedImpl::visit(ExprG*      expr) {m_negated = Factory<ExprF>::create(expr->time, negated(expr->arg));}
+void    NegatedImpl::visit(ExprF*      expr) {m_negated = Factory<ExprG>::create(expr->time, negated(expr->arg));}
+void    NegatedImpl::visit(ExprXs*     expr) {m_negated = Factory<ExprXw>::create(expr->time, negated(expr->arg));}
+void    NegatedImpl::visit(ExprXw*     expr) {m_negated = Factory<ExprXs>::create(expr->time, negated(expr->arg));}
+void    NegatedImpl::visit(ExprUs*     expr) {m_negated = Factory<ExprRw>::create(expr->time, negated(expr->lhs), negated(expr->rhs));}
+void    NegatedImpl::visit(ExprUw*     expr) {m_negated = Factory<ExprRs>::create(expr->time, negated(expr->lhs), negated(expr->rhs));}
+void    NegatedImpl::visit(ExprRs*     expr) {m_negated = Factory<ExprUw>::create(expr->time, negated(expr->lhs), negated(expr->rhs));}
+void    NegatedImpl::visit(ExprRw*     expr) {m_negated = Factory<ExprUs>::create(expr->time, negated(expr->lhs), negated(expr->rhs));}
 
-void    NegatedImpl::visit(ExprH*      expr) {negated = Factory<ExprO>::create(expr->time, make(expr->arg));}
-void    NegatedImpl::visit(ExprO*      expr) {negated = Factory<ExprH>::create(expr->time, make(expr->arg));}
-void    NegatedImpl::visit(ExprYs*     expr) {negated = Factory<ExprYw>::create(expr->time, make(expr->arg));}
-void    NegatedImpl::visit(ExprYw*     expr) {negated = Factory<ExprYs>::create(expr->time, make(expr->arg));}
-void    NegatedImpl::visit(ExprSs*     expr) {negated = Factory<ExprTw>::create(expr->time, make(expr->lhs), make(expr->rhs));}
-void    NegatedImpl::visit(ExprSw*     expr) {negated = Factory<ExprTs>::create(expr->time, make(expr->lhs), make(expr->rhs));}
-void    NegatedImpl::visit(ExprTs*     expr) {negated = Factory<ExprSw>::create(expr->time, make(expr->lhs), make(expr->rhs));}
-void    NegatedImpl::visit(ExprTw*     expr) {negated = Factory<ExprSs>::create(expr->time, make(expr->lhs), make(expr->rhs));}
+void    NegatedImpl::visit(ExprH*      expr) {m_negated = Factory<ExprO>::create(expr->time, negated(expr->arg));}
+void    NegatedImpl::visit(ExprO*      expr) {m_negated = Factory<ExprH>::create(expr->time, negated(expr->arg));}
+void    NegatedImpl::visit(ExprYs*     expr) {m_negated = Factory<ExprYw>::create(expr->time, negated(expr->arg));}
+void    NegatedImpl::visit(ExprYw*     expr) {m_negated = Factory<ExprYs>::create(expr->time, negated(expr->arg));}
+void    NegatedImpl::visit(ExprSs*     expr) {m_negated = Factory<ExprTw>::create(expr->time, negated(expr->lhs), negated(expr->rhs));}
+void    NegatedImpl::visit(ExprSw*     expr) {m_negated = Factory<ExprTs>::create(expr->time, negated(expr->lhs), negated(expr->rhs));}
+void    NegatedImpl::visit(ExprTs*     expr) {m_negated = Factory<ExprSw>::create(expr->time, negated(expr->lhs), negated(expr->rhs));}
+void    NegatedImpl::visit(ExprTw*     expr) {m_negated = Factory<ExprSs>::create(expr->time, negated(expr->lhs), negated(expr->rhs));}
 
-void    NegatedImpl::visit(ExprParen*  expr) {negated = Factory<ExprParen>::create(make(expr->arg));}
+void    NegatedImpl::visit(ExprParen*  expr) {m_negated = Factory<ExprParen>::create(negated(expr->arg));}
 
-Expr* NegatedImpl::make(Expr* expr)
+Expr*   NegatedImpl::negated(Expr* expr)
 {
-    negated = nullptr;
+    m_negated   = nullptr;
     expr->accept(*this);
-    return negated;
+    return m_negated;
 }
-
 
 Expr* Negated::make(Expr* expr)
 {
     NegatedImpl impl;
 
-    return  impl.make(expr);
+    return  impl.negated(expr);
 }

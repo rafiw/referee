@@ -31,4 +31,5 @@ class Rewrite
 public:
     static Expr*    make(Expr*  expr);
     static Time*    make(Time*  time);
+    static Expr*    make(Spec*  spec);
 };

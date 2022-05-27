@@ -51,14 +51,16 @@ struct CanonicImpl
              , ExprSs
              , ExprSw
              , ExprTs
-             , ExprTw>
+             , ExprTw
+             , ExprParen>
 {
-    Expr* canonic = nullptr;
+    Expr* m_canonic = nullptr;
 
     Expr* t = Factory<ExprConstBoolean>::create(true);
     Expr* f = Factory<ExprConstBoolean>::create(false);
 
-    Expr* make(Expr* expr);
+    Expr*       canonic(Expr* expr);
+    Expr*       negated(Expr* expr);
 
     void        visit(Expr*   expr) override;
     void        visit(ExprConstBoolean* expr) override;
@@ -86,47 +88,54 @@ struct CanonicImpl
     void        visit(ExprSw*       expr) override;
     void        visit(ExprTs*       expr) override;
     void        visit(ExprTw*       expr) override;
+    void        visit(ExprParen*    expr) override;
 };
 
-void    CanonicImpl::visit(Expr*  expr) {canonic = expr;}
-void    CanonicImpl::visit(ExprConstBoolean*    expr) {canonic = expr;}
-void    CanonicImpl::visit(ExprAt*     expr)  {canonic = Factory<ExprAt>::create(expr->name, make(expr->arg));}
-void    CanonicImpl::visit(ExprNot*     expr) {canonic = Negated::make(expr->arg);}
-void    CanonicImpl::visit(ExprOr*      expr) {canonic = Factory<ExprOr>::create(make(expr->lhs), make(expr->rhs));}
-void    CanonicImpl::visit(ExprAnd*     expr) {canonic = Factory<ExprAnd>::create(make(expr->lhs), make(expr->rhs));}
-void    CanonicImpl::visit(ExprXor*     expr) {canonic = Factory<ExprXor>::create(make(expr->lhs), make(expr->rhs));}
-void    CanonicImpl::visit(ExprImp*     expr) {canonic = Factory<ExprOr>::create(make(Negated::make(expr->lhs)), make(expr->rhs));}
-void    CanonicImpl::visit(ExprEqu*     expr) {}
-void    CanonicImpl::visit(ExprG*       expr) {canonic = Factory<ExprRw>::create(expr->time, f, make(expr->arg));}
-void    CanonicImpl::visit(ExprF*       expr) {canonic = Factory<ExprUs>::create(expr->time, t, make(expr->arg));}
-void    CanonicImpl::visit(ExprXs*      expr) {canonic = Factory<ExprXs>::create(expr->time, make(expr->arg));}
-void    CanonicImpl::visit(ExprXw*      expr) {canonic = Factory<ExprXw>::create(expr->time, make(expr->arg));}
-void    CanonicImpl::visit(ExprUs*      expr) {canonic = Factory<ExprUs>::create(expr->time, make(expr->lhs), make(expr->rhs));}
-void    CanonicImpl::visit(ExprUw*      expr) {canonic = Factory<ExprUw>::create(expr->time, make(expr->lhs), make(expr->rhs));}
-void    CanonicImpl::visit(ExprRs*      expr) {canonic = Factory<ExprRs>::create(expr->time, make(expr->lhs), make(expr->rhs));}
-void    CanonicImpl::visit(ExprRw*      expr) {canonic = Factory<ExprRw>::create(expr->time, make(expr->lhs), make(expr->rhs));}
-void    CanonicImpl::visit(ExprH*       expr) {canonic = Factory<ExprTw>::create(expr->time, f, make(expr->arg));}
-void    CanonicImpl::visit(ExprO*       expr) {canonic = Factory<ExprSs>::create(expr->time, t, make(expr->arg));}
-void    CanonicImpl::visit(ExprYs*      expr) {canonic = Factory<ExprYs>::create(expr->time, make(expr->arg));}
-void    CanonicImpl::visit(ExprYw*      expr) {canonic = Factory<ExprYw>::create(expr->time, make(expr->arg));}
-void    CanonicImpl::visit(ExprSs*      expr) {canonic = Factory<ExprSs>::create(expr->time, make(expr->lhs), make(expr->rhs));}
-void    CanonicImpl::visit(ExprSw*      expr) {canonic = Factory<ExprSw>::create(expr->time, make(expr->lhs), make(expr->rhs));}
-void    CanonicImpl::visit(ExprTs*      expr) {canonic = Factory<ExprTs>::create(expr->time, make(expr->lhs), make(expr->rhs));}
-void    CanonicImpl::visit(ExprTw*      expr) {canonic = Factory<ExprTw>::create(expr->time, make(expr->lhs), make(expr->rhs));}
+void    CanonicImpl::visit(Expr*        expr) {m_canonic = expr;}
+void    CanonicImpl::visit(ExprParen*   expr) {m_canonic = Factory<ExprParen>::create(canonic(expr->arg));}
+void    CanonicImpl::visit(ExprConstBoolean*    expr) {m_canonic = expr;}
+void    CanonicImpl::visit(ExprAt*      expr) {m_canonic = Factory<ExprAt>::create(expr->name, canonic(expr->arg));}
+void    CanonicImpl::visit(ExprNot*     expr) {m_canonic = negated(expr->arg);}
+void    CanonicImpl::visit(ExprOr*      expr) {m_canonic = Factory<ExprOr>::create(canonic(expr->lhs), canonic(expr->rhs));}
+void    CanonicImpl::visit(ExprAnd*     expr) {m_canonic = Factory<ExprAnd>::create(canonic(expr->lhs), canonic(expr->rhs));}
+void    CanonicImpl::visit(ExprXor*     expr) {m_canonic = Factory<ExprXor>::create(canonic(expr->lhs), canonic(expr->rhs));}
+void    CanonicImpl::visit(ExprImp*     expr) {m_canonic = Factory<ExprOr>::create(canonic(negated(expr->lhs)), canonic(expr->rhs));}
+void    CanonicImpl::visit(ExprEqu*     expr) {m_canonic = Factory<ExprEqu>::create(canonic(expr->lhs), canonic(expr->rhs));}
+void    CanonicImpl::visit(ExprG*       expr) {m_canonic = Factory<ExprRw>::create(expr->time, f, canonic(expr->arg));}
+void    CanonicImpl::visit(ExprF*       expr) {m_canonic = Factory<ExprUs>::create(expr->time, t, canonic(expr->arg));}
+void    CanonicImpl::visit(ExprXs*      expr) {m_canonic = Factory<ExprXs>::create(expr->time, canonic(expr->arg));}
+void    CanonicImpl::visit(ExprXw*      expr) {m_canonic = Factory<ExprXw>::create(expr->time, canonic(expr->arg));}
+void    CanonicImpl::visit(ExprUs*      expr) {m_canonic = Factory<ExprUs>::create(expr->time, canonic(expr->lhs), canonic(expr->rhs));}
+void    CanonicImpl::visit(ExprUw*      expr) {m_canonic = Factory<ExprUw>::create(expr->time, canonic(expr->lhs), canonic(expr->rhs));}
+void    CanonicImpl::visit(ExprRs*      expr) {m_canonic = Factory<ExprRs>::create(expr->time, canonic(expr->lhs), canonic(expr->rhs));}
+void    CanonicImpl::visit(ExprRw*      expr) {m_canonic = Factory<ExprRw>::create(expr->time, canonic(expr->lhs), canonic(expr->rhs));}
+void    CanonicImpl::visit(ExprH*       expr) {m_canonic = Factory<ExprTw>::create(expr->time, f, canonic(expr->arg));}
+void    CanonicImpl::visit(ExprO*       expr) {m_canonic = Factory<ExprSs>::create(expr->time, t, canonic(expr->arg));}
+void    CanonicImpl::visit(ExprYs*      expr) {m_canonic = Factory<ExprYs>::create(expr->time, canonic(expr->arg));}
+void    CanonicImpl::visit(ExprYw*      expr) {m_canonic = Factory<ExprYw>::create(expr->time, canonic(expr->arg));}
+void    CanonicImpl::visit(ExprSs*      expr) {m_canonic = Factory<ExprSs>::create(expr->time, canonic(expr->lhs), canonic(expr->rhs));}
+void    CanonicImpl::visit(ExprSw*      expr) {m_canonic = Factory<ExprSw>::create(expr->time, canonic(expr->lhs), canonic(expr->rhs));}
+void    CanonicImpl::visit(ExprTs*      expr) {m_canonic = Factory<ExprTs>::create(expr->time, canonic(expr->lhs), canonic(expr->rhs));}
+void    CanonicImpl::visit(ExprTw*      expr) {m_canonic = Factory<ExprTw>::create(expr->time, canonic(expr->lhs), canonic(expr->rhs));}
 
-Expr* CanonicImpl::make(Expr* expr)
+Expr* CanonicImpl::canonic(Expr* expr)
 {
-    canonic = expr;
+    m_canonic = expr;
 
     expr->accept(*this);
 
-    return  canonic;
+    return  m_canonic;
+}
+
+Expr* CanonicImpl::negated(Expr* expr)
+{
+    return  Negated::make(expr);
 }
 
 Expr* Canonic::make(Expr* expr)
 {
     CanonicImpl impl;
 
-    return impl.make(expr);
+    return impl.canonic(expr);
 }
 

@@ -295,7 +295,7 @@ void    PrinterImpl::visit(SpecPrecedenceChain21*    spec)
 
 void    PrinterImpl::visit(SpecResponse*             spec)
 {
-    os  <<  "if " << make(spec->P) << " has occurred, then in response " << make(spec->S) << " eventually holds " << make(spec->tPT) << " " << make(spec->cPS);
+    os  <<  "if " << make(spec->P) << " has occurred, then in response " << make(spec->S) << " eventually holds " << make(spec->tPS) << " " << make(spec->cPS);
 }
 
 void    PrinterImpl::visit(SpecResponseChain12*      spec)
@@ -310,12 +310,12 @@ void    PrinterImpl::visit(SpecResponseChain21*      spec)
 
 void    PrinterImpl::visit(SpecResponseInvariance*   spec)
 {
-    os  <<  "if " << make(spec->P) << " has occurred, then in response " << make(spec->S) << " holds continually " << make(spec->t);
+    os  <<  "if " << make(spec->P) << " has occurred, then in response " << make(spec->S) << " holds continually " << make(spec->tPS);
 }
 
 void    PrinterImpl::visit(SpecUntil*                spec)
 {
-    os  <<  make(spec->P) << " holds without interruption until " << make(spec->S) << " holds " << make(spec->t);
+    os  <<  make(spec->P) << " holds without interruption until " << make(spec->S) << " holds " << make(spec->tPS);
 }
 
 std::string PrinterImpl::make(  Base*   base)
