@@ -372,21 +372,6 @@ public:
     std::string name;
 };
 
-
-class ExprData final
-    : public Visitable<ExprNullary, ExprData>
-{
-public:
-    ExprData(std::string name)
-        : Visitable<ExprNullary, ExprData>()
-        , name(name)
-    {
-    }
-
-public:
-    std::string const   name;
-};
-
 class ExprContext final
     : public Visitable<ExprNullary, ExprContext>
 {
@@ -399,6 +384,22 @@ public:
 
 public:
     std::string const   name;
+};
+
+class ExprData final
+    : public Visitable<ExprNullary, ExprData>
+{
+public:
+    ExprData(ExprContext* ctxt, std::string name)
+        : Visitable<ExprNullary, ExprData>()
+        , ctxt(ctxt)
+        , name(name)
+    {
+    }
+
+public:
+    std::string const   name;
+    ExprContext* const  ctxt;
 };
 
 class ExprMmbr final
@@ -560,14 +561,14 @@ class SpecPrecedence
     : public Visitable<Spec, SpecPrecedence>
 {
 public:  
-    SpecPrecedence(Expr* p, Expr* s, Time* tPT)
-        : P(p), S(s), tPT(tPT)
+    SpecPrecedence(Expr* p, Expr* s, Time* tPS)
+        : P(p), S(s), tPS(tPS)
     {
     }
 
     Expr*   P;
     Expr*   S;
-    Time*   tPT;    
+    Time*   tPS;    
 };
 
 class SpecPrecedenceChain12

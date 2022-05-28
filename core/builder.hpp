@@ -80,6 +80,12 @@ Wrapper     F(Expr* arg)                            { return Wrapper(Factory<Exp
 Wrapper     G(Time* time, Expr* arg)                { return Wrapper(Factory<ExprG>::create( time, arg));}
 Wrapper     F(Time* time, Expr* arg)                { return Wrapper(Factory<ExprF>::create( time, arg));}
 
+Wrapper     H(Expr* arg)                            { return Wrapper(Factory<ExprH>::create( arg));}
+Wrapper     O(Expr* arg)                            { return Wrapper(Factory<ExprO>::create( arg));}
+
+Wrapper     H(Time* time, Expr* arg)                { return Wrapper(Factory<ExprH>::create( time, arg));}
+Wrapper     O(Time* time, Expr* arg)                { return Wrapper(Factory<ExprO>::create( time, arg));}
+
 Wrapper     Xs(Expr* arg)                           { return Wrapper(Factory<ExprXs>::create( arg));}
 Wrapper     Xw(Expr* arg)                           { return Wrapper(Factory<ExprXw>::create( arg));}
 Wrapper     Ys(Expr* arg)                           { return Wrapper(Factory<ExprYs>::create( arg));}

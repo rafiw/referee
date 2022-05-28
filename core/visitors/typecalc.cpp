@@ -33,6 +33,7 @@ struct TypeCalcImpl
              , ExprConstNumber
              , ExprConstString
              , ExprParen
+             , ExprData
              , ExprMmbr
              , ExprEq
              , ExprNe
@@ -67,6 +68,7 @@ struct TypeCalcImpl
     void    visit(ExprConstInteger*     expr) override;
     void    visit(ExprConstNumber*      expr) override;
     void    visit(ExprConstString*      expr) override;
+    void    visit(ExprData*             expr) override;
     void    visit(ExprDiv*              expr) override;
     void    visit(ExprEq*               expr) override;
     void    visit(ExprEqu*              expr) override;
@@ -220,6 +222,24 @@ void    TypeCalcImpl::visit(ExprMmbr*               expr)
         throw Exception(expr->where(), "no such a member");
     }
 }
+
+void    TypeCalcImpl::visit(ExprData*               expr)
+{
+    auto    ctxt    = dynamic_cast<TypeComposite*>(TypeCalc::make(expr->ctxt));
+
+    if(ctxt == nullptr)
+    {
+        throw Exception(expr->where(), "bad type");
+    }
+
+    type    = ctxt->member(expr->name);
+
+    if(type == nullptr)
+    {
+        throw Exception(expr->where(), "no such a member");
+    }
+}
+
 
 
 void    TypeCalcImpl::visit(ExprMod*                expr)

@@ -82,16 +82,17 @@ struct RewriteImpl
              , TimeMax
              
              , Spec
-             , SpecUniversality
              , SpecAbsence
-             , SpecRecurrence
              , SpecExistence
              , SpecMaximumDuration
              , SpecMinimunDuration
+             , SpecPrecedence
+             , SpecRecurrence
              , SpecResponse
              , SpecResponseChain12
              , SpecResponseChain21
              , SpecResponseInvariance
+             , SpecUniversality
              , SpecUntil>
 
 {
@@ -151,17 +152,18 @@ public:
     void    visit(TimeMin*          expr) override;
     void    visit(TimeMax*          expr) override;
 
-    void    visit(Spec*             spec) override;
-    void    visit(SpecUniversality* spec) override;
-    void    visit(SpecAbsence*      spec) override;
-    void    visit(SpecExistence*    spec) override;
-    void    visit(SpecRecurrence*   spec) override;
+    void    visit(Spec*                     spec) override;
+    void    visit(SpecAbsence*              spec) override;
+    void    visit(SpecExistence*            spec) override;
     void    visit(SpecMaximumDuration*      spec) override;
     void    visit(SpecMinimunDuration*      spec) override;
+    void    visit(SpecPrecedence*           spec) override;
+    void    visit(SpecRecurrence*           spec) override;
     void    visit(SpecResponse*             spec) override;
     void    visit(SpecResponseChain12*      spec) override;
     void    visit(SpecResponseChain21*      spec) override;
     void    visit(SpecResponseInvariance*   spec) override;
+    void    visit(SpecUniversality*         spec) override;
     void    visit(SpecUntil*                spec) override;
 
     Expr*   canonic(Expr* expr);
@@ -243,6 +245,7 @@ void    RewriteImpl::visit( ExprData*           expr)
 {
     m_expr =  Factory<ExprData>::create(
         expr->where(),
+        expr->ctxt,
         expr->name);
 }
 
@@ -673,11 +676,6 @@ void    RewriteImpl::visit( Spec*                   spec)
     m_expr  = Factory<ExprConstBoolean>::create(true);
 }
 
-void    RewriteImpl::visit( SpecUniversality*       spec)
-{
-    m_expr  = G(make(spec->tP), make(spec->P));
-}
-
 void    RewriteImpl::visit( SpecAbsence*            spec)
 {
     m_expr  = G(make(spec->tP), Not(make(spec->P)));
@@ -688,9 +686,12 @@ void    RewriteImpl::visit( SpecExistence*          spec)
     m_expr  = F(make(spec->tP), make(spec->P));
 }
 
-void    RewriteImpl::visit( SpecRecurrence*         spec)
+void    RewriteImpl::visit( SpecMaximumDuration*    spec)
 {
-    m_expr  = G(F(make(spec->tP), make(spec->P)));
+    auto    P   = Wrapper(make(spec->P));
+    auto    tP  = make(spec->tP);
+
+    m_expr  = G(P || Uw(!P, P && F(tP, !P)));
 }
 
 void    RewriteImpl::visit( SpecMinimunDuration*    spec)
@@ -701,6 +702,20 @@ void    RewriteImpl::visit( SpecMinimunDuration*    spec)
     m_expr  = G(P || Uw(!P, G(tP, P)));
 }
 
+void    RewriteImpl::visit( SpecPrecedence*         spec)
+{
+    auto    P   = Wrapper(make(spec->P));
+    auto    S   = Wrapper(make(spec->S));
+    auto    tPS = make(spec->tPS);
+
+    m_expr  = G(P >> O(tPS, S));
+}
+
+void    RewriteImpl::visit( SpecRecurrence*         spec)
+{
+    m_expr  = G(F(make(spec->tP), make(spec->P)));
+}
+
 void    RewriteImpl::visit( SpecResponse*           spec)
 {
     auto    P   = Wrapper(make(spec->P));
@@ -709,15 +724,6 @@ void    RewriteImpl::visit( SpecResponse*           spec)
     auto    tPS = make(spec->tPS);
 
     m_expr  = G(P >> Us(tPS, !Z, S));
-}
-
-void    RewriteImpl::visit( SpecResponseInvariance* spec)
-{
-    auto    P   = Wrapper(make(spec->P));
-    auto    S   = Wrapper(make(spec->S));
-    auto    tPS = make(spec->tPS);
-
-    m_expr  = G(P >> G(tPS, S));
 }
 
 void    RewriteImpl::visit(SpecResponseChain12*     spec)
@@ -746,6 +752,20 @@ void    RewriteImpl::visit(SpecResponseChain21*     spec)
     m_expr  = G((S && !cST && Xs(Us(tTP, !cST, T && !cTP))) >> Xs(Us(tST, !cST, T && Us(tTP, !cTP, P))));   //  TODO: do we need this Xs ???
 }
 
+void    RewriteImpl::visit( SpecResponseInvariance* spec)
+{
+    auto    P   = Wrapper(make(spec->P));
+    auto    S   = Wrapper(make(spec->S));
+    auto    tPS = make(spec->tPS);
+
+    m_expr  = G(P >> G(tPS, S));
+}
+
+void    RewriteImpl::visit( SpecUniversality*       spec)
+{
+    m_expr  = G(make(spec->tP), make(spec->P));
+}
+
 void    RewriteImpl::visit( SpecUntil*              spec)
 {
     auto    P   = Wrapper(make(spec->P));
@@ -753,14 +773,6 @@ void    RewriteImpl::visit( SpecUntil*              spec)
     auto    tPS = make(spec->tPS);
 
     m_expr  = Us(tPS, P, S);
-}
-
-void    RewriteImpl::visit( SpecMaximumDuration*    spec)
-{
-    auto    P   = Wrapper(make(spec->P));
-    auto    tP  = make(spec->tP);
-
-    m_expr  = G(P || Uw(!P, P && F(tP, !P)));
 }
 
 Expr*   RewriteImpl::make(Expr* expr)

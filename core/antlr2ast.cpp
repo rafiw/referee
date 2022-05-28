@@ -214,9 +214,9 @@ std::any Antlr2AST::visitExprData(      referee::refereeParser::ExprDataContext*
     }
     else
     {
-        auto    base    = static_cast<Expr*>(build<ExprContext>(ctx, "__curr__"));
+        auto    ctxt    = build<ExprContext>(ctx, "__curr__");
         auto    type    = module->get_data(name);
-        auto    expr    = static_cast<Expr*>(build<ExprMmbr>(ctx, base, name));
+        auto    expr    = static_cast<Expr*>(build<ExprData>(ctx, ctxt, name));
 
         expr->type(type);
 
@@ -334,9 +334,13 @@ std::any Antlr2AST::visitExprLt(        referee::refereeParser::ExprLtContext*  
 std::any Antlr2AST::visitExprMmbr(      referee::refereeParser::ExprMmbrContext*    ctx)
 {
     auto name   = ctx->mmbrID()->getText();
-    auto base   = ctx->expression()->accept(this);
+    auto base   = std::any_cast<Expr*>(ctx->expression()->accept(this));
+    auto ctxt   = dynamic_cast<ExprContext*>(base);
 
-    return static_cast<Expr*>(build<ExprMmbr>(ctx, std::any_cast<Expr*>(base), name));
+    if(ctxt != nullptr)
+        return static_cast<Expr*>(build<ExprData>(ctx, ctxt, name));
+    else
+        return static_cast<Expr*>(build<ExprMmbr>(ctx, base, name));
 }
 
 std::any Antlr2AST::visitExprMod(       referee::refereeParser::ExprModContext*     ctx)

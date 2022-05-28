@@ -280,7 +280,7 @@ void    PrinterImpl::visit(SpecRecurrence*           spec)
 
 void    PrinterImpl::visit(SpecPrecedence*           spec)
 {
-    os  <<  "if " << make(spec->P) << " holds, then it must have been the case that " << make(spec->S) << " has occurred " << make(spec->tPT) << " before it";
+    os  <<  "if " << make(spec->P) << " holds, then it must have been the case that " << make(spec->S) << " has occurred " << make(spec->tPS) << " before it";
 }
 
 void    PrinterImpl::visit(SpecPrecedenceChain12*    spec)
