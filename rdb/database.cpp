@@ -22,18 +22,17 @@
  *  SOFTWARE.
  */
 
-//#include "database.hpp"
+#include "database.hpp"
 
-//void    Writer::data(uint8_t type, std::string const& data)
-//{
-    
-//}
 #include <stdint.h>
 #include <string>
 #include <fstream>
 #include <chrono>
 #include <iostream>
 
+#include <arpa/inet.h>
+
+#if 0
 struct RecordInfo 
 {
     uint64_t    timestamp;
@@ -69,12 +68,10 @@ private:
     uint16_t        m_subtype;
     std::string     m_data;
     bool            m_has_data  = false;
-
 };
 
 Database::Database()
 {
-
 }
 
 void    Database::open(std::string filename)
@@ -168,4 +165,439 @@ int main(int argc, char* argv[])
     }
 #endif
 
+}
+
+
+
+//TypeBuilder&    add_timestamp(  std::string const&  name);
+TypeBuilder&    add_integer(    std::string const&  name);
+TypeBuilder&    add_boolean(    std::string const&  name);
+TypeBuilder&    add_number(     std::string const&  name);
+TypeBuilder&    add_string(     std::string const&  name);
+TypeBuilder&    enter_array(    std::string const&  name);
+TypeBuilder&    enter_array(    std::string const&  name,
+                                unsigned            size);
+TypeBuilder&    leave_array();
+TypeBuilder&    enter_struct(   std::string const&  name);
+TypeBuilder&    leave_struct();
+    
+#endif
+
+
+
+TypeBuilderRecord&  TypeBuilderRecord::integer(std::string name)
+{
+    m_body.push_back(Name2Type(name, new TypeInteger{}));
+    return  *this;
+}
+
+TypeBuilderRecord&  TypeBuilderRecord::number( std::string name)
+{
+    m_body.push_back(Name2Type(name, new TypeNumber{}));
+
+    return  *this;
+}
+
+TypeBuilderRecord&  TypeBuilderRecord::boolean(std::string name)
+{
+    m_body.push_back(Name2Type(name, new TypeBoolean{}));
+
+    return  *this;
+}
+
+TypeBuilderRecord&  TypeBuilderRecord::string( std::string name)
+{
+    m_body.push_back(Name2Type(name, new TypeString{}));
+
+    return  *this;
+}
+
+TypeBuilderRecord&  TypeBuilderRecord::record( std::string name, TypeRecord*type)
+{
+    m_body.push_back(Name2Type(name, type));
+
+    return  *this;
+}
+
+TypeBuilderRecord&  TypeBuilderRecord::array(  std::string name, TypeArray* type)
+{
+    m_body.push_back(Name2Type(name, type));
+
+    return  *this;
+}
+
+TypeRecord*         TypeBuilderRecord::build()
+{
+    return  new TypeRecord(m_body);
+}
+
+TypeBuilderArray&   TypeBuilderArray::integer()
+{
+    if(m_body != nullptr)
+        throw std::logic_error("array body has been already specified");
+
+    m_body  = new TypeInteger{};
+
+    return  *this;
+}
+
+TypeBuilderArray&   TypeBuilderArray::number()
+{
+    if(m_body != nullptr)
+        throw std::logic_error("array body has been already specified");
+
+    m_body  = new TypeNumber{};
+
+    return  *this;
+}
+
+TypeBuilderArray&   TypeBuilderArray::boolean()
+{
+    if(m_body != nullptr)
+        throw std::logic_error("array body has been already specified");
+
+    m_body  = new TypeBoolean{};
+
+    return  *this;
+}
+
+TypeBuilderArray&   TypeBuilderArray::string()
+{
+    if(m_body != nullptr)
+        throw std::logic_error("array body has been already specified");
+
+    m_body  = new TypeString{};
+
+    return  *this;
+}
+
+TypeBuilderArray&   TypeBuilderArray::record(   TypeRecord* type)
+{
+    if(m_body != nullptr)
+        throw std::logic_error("array body has been already specified");
+
+    m_body  = type;
+
+    return  *this;
+}
+
+TypeBuilderArray&   TypeBuilderArray::array(    TypeArray*  type)
+{
+    if(m_body != nullptr)
+        throw std::logic_error("array body has been already specified");
+
+    m_body  = type;
+
+    return  *this;
+}
+
+TypeBuilderArray&   TypeBuilderArray::size(   unsigned    size)
+{
+    m_size  = size;
+
+    return *this;
+}
+
+TypeArray*          TypeBuilderArray::build()
+{
+    if(m_body == nullptr)
+        throw std::logic_error("array body has not been yet specified");
+    
+    return  new TypeArray(m_body, m_size);
+}
+
+
+void printHelper(Type* const type, std::string prefix = "")
+{
+    if(nullptr != dynamic_cast<TypeInteger*>(type))
+        std::cout << "\"type\": \"integer\"";
+
+    if(nullptr != dynamic_cast<TypeBoolean*>(type))
+        std::cout << "\"type\": \"boolean\"";
+        
+    if(nullptr != dynamic_cast<TypeNumber*>(type))
+        std::cout << "\"type\": \"number\"";
+
+    if(nullptr != dynamic_cast<TypeString*>(type))
+        std::cout << "\"type\": \"string\"";
+
+    if(auto array = dynamic_cast<TypeArray*>(type))
+    {
+        std::cout << "\"type\": \"array\", \"body\": {\"size\": "<< array->size << ", ";
+        printHelper(array->base, prefix + "    ");
+        std::cout << "}";
+    }
+
+    if(auto record = dynamic_cast<TypeRecord*>(type))
+    {
+        std::cout << "\"type\": \"record\", \"body\": [";
+
+        auto    suffix   = "\n";
+        for(auto& item: record->body())
+        {
+            std::cout << suffix << prefix << "    {\"name\": \"" << item.name << "\", ";
+            printHelper(item.type, prefix + "    ");
+            std::cout << "}";
+
+            suffix = ",\n";
+        }
+        std::cout << "]";
+    }
+}
+
+std::ostream&   printHex(std::string const& data)
+{
+    std::cout << std::endl;
+    for(unsigned i = 0; i < data.size(); i++)
+    {
+        if(i % 16 == 0)
+            std::cout << std::hex << std::setw(4) << std::setfill('0') <<  i << ": ";
+
+        std::cout << std::hex << std::setw(2) << std::setfill('0') << (0xff & (unsigned)data[i]) << " ";
+        if((i + 1) % 16 == 0)
+            std::cout << std::endl;
+    }
+
+    if(data.size() % 16 != 0)
+        std::cout << std::endl;
+
+    return std::cout;
+}
+
+DataBuilder::DataBuilder(Type* type)
+    : m_main(type)
+{
+    m_type.push_back(type);
+}
+
+template<typename Type>
+Type*           DataBuilder::pop_type()
+{
+    if(m_type.empty())
+        throw   std::runtime_error("wrong data/type");
+
+    if(auto record = dynamic_cast<TypeRecord*>(m_type.front()))
+    {
+        m_type.pop_front();
+
+        for(auto it = record->body().rbegin(); it != record->body().rend(); it ++)
+        {
+            m_type.push_front(it->type);
+        }
+    }
+
+    if(m_type.empty())
+        throw   std::runtime_error("wrong data/type");
+
+    auto    type    = dynamic_cast<Type*>(m_type.front());
+
+    if(type == nullptr)
+        throw   std::runtime_error("wrong data/type");
+
+    m_type.pop_front();
+
+    return  type;
+}
+
+DataBuilder&    DataBuilder::integer(    int64_t             data)
+{
+    pop_type<TypeInteger>();
+
+    auto    buff    = htonll(data);
+    m_os.write(reinterpret_cast<char const*>(&buff), sizeof(buff));
+
+    return  *this;
+}
+
+DataBuilder&    DataBuilder::number(     double              data)
+{
+    pop_type<TypeNumber>();
+
+    auto    buff    = htonll(*reinterpret_cast<uint64_t*>(&data));
+    m_os.write(reinterpret_cast<char const*>(&buff), sizeof(buff));
+
+    return  *this;
+}
+
+DataBuilder&    DataBuilder::boolean(    bool                data)
+{
+    pop_type<TypeBoolean>();
+
+    m_os.write(reinterpret_cast<char const*>(&data), sizeof(data));
+
+    return  *this;
+}
+
+DataBuilder&    DataBuilder::string(     std::string const&  data)
+{
+    pop_type<TypeString>();
+
+    auto    size    = htonl(data.size());
+    m_os.write(reinterpret_cast<char const*>(&size), sizeof(size));
+    m_os.write(reinterpret_cast<char const*>(data.data()), data.size());
+    
+    return *this;
+}
+
+DataBuilder&    DataBuilder::size(       unsigned            size)
+{
+    auto*   type    = pop_type<TypeArray>();
+
+    if(type->size != 0 && type->size != size)
+        throw   std::runtime_error("invalid array size");
+
+    auto    buff    = htonl(size);
+    m_os.write(reinterpret_cast<char const*>(&buff), sizeof(buff));
+
+    for(auto i = 0; i < size; i++)
+    {
+        m_type.push_front(type->base);
+    }
+
+    return *this;
+}
+
+std::string     DataBuilder::build()
+{
+    return  m_os.str();
+}
+
+void print(Type* const type)
+{
+    std::cout << "{";
+    printHelper(type);
+    std::cout << "}";
+}
+
+void    readData(Type* main, std::string const& data)
+{
+    std::deque<Type*>   type;
+    std::vector<Type*>  fifo;
+    std::istringstream  is(data);
+
+    type.push_back(main);
+
+    while(type.empty() == false)
+    {
+        Type*   top     = type.front();
+
+        type.pop_front();
+
+        if(auto curr = dynamic_cast<TypeInteger*>(top))
+        {
+            uint64_t    buff;
+
+            is.read(reinterpret_cast<char*>(&buff), sizeof(buff));
+
+            buff    = ntohll(buff);
+            std::cout << std::dec << buff << " ";
+        }
+
+        if(auto curr = dynamic_cast<TypeNumber*>(top))
+        {
+            uint64_t    buff;
+
+            is.read(reinterpret_cast<char*>(&buff), sizeof(buff));
+
+            buff    = ntohll(buff);
+            std::cout << std::dec << *reinterpret_cast<double*>(&buff) << " ";
+        }    
+
+        if(auto curr = dynamic_cast<TypeBoolean*>(top))
+        {
+            bool    buff;
+
+            is.read(reinterpret_cast<char*>(&buff), sizeof(buff));
+
+            std::cout << buff << " ";
+        }    
+
+        if(auto curr = dynamic_cast<TypeString*>(top))
+        {
+            unsigned    size;
+
+            is.read(reinterpret_cast<char*>(&size), sizeof(size));
+            size    = ntohl(size);
+
+            std::string buff(size, 0);
+            is.read(buff.data(), size);
+
+            std::cout << "\"" << buff << "\" ";
+        }   
+
+        if(auto curr = dynamic_cast<TypeRecord*>(top))
+        {
+            for(auto it = curr->body().rbegin(); it != curr->body().rend(); it ++)
+            {
+                type.push_front(it->type);
+            }
+        }
+
+        if(auto curr = dynamic_cast<TypeArray*>(top))
+        {
+            uint32_t    size;
+            is.read(reinterpret_cast<char*>(&size), sizeof(size));
+            size = ntohl(size);
+
+            for(auto i = 0; i < size; i++)
+            {
+                type.push_front(curr->base);
+            }
+        }
+    }
+}
+
+int main(int argc, char* argv[])
+{
+    try 
+    {
+        auto    type    = 
+            TypeBuilderRecord()
+                .integer("i")
+                .number("n")
+                .string("s")
+                .array("xyz", 
+                    TypeBuilderArray()
+                        .integer()
+                        .size(5)
+                        .build())
+                .record("rec", 
+                    TypeBuilderRecord()
+                        .boolean("b")
+                        .integer("c")
+                        .record("what", 
+                            TypeBuilderRecord()
+                                .integer("X")
+                                .build())
+                        .build())
+                .build();
+        print(type);
+
+        std::string     data    = 
+            DataBuilder(type)
+                .integer(0xaaaaaaaa55555555)
+                .number(0.5)
+                .string("hello")
+                .size(5)
+                    .integer(1)
+                    .integer(2)
+                    .integer(3)
+                    .integer(4)
+                    .integer(5)
+                .boolean(true)
+                .integer(11111111)
+                    .integer(0x777)
+            .build();
+
+        printHex(data) << std::endl;
+
+        readData(type, data);
+    }
+    catch(std::exception& ex)
+    {
+        std::cerr << std::endl << "exception: " << ex.what() << std::endl;
+        return 1;
+    }
+
+    return 0;
 }

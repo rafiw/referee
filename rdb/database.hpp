@@ -25,7 +25,11 @@
 #pragma once
 
 #include <string>
+#include <vector>
+#include <deque>
+#include <sstream>
 
+/*
 class Database
 {
 public:
@@ -56,30 +60,9 @@ public:
 private:
     Database&       m_database;
 };
+*/
 
-class   Type
-{
-public:
-};
-
-class   TypeBuilder
-{
-public:
-    TypeBuilder&    add_timestamp(  std::string const&  name);
-    TypeBuilder&    add_integer(    std::string const&  name);
-    TypeBuilder&    add_boolean(    std::string const&  name);
-    TypeBuilder&    add_number(     std::string const&  name);
-    TypeBuilder&    add_string(     std::string const&  name);
-    TypeBuilder&    enter_array(    std::string const&  name);
-    TypeBuilder&    enter_array(    std::string const&  name,
-                                    unsigned            size);
-    TypeBuilder&    leave_array();
-    TypeBuilder&    enter_sruct(    std::string const&  name);
-    TypeBuilder&    leave_struct();
-    
-    Type*           build();
-};
-
+/*
 class   Writer
 {
 public:
@@ -104,4 +87,163 @@ private:
     
 private:
     Database&   m_database;
+};
+*/
+
+class   Type
+{
+public:
+    virtual ~Type() = default;
+};
+
+class   TypeScalar
+    : public Type
+{
+public:
+    TypeScalar()    = default;
+};
+
+template<typename T>
+class   TypeScalarT
+    : public TypeScalar
+{
+public:
+    TypeScalarT()   = default;
+};
+
+using   TypeString  = TypeScalarT<std::string>;
+using   TypeInteger = TypeScalarT<uint64_t>;
+using   TypeNumber  = TypeScalarT<double>;
+using   TypeBoolean = TypeScalarT<bool>;
+
+class Name2Type
+{
+public:
+    Name2Type(std::string name, Type* type)
+        : name(name)
+        , type(type)
+    {
+    }
+
+    std::string name;
+    Type* const type;
+};
+
+class   TypeRecord
+    : public Type
+{
+public:
+    TypeRecord(std::vector<Name2Type>   body)
+        : m_body(body)
+    {
+    }
+
+    std::vector<Name2Type> const&  body() {return m_body;}
+
+private:
+    std::vector<Name2Type>  m_body;
+};
+
+class   TypeArray
+    : public Type
+{
+public:
+    TypeArray(Type* base, unsigned size)
+        : base(base)
+        , size(size)
+    {
+    }
+
+    Type*       base;
+    unsigned    size;
+};   
+
+class   TypeBuilderRecord
+{
+public:
+    TypeBuilderRecord() = default;
+
+    using   Builder     = TypeBuilderRecord;
+
+    Builder&    integer(std::string name);
+    Builder&    number( std::string name);
+    Builder&    boolean(std::string name);
+    Builder&    string( std::string name);
+    Builder&    record( std::string name,
+                        TypeRecord* type);
+    Builder&    array(  std::string name,
+                        TypeArray*  type);
+    TypeRecord* build();
+
+private:
+    std::vector<Name2Type>  m_body;
+};
+
+class   TypeBuilderArray
+{
+public:
+    TypeBuilderArray()  = default;
+
+    using   Builder     = TypeBuilderArray;
+
+    Builder&    integer();
+    Builder&    number();
+    Builder&    boolean();
+    Builder&    string();
+    Builder&    size(   unsigned    size);
+    Builder&    record( TypeRecord* type);
+    Builder&    array(  TypeArray*  type);
+    TypeArray*  build();
+
+private:
+    Type*       m_body  = nullptr;
+    unsigned    m_size  = 0;
+};
+
+class DataBuilder
+{
+public:
+    DataBuilder(Type* type);
+
+    using   Builder     = DataBuilder;
+
+    Builder&    integer(    int64_t             data);
+    Builder&    number(     double              data);
+    Builder&    boolean(    bool                data);
+    Builder&    string(     std::string const&  data);
+    Builder&    size(       unsigned            size);
+    std::string build();
+
+private:
+    template<typename Type>
+    Type*       pop_type();
+
+private:
+    std::ostringstream  m_os;
+    Type*               m_main;
+    std::deque<Type*>   m_type;
+};
+
+class Writer
+{
+public:
+    Writer() = default;
+
+    void    open(std::string filename);
+
+    uint8_t decl_type(  Type*               type);
+
+    //  property - constant data
+    uint8_t decl_prop(  Type*               type,
+                        std::string         name);
+    void    push_values(std::string const&  data,
+                        uint8_t             prop);
+                        
+    //  function - time dependent data
+    uint8_t decl_func(  Type*               type,
+                        std::string         name);
+
+    void    push_values(std::string const&  data,
+                        uint64_t            time,
+                        uint8_t             func);
 };
