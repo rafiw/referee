@@ -60,6 +60,7 @@ include_directories(
     ${PROJECT_BINARY_DIR}
     ${ANTLR4_INCLUDE_DIR}
     ${LLVM_INCLUDE_DIRS}
+    submodules/rapidcsv/src
 )
 
 include_directories(

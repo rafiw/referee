@@ -32,6 +32,8 @@
 
 #include <arpa/inet.h>
 
+#include "rapidcsv.h"
+
 #if 0
 struct RecordInfo 
 {
@@ -547,6 +549,166 @@ void    readData(Type* main, std::string const& data)
     }
 }
 
+void nameHelper(Type* type, std::string prefix, std::vector<std::string>& names)
+{
+    if(auto array = dynamic_cast<TypeArray*>(type))
+    {
+        auto    size    = array->size == 0 ? 1 : array->size;
+
+        names.push_back(prefix + "#size");
+
+        std::cout << prefix << "#size" << std::endl;
+        for(auto i = 0; i < size; i++)
+        {
+            nameHelper(array->base, prefix + "[" + std::to_string(i) + "]", names);
+        }
+    }
+
+    else if(auto record = dynamic_cast<TypeRecord*>(type))
+    {
+        for(auto& item: record->body())
+        {
+            nameHelper(item.type, prefix + "." + item.name, names);
+        }
+    }
+    else
+    {
+        if(nullptr != dynamic_cast<TypeInteger*>(type))
+        {
+            names.push_back(prefix + ":integer");
+
+            std::cout << prefix << ":integer" << std::endl;
+        }
+        if(nullptr != dynamic_cast<TypeNumber*>(type))
+        {
+            names.push_back(prefix + ":number");
+
+            std::cout << prefix << ":number" << std::endl;
+        }
+        if(nullptr != dynamic_cast<TypeBoolean*>(type))
+        {
+            names.push_back(prefix + ":boolean");
+
+            std::cout << prefix << ":boolean" << std::endl;
+        }
+        if(nullptr != dynamic_cast<TypeString*>(type))
+        {
+            names.push_back(prefix + ":string");
+
+            std::cout << prefix << ":string" << std::endl;
+        }
+    }
+}
+
+std::vector<std::string>    names(Type* type, std::string name)
+{
+    std::vector<std::string>    names;
+
+    nameHelper(type, name, names);
+
+    return names;
+}
+
+void readCsv(Type* type, std::string name, std::string data)
+{
+    rapidcsv::Document  doc(name);
+
+    std::cout << std::endl;
+/*
+    auto cols = doc.GetColumnNames();
+
+    for(auto col: cols)
+    {
+        std::cout << col << std::endl;
+    }
+*/
+    //auto cols   = names(type, data);
+    auto rows   = doc.GetRowCount();
+
+    for(size_t row = 0; row < rows; row++)
+    {
+        std::deque<Type*>       types;
+        std::deque<std::string> names;
+        DataBuilder             builder(type);
+
+        types.push_front(type);
+        names.push_front(data);
+
+        while(types.empty() == false)
+        {
+            auto    type    = types.front();    types.pop_front();
+            auto    name    = names.front();    names.pop_front();
+
+            if(auto curr = dynamic_cast<TypeInteger*>(type))
+            {
+                int64_t     data    = doc.GetCell<int64_t>(name, row);
+                builder.integer(data);
+            }
+
+            if(auto curr = dynamic_cast<TypeNumber*>(type))
+            {
+                double      data    = doc.GetCell<double>(name, row);
+                builder.number(data);
+            }
+
+            if(auto curr = dynamic_cast<TypeBoolean*>(type))
+            {
+                std::string data    = doc.GetCell<std::string>(name, row);
+                bool        value   = false;
+                if(data == "true" || data == "yes" || data == "1")
+                    value   = true;
+                if(data == "false" || data == "no" || data == "0")
+                    value   = false;                    
+
+                builder.boolean(value);
+            }
+
+            if(auto curr = dynamic_cast<TypeString*>(type))
+            {
+                std::string data    = doc.GetCell<std::string>(name, row);
+                builder.string(data);
+            }
+
+            if(auto curr = dynamic_cast<TypeRecord*>(type))
+            {
+                for(auto it = curr->body().rbegin(); it != curr->body().rend(); it ++)
+                {
+                    types.push_front(it->type);
+                    names.push_front(name + "." + it->name);
+                }
+            }
+
+            if(auto curr = dynamic_cast<TypeArray*>(type))
+            {
+                unsigned    size    = doc.GetCell<unsigned>(name + "#size", row);
+
+                for(auto i = 0; i < size; i++)
+                {
+                    types.push_front(curr->base);
+                    names.push_front(name + "[" + std::to_string(size - i - 1) + "]");
+                }
+
+                builder.size(size);
+            }
+        }
+
+        auto data = builder.build();
+
+        printHex(data) << std::endl;
+        readData(type, data);
+
+/*
+        for(auto col: cols)
+        {
+            std::cout << doc.GetCell<std::string>(col, row) << " ";
+        }
+        std::cout << std::endl;
+*/
+
+    }
+
+}
+
 int main(int argc, char* argv[])
 {
     try 
@@ -592,6 +754,10 @@ int main(int argc, char* argv[])
         printHex(data) << std::endl;
 
         readData(type, data);
+
+        names(type, "abc");
+
+        readCsv(type, "../test.csv", "abc");
     }
     catch(std::exception& ex)
     {
