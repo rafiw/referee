@@ -256,13 +256,11 @@ public:
 
     uint8_t declType(  Type*               type);
 
-    //  property - constant data
     uint8_t declProp(   uint8_t             type,
                         std::string         name);
     void    pushData(   uint8_t             prop,
                         std::string const&  data);
                         
-    //  function - time dependent data
     uint8_t declFunc(   uint8_t             type,
                         std::string         name);
 

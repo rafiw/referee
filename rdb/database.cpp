@@ -799,18 +799,30 @@ void printHelper(Type* const type, std::string prefix = "")
 std::ostream&   printHex(std::string const& data)
 {
     std::cout << std::endl;
+    char    text[17]    = "                ";
     for(unsigned i = 0; i < data.size(); i++)
     {
+        text[i % 16]    = isprint(data[i]) ? data[i] : '.';
+
         if(i % 16 == 0)
+        {
             std::cout << std::hex << std::setw(4) << std::setfill('0') <<  i << ": ";
+        }
 
         std::cout << std::hex << std::setw(2) << std::setfill('0') << (0xff & (unsigned)data[i]) << " ";
         if((i + 1) % 16 == 0)
-            std::cout << std::endl;
+        {
+            std::cout << " | " << text << std::endl;
+        }
     }
 
     if(data.size() % 16 != 0)
-        std::cout << std::endl;
+    {
+        auto i = data.size() % 16;
+
+        text[i] = 0;
+        std::cout << std::setfill(' ') << std::setw(3 * (16 - i)) << " " << " | " << text << std::endl;
+    }
 
     return std::cout;
 }
@@ -1174,7 +1186,6 @@ uint8_t Writer::declType(   Type*               type)
     return  0;
 }
 
-//  property - constant data
 uint8_t Writer::declProp(   uint8_t             type,
                             std::string         name)
 {
@@ -1193,7 +1204,6 @@ void    Writer::pushData(   uint8_t             prop,
     record(INFO(PUSH_PROP, prop), data);
 }
                     
-//  function - time dependent data
 uint8_t Writer::declFunc(   uint8_t             type,
                             std::string         name)
 {
@@ -1211,6 +1221,66 @@ void    Writer::pushData(   uint8_t             func,
                             std::string const&  data)
 {
     record(INFO(PUSH_FUNC, func), time, data);
+}
+
+void    readDB(std::string filename)
+{
+    std::ifstream   is(filename, std::ios_base::binary | std::ios_base::in);
+
+    while(is.eof() == false)
+    {
+        uint16_t    type;
+        uint32_t    info;
+        uint32_t    size;
+        uint64_t    time;
+        std::string data;
+        is.read(reinterpret_cast<char*>(&info), sizeof(info));
+        is.read(reinterpret_cast<char*>(&size), sizeof(size));
+
+        info    = ntohl(info);
+        size    = ntohl(size);
+        type    = info >> 16;
+
+        switch(type)
+        {
+            case ROOT:
+                data.resize(size);
+                is.read(reinterpret_cast<char*>(data.data()), size);
+                std::cout << data << std::endl;
+                break;
+            case DECL_TYPE:
+                data.resize(size);
+                is.read(reinterpret_cast<char*>(data.data()), size);
+                std::cout << data << std::endl;
+                break;
+            case DECL_FUNC:
+                data.resize(size);
+                is.read(reinterpret_cast<char*>(data.data()), data.size());
+                std::cout << data << std::endl;
+                break;
+            case DECL_PROP:
+                data.resize(size);
+                is.read(reinterpret_cast<char*>(data.data()), size);
+                std::cout << data << std::endl;
+                break;
+            case PUSH_FUNC:
+                data.resize(size - sizeof(time));
+                is.read(reinterpret_cast<char*>(&time), sizeof(time));
+                time    = ntohll(time);
+                is.read(reinterpret_cast<char*>(data.data()), data.size());
+                std::cout << time << std::endl;
+                printHex(data) << std::endl;
+                break;
+            case PUSH_PROP:
+                data.resize(size);
+                is.read(reinterpret_cast<char*>(data.data()), data.size());
+                printHex(data) << std::endl;
+                break;
+            default:
+                std::exit(1);
+        }
+
+    }
 }
 
 int main(int argc, char* argv[])
@@ -1241,7 +1311,7 @@ int main(int argc, char* argv[])
 
         std::string     data    = 
             DataWriter(type)
-                .integer(0xaaaaaaaa55555555)
+                .integer(0x1234567890abcdef)
                 .number(0.5)
                 .string("hello")
                 .size(5)
@@ -1251,7 +1321,7 @@ int main(int argc, char* argv[])
                     .integer(4)
                     .integer(5)
                 .boolean(true)
-                .integer(11111111)
+                .integer('what')
                     .integer(0x777)
             .build();
 
@@ -1289,8 +1359,10 @@ int main(int argc, char* argv[])
         writer.open("xyw.rdb");
         auto    typeID  = writer.declType(type);
         auto    funcID  = writer.declFunc(typeID, "data");
-        writer.pushData(funcID, data);
+        writer.pushData(funcID, 1, data);
         writer.close();
+
+        readDB("xyw.rdb");
     }
     catch(std::exception& ex)
     {
