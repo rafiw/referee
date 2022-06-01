@@ -28,6 +28,7 @@ project(referee)
 
 set(CMAKE_MODULE_PATH "${CMAKE_SOURCE_DIR}/submodules/cmake-scripts")
 include(code-coverage)
+include(formatting)
 
 add_compile_options(-Wno-multichar)
 add_compile_options(-g -ggdb)
@@ -76,6 +77,16 @@ link_directories(
 separate_arguments(LLVM_DEFINITIONS_LIST NATIVE_COMMAND ${LLVM_DEFINITIONS})
 add_definitions(${LLVM_DEFINITIONS_LIST})
 llvm_map_components_to_libnames(llvm_libs support core irreader)
+
+file(GLOB_RECURSE ALL_CODE_FILES
+    ${PROJECT_SOURCE_DIR}/core/*.[ch]pp
+    ${PROJECT_SOURCE_DIR}/core/*.[ch]
+    ${PROJECT_SOURCE_DIR}/rdb/*.[h]pp
+    ${PROJECT_SOURCE_DIR}/rdb/*.[h]
+)
+
+clang_format(format ${ALL_CODE_FILES})
+message( ${ALL_CODE_FILES})
 
 add_library(
     core
@@ -129,5 +140,3 @@ add_executable(
     rdb
     rdb/database.cpp
 )
-
-
