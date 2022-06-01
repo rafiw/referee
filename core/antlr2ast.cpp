@@ -136,7 +136,7 @@ std::any Antlr2AST::visitDeclData(      referee::refereeParser::DeclDataContext*
     auto    name    = ctx->dataID()->getText();
     auto    type    = ctx->type()->accept(this);
 
-    module->add_data(name, std::any_cast<Type*>(type));
+    module->addData(name, std::any_cast<Type*>(type));
 
     return nullptr;
 }
@@ -147,7 +147,7 @@ std::any Antlr2AST::visitDeclType(      referee::refereeParser::DeclTypeContext*
     auto    name    = ctx->typeID()->getText();
     auto    type    = ctx->type()->accept(this);
 
-    module->add_type(name, std::any_cast<Type*>(type));
+    module->addType(name, std::any_cast<Type*>(type));
 
     return nullptr;
 }
@@ -166,9 +166,9 @@ std::any Antlr2AST::visitExprAt(        referee::refereeParser::ExprAtContext*  
 {
     auto    name    = ctx->ID()->getText();
     
-    module->push_context(name);
+    module->pushContext(name);
     auto    expr    = ctx->expression()->accept(this);
-    module->pop_context();
+    module->popContext();
 
     return static_cast<Expr*>(build<ExprAt>(ctx, name, std::any_cast<Expr*>(expr)));
 }
@@ -203,7 +203,7 @@ std::any Antlr2AST::visitExprData(      referee::refereeParser::ExprDataContext*
 {
     auto    name    = ctx->dataID()->getText();
 
-    if(module->has_context(name))
+    if(module->hasContext(name))
     {
         auto    expr    = static_cast<Expr*>(build<ExprContext>(ctx, name));
         auto    type    = build<TypeContext>(ctx, module);
@@ -215,7 +215,7 @@ std::any Antlr2AST::visitExprData(      referee::refereeParser::ExprDataContext*
     else
     {
         auto    ctxt    = build<ExprContext>(ctx, "__curr__");
-        auto    type    = module->get_data(name);
+        auto    type    = module->getData(name);
         auto    expr    = static_cast<Expr*>(build<ExprData>(ctx, ctxt, name));
 
         expr->type(type);
@@ -513,7 +513,7 @@ std::any Antlr2AST::visitTypeAlias(     referee::refereeParser::TypeAliasContext
 {
     auto name   = ctx->typeID()->getText();
 
-    return module->get_type(name);
+    return module->getType(name);
 }
 
 std::any Antlr2AST::visitTypeEnum(      referee::refereeParser::TypeEnumContext*    ctx)

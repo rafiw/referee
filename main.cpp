@@ -91,9 +91,9 @@ int main(int argc, const char * argv[]) {
         TheModule->dump();
 
 
-        for(auto name: module->get_type_names())
+        for(auto name: module->getTypeNames())
         {
-            auto    type    = module->get_type(name);
+            auto    type    = module->getType(name);
             std::cout << name << std::endl << "    ";
             Compile::make(TheContext.get(), TheModule.get(), type)->print(llvm::outs());
             std::cout << std::endl;

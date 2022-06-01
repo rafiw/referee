@@ -1062,23 +1062,156 @@ void readCsv(Type* type, std::string name, std::string data)
 
 void    Writer::open(std::string filename)
 {
+    m_os.open(filename, std::ios_base::binary | std::ios_base::in | std::ios_base::trunc);
+
+    record(0x00010000, "referee");
+    record(0x00010001, "v1.0.0");
 }
 
-uint8_t Writer::decl_type(  Type*               type);
+void    Writer::close()
+{
+    m_os.flush();
+    m_os.close();
+}
+
+
+void    Writer::record( uint32_t            info,
+                        std::string const&  data)
+{
+    uint32_t    buff32;
+
+    buff32  = htonl(info);
+    m_os.write(reinterpret_cast<char const*>(&buff32), sizeof(buff32));
+
+    buff32  = htonl(data.size());
+    m_os.write(reinterpret_cast<char const*>(&buff32), sizeof(buff32));
+
+    m_os.write(reinterpret_cast<char const*>(data.data()), data.size());
+}
+
+void    Writer::record( uint32_t            info,
+                        uint64_t            time,
+                        std::string const&  data)
+{
+    uint32_t    buff32;
+    uint64_t    buff64;
+
+    buff32  = htonl(info);
+    m_os.write(reinterpret_cast<char const*>(&buff32), sizeof(buff32));
+
+    buff32  = htonl(data.size() + sizeof(time));
+    m_os.write(reinterpret_cast<char const*>(&buff32), sizeof(buff32));
+
+    buff64  = htonll(time);
+    m_os.write(reinterpret_cast<char const*>(&buff64), sizeof(buff64));
+
+    m_os.write(reinterpret_cast<char const*>(data.data()), data.size());
+}
+
+void    encode(std::ostream& os, Type* const type, std::string prefix = "")
+{
+    if(nullptr != dynamic_cast<TypeInteger*>(type))
+        os << "\"type\": \"integer\"";
+
+    if(nullptr != dynamic_cast<TypeBoolean*>(type))
+        os << "\"type\": \"boolean\"";
+        
+    if(nullptr != dynamic_cast<TypeNumber*>(type))
+        os << "\"type\": \"number\"";
+
+    if(nullptr != dynamic_cast<TypeString*>(type))
+        os << "\"type\": \"string\"";
+
+    if(auto array = dynamic_cast<TypeArray*>(type))
+    {
+        os << "\"type\": \"array\", \"body\": {\"size\": "<< array->size << ", ";
+        encode(os, array->base, prefix + "    ");
+        os << "}";
+    }
+
+    if(auto record = dynamic_cast<TypeRecord*>(type))
+    {
+        os << "\"type\": \"record\", \"body\": [";
+
+        auto    suffix   = "\n";
+        for(auto& item: record->body())
+        {
+            os << suffix << prefix << "    {\"name\": \"" << item.name << "\", ";
+            encode(os, item.type, prefix + "    ");
+            os << "}";
+
+            suffix = ",\n";
+        }
+        os << "]";
+    }
+}
+
+std::string Writer::encode( Type*   type)
+{
+    std::ostringstream  os;
+    os << "{";
+    ::encode(os, type);
+    os << "}";
+
+    return os.str();
+}
+#define     INFO(type, ID)  (((type) << 16) | (ID))
+#define     ROOT        0x0001
+#define     DECL_TYPE   0x0002
+#define     DECL_FUNC   0x0003
+#define     DECL_PROP   0x0004
+#define     PUSH_FUNC   0x0005
+#define     PUSH_PROP   0x0006
+
+uint8_t Writer::declType(   Type*               type)
+{
+    std::string encoded = encode(type);
+
+    m_types.push_back(type);
+    auto    indx    = m_types.size();
+
+    record(INFO(DECL_TYPE, indx), encoded);
+    return  0;
+}
 
 //  property - constant data
-uint8_t Writer::decl_prop(  Type*               type,
-                    std::string         name);
-void    Writer::push_values(std::string const&  data,
-                    uint8_t             prop);
+uint8_t Writer::declProp(   uint8_t             type,
+                            std::string         name)
+{
+    m_props.push_back(std::make_pair(name, type));
+
+    auto    indx    = m_props.size();
+
+    record(INFO(DECL_PROP, type), name);
+
+    return m_funcs.size();
+}
+
+void    Writer::pushData(   uint8_t             prop,
+                            std::string const&  data)
+{
+    record(INFO(PUSH_PROP, prop), data);
+}
                     
 //  function - time dependent data
-uint8_t Writer::decl_func(  Type*               type,
-                    std::string         name);
+uint8_t Writer::declFunc(   uint8_t             type,
+                            std::string         name)
+{
+    uint32_t    info;
 
-void    Writer::push_values(std::string const&  data,
-                    uint64_t            time,
-                    uint8_t             func);
+    m_funcs.push_back(std::make_pair(name, type));
+
+    record(INFO(DECL_FUNC, type), name);
+
+    return m_funcs.size();
+}
+
+void    Writer::pushData(   uint8_t             func,
+                            uint64_t            time,
+                            std::string const&  data)
+{
+    record(INFO(PUSH_FUNC, func), time, data);
+}
 
 int main(int argc, char* argv[])
 {
@@ -1151,6 +1284,13 @@ int main(int argc, char* argv[])
         names(type, "abc");
 
         readCsv(type, "../test.csv", "abc");
+    
+        Writer writer;
+        writer.open("xyw.rdb");
+        auto    typeID  = writer.declType(type);
+        auto    funcID  = writer.declFunc(typeID, "data");
+        writer.pushData(funcID, data);
+        writer.close();
     }
     catch(std::exception& ex)
     {

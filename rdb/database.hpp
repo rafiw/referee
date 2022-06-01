@@ -28,6 +28,7 @@
 #include <vector>
 #include <deque>
 #include <sstream>
+#include <fstream>
 #include <memory>
 
 /*
@@ -251,20 +252,35 @@ public:
     Writer() = default;
 
     void    open(std::string filename);
+    void    close();
 
-    uint8_t decl_type(  Type*               type);
+    uint8_t declType(  Type*               type);
 
     //  property - constant data
-    uint8_t decl_prop(  Type*               type,
+    uint8_t declProp(   uint8_t             type,
                         std::string         name);
-    void    push_values(std::string const&  data,
-                        uint8_t             prop);
+    void    pushData(   uint8_t             prop,
+                        std::string const&  data);
                         
     //  function - time dependent data
-    uint8_t decl_func(  Type*               type,
+    uint8_t declFunc(   uint8_t             type,
                         std::string         name);
 
-    void    push_values(std::string const&  data,
+    void    pushData(   uint8_t             func,
                         uint64_t            time,
-                        uint8_t             func);
+                        std::string const&  data);
+private:
+    void    record(     uint32_t            info,
+                        std::string const&  data);
+    void    record(     uint32_t            info,
+                        uint64_t            time,
+                        std::string const&  data);
+
+    std::string 
+            encode(     Type*               type);
+private:
+    std::ofstream       m_os;
+    std::vector<Type*>  m_types;
+    std::vector<std::pair<std::string, uint8_t>>    m_props;
+    std::vector<std::pair<std::string, uint8_t>>    m_funcs;
 };

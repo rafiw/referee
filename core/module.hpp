@@ -35,16 +35,16 @@ class Module
 public:
     Module(std::string name);
 
-    void    add_type(std::string name, Type* type);
-    void    add_data(std::string name, Type* data);
+    void    addType(std::string name, Type* type);
+    void    addData(std::string name, Type* data);
 
-    Type*   get_type(std::string name);
-    Type*   get_data(std::string name);
-    std::vector<std::string>    get_type_names();
+    Type*   getType(std::string name);
+    Type*   getData(std::string name);
+    std::vector<std::string>    getTypeNames();
 
-    void    push_context(std::string name);
-    void    pop_context();
-    bool    has_context(std::string name);
+    void    pushContext(std::string name);
+    void    popContext();
+    bool    hasContext( std::string name);
 
 private:
     std::map<std::string, Type*>    m_name2type;

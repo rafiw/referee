@@ -36,7 +36,7 @@ Module::Module(std::string name)
     m_name2data["__time__"] = Factory<TypeInteger>::create();
 }
 
-void    Module::add_type(std::string name, Type* type)
+void    Module::addType(std::string name, Type* type)
 {
     if(m_name2type.contains(name))
     {
@@ -45,7 +45,7 @@ void    Module::add_type(std::string name, Type* type)
     m_name2type[name]   = type;
 }
 
-void    Module::add_data(std::string name, Type* data)
+void    Module::addData(std::string name, Type* data)
 {
     if(m_name2data.contains(name))
     {
@@ -54,7 +54,7 @@ void    Module::add_data(std::string name, Type* data)
     m_name2data[name]   = data;
 }
 
-Type*   Module::get_type(std::string name)
+Type*   Module::getType(std::string name)
 {
     if(!m_name2type.contains(name))
     {
@@ -63,7 +63,7 @@ Type*   Module::get_type(std::string name)
     return m_name2type[name];
 }
 
-Type*   Module::get_data(std::string name)
+Type*   Module::getData(std::string name)
 {
     if(!m_name2data.contains(name))
     {
@@ -72,7 +72,7 @@ Type*   Module::get_data(std::string name)
     return m_name2data[name];
 }
 
-std::vector<std::string>    Module::get_type_names()
+std::vector<std::string>    Module::getTypeNames()
 {
     std::vector<std::string>    names;
 
@@ -85,17 +85,17 @@ std::vector<std::string>    Module::get_type_names()
 }
 
 
-void    Module::push_context(std::string name)
+void    Module::pushContext(std::string name)
 {
     m_context.push_back(name);
 }
 
-void    Module::pop_context()
+void    Module::popContext()
 {
     m_context.pop_back();
 }
 
-bool    Module::has_context(std::string name)
+bool    Module::hasContext(std::string name)
 {
     return std::find(m_context.begin(), m_context.end(), name) != m_context.end();
 }
