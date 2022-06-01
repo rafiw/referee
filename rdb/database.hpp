@@ -201,29 +201,48 @@ private:
     unsigned    m_size  = 0;
 };
 
-class DataBuilder
+class DataWriter
 {
 public:
-    DataBuilder();
-    DataBuilder(Type* type);
-    ~DataBuilder();
+    DataWriter();
+    DataWriter(Type* type);
+    ~DataWriter();
 
-    using   Builder     = DataBuilder;
+    using   Writer  = DataWriter;
 
-    Builder&    integer(    int64_t             data);
-    Builder&    number(     double              data);
-    Builder&    boolean(    bool                data);
-    Builder&    string(     std::string const&  data);
-    Builder&    size(       unsigned            size);
+    DataWriter& integer(    int64_t             data);
+    DataWriter& number(     double              data);
+    DataWriter& boolean(    bool                data);
+    DataWriter& string(     std::string const&  data);
+    DataWriter& size(       unsigned            size);
     std::string build();
 
     class Impl;
 
 private:
-
     std::unique_ptr<Impl>   m_impl;
 };
 
+class DataReader
+{
+public:
+    DataReader( std::string const&  data);
+    DataReader( std::string const&  data,
+                Type*               type);
+    ~DataReader();
+
+    DataReader& integer(    int64_t&            data);
+    DataReader& number(     double&             data);
+    DataReader& boolean(    bool&               data);
+    DataReader& string(     std::string&        data);
+    DataReader& size(       unsigned&           size);
+    void        done();
+
+    class Impl;
+
+private:
+    std::unique_ptr<Impl>   m_impl;
+};
 
 class Writer
 {

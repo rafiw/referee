@@ -34,11 +34,9 @@
 
 #include "rapidcsv.h"
 
-
-class DataBuilder::Impl
+class DataWriter::Impl
 {
 public:
-    Impl() {};
     virtual ~Impl() {};
 
     virtual void        integer(    int64_t             data) = 0;
@@ -49,11 +47,11 @@ public:
     virtual std::string build() = 0;
 };
 
-class DataBuilderPlain
-    : public DataBuilder::Impl
+class DataWriterPlain
+    : public DataWriter::Impl
 {
 public:
-    DataBuilderPlain();
+    DataWriterPlain();
 
     void        integer(    int64_t             data) override;
     void        number(     double              data) override;
@@ -66,11 +64,11 @@ private:
     std::ostringstream  m_os;
 };
 
-class DataBuilderTyped
-    : public DataBuilder::Impl
+class DataWriterTyped
+    : public DataWriter::Impl
 {
 public:
-    DataBuilderTyped(Type* type);
+    DataWriterTyped(Type* type);
 
     void        integer(    int64_t             data) override;
     void        number(     double              data) override;
@@ -85,16 +83,68 @@ private:
 
 private:
     std::deque<Type*>   m_type;
-    DataBuilderPlain    m_builder;
+    DataWriterPlain     m_writer;
 };
 
-DataBuilderTyped::DataBuilderTyped(Type* type)
+class DataReader::Impl
+{
+public:
+    virtual ~Impl() {};
+
+    virtual void        integer(    int64_t&            data) = 0;
+    virtual void        number(     double&             data) = 0;
+    virtual void        boolean(    bool&               data) = 0;
+    virtual void        string(     std::string&        data) = 0;
+    virtual void        size(       unsigned&           size) = 0;
+    virtual void        done() = 0;
+};
+
+class DataReaderPlain
+    : public DataReader::Impl
+{
+public:
+    DataReaderPlain(std::string const& data);
+
+    void        integer(    int64_t&            data) override;
+    void        number(     double&             data) override;
+    void        boolean(    bool&               data) override;
+    void        string(     std::string&        data) override;
+    void        size(       unsigned&           size) override;
+    void        done() override;
+
+private:
+    std::istringstream  m_is;
+};
+
+class DataReaderTyped
+    : public DataReader::Impl
+{
+public:
+    DataReaderTyped(std::string const& data, Type* type);
+
+    void        integer(    int64_t&            data) override;
+    void        number(     double&             data) override;
+    void        boolean(    bool&               data) override;
+    void        string(     std::string&        data) override;
+    void        size(       unsigned&           size) override;
+    void        done() override;
+
+private:
+    template<typename Type>
+    Type*       pop_type();
+
+private:
+    std::deque<Type*>   m_type;
+    DataReaderPlain     m_reader;
+};
+
+DataWriterTyped::DataWriterTyped(Type* type)
 {
     m_type.push_back(type);
 }
 
 template<typename Type>
-Type*           DataBuilderTyped::pop_type()
+Type*           DataWriterTyped::pop_type()
 {
     if(m_type.empty())
         throw   std::runtime_error("wrong data/type");
@@ -122,42 +172,42 @@ Type*           DataBuilderTyped::pop_type()
     return type;
 }
 
-void    DataBuilderTyped::integer(    int64_t             data)
+void    DataWriterTyped::integer(   int64_t             data)
 {
     pop_type<TypeInteger>();
 
-    m_builder.integer(data);
+    m_writer.integer(data);
 }
 
-void    DataBuilderTyped::number(     double              data)
+void    DataWriterTyped::number(    double              data)
 {
     pop_type<TypeNumber>();
 
-    m_builder.number(data);
+    m_writer.number(data);
 }
 
-void    DataBuilderTyped::boolean(    bool                data)
+void    DataWriterTyped::boolean(   bool                data)
 {
     pop_type<TypeBoolean>();
 
-    m_builder.boolean(data);
+    m_writer.boolean(data);
 }
 
-void    DataBuilderTyped::string(     std::string const&  data)
+void    DataWriterTyped::string(    std::string const&  data)
 {
     pop_type<TypeString>();
 
-    m_builder.string(data);
+    m_writer.string(data);
 }
 
-void    DataBuilderTyped::size(       unsigned            size)
+void    DataWriterTyped::size(      unsigned            size)
 {
     auto*   type    = pop_type<TypeArray>();
 
     if(type->size != 0 && type->size != size)
         throw   std::runtime_error("invalid array size");
 
-    m_builder.size(size);
+    m_writer.size(size);
 
     for(auto i = 0; i < size; i++)
     {
@@ -165,97 +215,275 @@ void    DataBuilderTyped::size(       unsigned            size)
     }
 }
 
-std::string     DataBuilderTyped::build()
+std::string     DataWriterTyped::build()
 {
-    return  m_builder.build();
+    return  m_writer.build();
 }
 
-DataBuilderPlain::DataBuilderPlain()
+DataWriterPlain::DataWriterPlain()
 {
 }
 
-void    DataBuilderPlain::integer(    int64_t             data)
+void    DataWriterPlain::integer(   int64_t             data)
 {
     auto    buff    = htonll(data);
     m_os.write(reinterpret_cast<char const*>(&buff), sizeof(buff));
 }
 
-void    DataBuilderPlain::number(     double              data)
+void    DataWriterPlain::number(    double              data)
 {
     auto    buff    = htonll(*reinterpret_cast<uint64_t*>(&data));
     m_os.write(reinterpret_cast<char const*>(&buff), sizeof(buff));
 }
 
-void    DataBuilderPlain::boolean(    bool                data)
+void    DataWriterPlain::boolean(   bool                data)
 {
     m_os.write(reinterpret_cast<char const*>(&data), sizeof(data));
 }
 
-void    DataBuilderPlain::string(     std::string const&  data)
+void    DataWriterPlain::string(    std::string const&  data)
 {
     auto    size    = htonl(data.size());
     m_os.write(reinterpret_cast<char const*>(&size), sizeof(size));
     m_os.write(reinterpret_cast<char const*>(data.data()), data.size());
 }
 
-void    DataBuilderPlain::size(       unsigned            size)
+void    DataWriterPlain::size(      unsigned            size)
 {
     auto    buff    = htonl(size);
     m_os.write(reinterpret_cast<char const*>(&buff), sizeof(buff));
 }
 
-std::string     DataBuilderPlain::build()
+std::string     DataWriterPlain::build()
 {
     return  m_os.str();
 }
 
-DataBuilder::DataBuilder()
-    : m_impl(new DataBuilderPlain())
+DataWriter::DataWriter()
+    : m_impl(new DataWriterPlain())
 {
 }
 
-DataBuilder::DataBuilder(Type* type)
-    : m_impl(new DataBuilderTyped(type))
+DataWriter::DataWriter(Type* type)
+    : m_impl(new DataWriterTyped(type))
 {
 }
 
-DataBuilder::~DataBuilder() = default;
+DataWriter::~DataWriter() = default;
 
-DataBuilder&    DataBuilder::integer(    int64_t             data)
+DataWriter&    DataWriter::integer( int64_t             data)
 {
     m_impl->integer(data);
     return *this;
 }
 
-DataBuilder&    DataBuilder::number(     double              data)
+DataWriter&    DataWriter::number(  double              data)
 {
     m_impl->number(data);
     return *this;
 }
 
-DataBuilder&    DataBuilder::boolean(    bool                data)
+DataWriter&    DataWriter::boolean( bool                data)
 {
     m_impl->boolean(data);
     return *this;
 }
 
-DataBuilder&    DataBuilder::string(     std::string const&  data)
+DataWriter&    DataWriter::string(  std::string const&  data)
 {
     m_impl->string(data);
     return *this;
 }
 
-DataBuilder&    DataBuilder::size(       unsigned            size)
+DataWriter&    DataWriter::size(    unsigned            size)
 {
     m_impl->size(size);
     return *this;
 }
 
-std::string     DataBuilder::build()
+std::string     DataWriter::build()
 {
     return  m_impl->build();
 }
 
+DataReader::DataReader( std::string const&  data)
+    : m_impl(new DataReaderPlain(data))
+{
+}
+
+DataReader::DataReader( std::string const&  data,
+                        Type*               type)
+    : m_impl(new DataReaderTyped(data, type))
+{
+}
+
+DataReader::~DataReader() = default;
+
+DataReader& DataReader::integer(    int64_t&            data)
+{
+    m_impl->integer(data);
+
+    return *this;
+}
+
+DataReader& DataReader::number(     double&             data)
+{
+    m_impl->number(data);
+
+    return *this;
+}
+DataReader& DataReader::boolean(    bool&               data)
+{
+    m_impl->boolean(data);
+
+    return *this;
+}
+DataReader& DataReader::string(     std::string&        data)
+{
+    m_impl->string(data);
+
+    return *this;
+}
+DataReader& DataReader::size(       unsigned&           size)
+{
+    m_impl->size(size);
+
+    return *this;
+}
+
+void        DataReader::done()
+{
+    m_impl->done();
+}
+
+
+DataReaderTyped::DataReaderTyped(std::string const& data, Type* type)
+    : m_reader(data)
+{
+    m_type.push_back(type);
+}
+
+template<typename Type>
+Type*           DataReaderTyped::pop_type()
+{
+    if(m_type.empty())
+        throw   std::runtime_error("wrong data/type");
+
+    if(auto record = dynamic_cast<TypeRecord*>(m_type.front()))
+    {
+        m_type.pop_front();
+
+        for(auto it = record->body().rbegin(); it != record->body().rend(); it ++)
+        {
+            m_type.push_front(it->type);
+        }
+    }
+
+    if(m_type.empty())
+        throw   std::runtime_error("wrong data/type");
+
+    auto    type    = dynamic_cast<Type*>(m_type.front());
+
+    if(type == nullptr)
+        throw   std::runtime_error("wrong data/type");
+
+    m_type.pop_front();
+
+    return type;
+}
+
+void    DataReaderTyped::integer(   int64_t&            data)
+{
+    pop_type<TypeInteger>();
+
+    m_reader.integer(data);
+}
+
+void    DataReaderTyped::number(    double&             data)
+{
+    pop_type<TypeNumber>();
+
+    m_reader.number(data);
+}
+
+void    DataReaderTyped::boolean(   bool&               data)
+{
+    pop_type<TypeBoolean>();
+
+    m_reader.boolean(data);
+}
+
+void    DataReaderTyped::string(    std::string&        data)
+{
+    pop_type<TypeString>();
+
+    m_reader.string(data);
+}
+
+void    DataReaderTyped::size(      unsigned&           size)
+{
+    auto*   type    = pop_type<TypeArray>();
+
+    m_reader.size(size);
+
+    if(type->size != 0 && type->size != size)
+        throw   std::runtime_error("invalid array size");
+
+    for(auto i = 0; i < size; i++)
+    {
+        m_type.push_front(type->base);
+    }
+}
+
+void    DataReaderTyped::done()
+{
+    m_reader.done();
+}
+
+DataReaderPlain::DataReaderPlain(std::string const& data)
+    : m_is(data)
+{
+}
+
+void    DataReaderPlain::integer(   int64_t&            data)
+{
+    int64_t buff;
+    m_is.read(reinterpret_cast<char*>(&buff), sizeof(buff));
+    data    = ntohll(buff);
+}
+
+void    DataReaderPlain::number(    double&             data)
+{
+    auto    buff    = htonll(*reinterpret_cast<uint64_t*>(&data));
+    m_is.read(reinterpret_cast<char*>(&buff), sizeof(buff));
+    *reinterpret_cast<uint64_t*>(&data) = ntohll(buff);
+}
+
+void    DataReaderPlain::boolean(   bool&               data)
+{
+    m_is.read(reinterpret_cast<char*>(&data), sizeof(data));
+}
+
+void    DataReaderPlain::string(    std::string&        data)
+{
+    uint32_t    size;
+    m_is.read(reinterpret_cast<char*>(&size), sizeof(size));
+    size    = ntohl(size);
+    data.resize(size);
+    m_is.read(reinterpret_cast<char*>(data.data()), data.size());
+}
+
+void    DataReaderPlain::size(      unsigned&           size)
+{
+    unsigned    buff;
+    m_is.read(reinterpret_cast<char*>(&buff), sizeof(buff));
+    size    = ntohl(buff);
+}
+
+void    DataReaderPlain::done()
+{
+    //  TODO: assert m_is is empty
+}
 
 #if 0
 struct RecordInfo 
@@ -754,7 +982,7 @@ void readCsv(Type* type, std::string name, std::string data)
     {
         std::deque<Type*>       types;
         std::deque<std::string> names;
-        DataBuilder             builder;
+        DataWriter             builder;
 
         types.push_front(type);
         names.push_front(data);
@@ -861,7 +1089,7 @@ int main(int argc, char* argv[])
         print(type);
 
         std::string     data    = 
-            DataBuilder(type)
+            DataWriter(type)
                 .integer(0xaaaaaaaa55555555)
                 .number(0.5)
                 .string("hello")
@@ -875,6 +1103,28 @@ int main(int argc, char* argv[])
                 .integer(11111111)
                     .integer(0x777)
             .build();
+
+        DataReader  reader(data, type);
+        int64_t     i;
+        double      n;
+        bool        b;
+        std::string s;
+        unsigned    size;
+
+        reader
+            .integer(i)
+            .number(n)
+            .string(s)
+            .size(size)
+                .integer(i)
+                .integer(i)
+                .integer(i)
+                .integer(i)
+                .integer(i)
+            .boolean(b)
+            .integer(i)
+                .integer(i)
+            .done();
 
         printHex(data) << std::endl;
 
