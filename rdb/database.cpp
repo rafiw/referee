@@ -636,8 +636,6 @@ TypeBuilder&    leave_struct();
     
 #endif
 
-
-
 TypeBuilderRecord&  TypeBuilderRecord::integer(std::string name)
 {
     m_body.push_back(Name2Type(name, new TypeInteger{}));
@@ -1061,6 +1059,26 @@ void readCsv(Type* type, std::string name, std::string data)
     }
 
 }
+
+void    Writer::open(std::string filename)
+{
+}
+
+uint8_t Writer::decl_type(  Type*               type);
+
+//  property - constant data
+uint8_t Writer::decl_prop(  Type*               type,
+                    std::string         name);
+void    Writer::push_values(std::string const&  data,
+                    uint8_t             prop);
+                    
+//  function - time dependent data
+uint8_t Writer::decl_func(  Type*               type,
+                    std::string         name);
+
+void    Writer::push_values(std::string const&  data,
+                    uint64_t            time,
+                    uint8_t             func);
 
 int main(int argc, char* argv[])
 {

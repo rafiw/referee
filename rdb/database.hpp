@@ -210,11 +210,12 @@ public:
 
     using   Writer  = DataWriter;
 
-    DataWriter& integer(    int64_t             data);
-    DataWriter& number(     double              data);
-    DataWriter& boolean(    bool                data);
-    DataWriter& string(     std::string const&  data);
-    DataWriter& size(       unsigned            size);
+    DataWriter& integer(int64_t     data);
+    DataWriter& number( double      data);
+    DataWriter& boolean(bool        data);
+    DataWriter& string( std::string const&
+                                    data);
+    DataWriter& size(   unsigned    size);
     std::string build();
 
     class Impl;
@@ -231,11 +232,11 @@ public:
                 Type*               type);
     ~DataReader();
 
-    DataReader& integer(    int64_t&            data);
-    DataReader& number(     double&             data);
-    DataReader& boolean(    bool&               data);
-    DataReader& string(     std::string&        data);
-    DataReader& size(       unsigned&           size);
+    DataReader& integer(int64_t&    data);
+    DataReader& number( double&     data);
+    DataReader& boolean(bool&       data);
+    DataReader& string( std::string&data);
+    DataReader& size(   unsigned&   size);
     void        done();
 
     class Impl;
