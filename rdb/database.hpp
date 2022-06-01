@@ -28,6 +28,7 @@
 #include <vector>
 #include <deque>
 #include <sstream>
+#include <memory>
 
 /*
 class Database
@@ -203,7 +204,9 @@ private:
 class DataBuilder
 {
 public:
+    DataBuilder();
     DataBuilder(Type* type);
+    ~DataBuilder();
 
     using   Builder     = DataBuilder;
 
@@ -214,15 +217,13 @@ public:
     Builder&    size(       unsigned            size);
     std::string build();
 
-private:
-    template<typename Type>
-    Type*       pop_type();
+    class Impl;
 
 private:
-    std::ostringstream  m_os;
-    Type*               m_main;
-    std::deque<Type*>   m_type;
+
+    std::unique_ptr<Impl>   m_impl;
 };
+
 
 class Writer
 {

@@ -34,6 +34,229 @@
 
 #include "rapidcsv.h"
 
+
+class DataBuilder::Impl
+{
+public:
+    Impl() {};
+    virtual ~Impl() {};
+
+    virtual void        integer(    int64_t             data) = 0;
+    virtual void        number(     double              data) = 0;
+    virtual void        boolean(    bool                data) = 0;
+    virtual void        string(     std::string const&  data) = 0;
+    virtual void        size(       unsigned            size) = 0;
+    virtual std::string build() = 0;
+};
+
+class DataBuilderPlain
+    : public DataBuilder::Impl
+{
+public:
+    DataBuilderPlain();
+
+    void        integer(    int64_t             data) override;
+    void        number(     double              data) override;
+    void        boolean(    bool                data) override;
+    void        string(     std::string const&  data) override;
+    void        size(       unsigned            size) override;
+    std::string build() override;
+
+private:
+    std::ostringstream  m_os;
+};
+
+class DataBuilderTyped
+    : public DataBuilder::Impl
+{
+public:
+    DataBuilderTyped(Type* type);
+
+    void        integer(    int64_t             data) override;
+    void        number(     double              data) override;
+    void        boolean(    bool                data) override;
+    void        string(     std::string const&  data) override;
+    void        size(       unsigned            size) override;
+    std::string build() override;
+
+private:
+    template<typename Type>
+    Type*       pop_type();
+
+private:
+    std::deque<Type*>   m_type;
+    DataBuilderPlain    m_builder;
+};
+
+DataBuilderTyped::DataBuilderTyped(Type* type)
+{
+    m_type.push_back(type);
+}
+
+template<typename Type>
+Type*           DataBuilderTyped::pop_type()
+{
+    if(m_type.empty())
+        throw   std::runtime_error("wrong data/type");
+
+    if(auto record = dynamic_cast<TypeRecord*>(m_type.front()))
+    {
+        m_type.pop_front();
+
+        for(auto it = record->body().rbegin(); it != record->body().rend(); it ++)
+        {
+            m_type.push_front(it->type);
+        }
+    }
+
+    if(m_type.empty())
+        throw   std::runtime_error("wrong data/type");
+
+    auto    type    = dynamic_cast<Type*>(m_type.front());
+
+    if(type == nullptr)
+        throw   std::runtime_error("wrong data/type");
+
+    m_type.pop_front();
+
+    return type;
+}
+
+void    DataBuilderTyped::integer(    int64_t             data)
+{
+    pop_type<TypeInteger>();
+
+    m_builder.integer(data);
+}
+
+void    DataBuilderTyped::number(     double              data)
+{
+    pop_type<TypeNumber>();
+
+    m_builder.number(data);
+}
+
+void    DataBuilderTyped::boolean(    bool                data)
+{
+    pop_type<TypeBoolean>();
+
+    m_builder.boolean(data);
+}
+
+void    DataBuilderTyped::string(     std::string const&  data)
+{
+    pop_type<TypeString>();
+
+    m_builder.string(data);
+}
+
+void    DataBuilderTyped::size(       unsigned            size)
+{
+    auto*   type    = pop_type<TypeArray>();
+
+    if(type->size != 0 && type->size != size)
+        throw   std::runtime_error("invalid array size");
+
+    m_builder.size(size);
+
+    for(auto i = 0; i < size; i++)
+    {
+        m_type.push_front(type->base);
+    }
+}
+
+std::string     DataBuilderTyped::build()
+{
+    return  m_builder.build();
+}
+
+DataBuilderPlain::DataBuilderPlain()
+{
+}
+
+void    DataBuilderPlain::integer(    int64_t             data)
+{
+    auto    buff    = htonll(data);
+    m_os.write(reinterpret_cast<char const*>(&buff), sizeof(buff));
+}
+
+void    DataBuilderPlain::number(     double              data)
+{
+    auto    buff    = htonll(*reinterpret_cast<uint64_t*>(&data));
+    m_os.write(reinterpret_cast<char const*>(&buff), sizeof(buff));
+}
+
+void    DataBuilderPlain::boolean(    bool                data)
+{
+    m_os.write(reinterpret_cast<char const*>(&data), sizeof(data));
+}
+
+void    DataBuilderPlain::string(     std::string const&  data)
+{
+    auto    size    = htonl(data.size());
+    m_os.write(reinterpret_cast<char const*>(&size), sizeof(size));
+    m_os.write(reinterpret_cast<char const*>(data.data()), data.size());
+}
+
+void    DataBuilderPlain::size(       unsigned            size)
+{
+    auto    buff    = htonl(size);
+    m_os.write(reinterpret_cast<char const*>(&buff), sizeof(buff));
+}
+
+std::string     DataBuilderPlain::build()
+{
+    return  m_os.str();
+}
+
+DataBuilder::DataBuilder()
+    : m_impl(new DataBuilderPlain())
+{
+}
+
+DataBuilder::DataBuilder(Type* type)
+    : m_impl(new DataBuilderTyped(type))
+{
+}
+
+DataBuilder::~DataBuilder() = default;
+
+DataBuilder&    DataBuilder::integer(    int64_t             data)
+{
+    m_impl->integer(data);
+    return *this;
+}
+
+DataBuilder&    DataBuilder::number(     double              data)
+{
+    m_impl->number(data);
+    return *this;
+}
+
+DataBuilder&    DataBuilder::boolean(    bool                data)
+{
+    m_impl->boolean(data);
+    return *this;
+}
+
+DataBuilder&    DataBuilder::string(     std::string const&  data)
+{
+    m_impl->string(data);
+    return *this;
+}
+
+DataBuilder&    DataBuilder::size(       unsigned            size)
+{
+    m_impl->size(size);
+    return *this;
+}
+
+std::string     DataBuilder::build()
+{
+    return  m_impl->build();
+}
+
+
 #if 0
 struct RecordInfo 
 {
@@ -366,104 +589,6 @@ std::ostream&   printHex(std::string const& data)
     return std::cout;
 }
 
-DataBuilder::DataBuilder(Type* type)
-    : m_main(type)
-{
-    m_type.push_back(type);
-}
-
-template<typename Type>
-Type*           DataBuilder::pop_type()
-{
-    if(m_type.empty())
-        throw   std::runtime_error("wrong data/type");
-
-    if(auto record = dynamic_cast<TypeRecord*>(m_type.front()))
-    {
-        m_type.pop_front();
-
-        for(auto it = record->body().rbegin(); it != record->body().rend(); it ++)
-        {
-            m_type.push_front(it->type);
-        }
-    }
-
-    if(m_type.empty())
-        throw   std::runtime_error("wrong data/type");
-
-    auto    type    = dynamic_cast<Type*>(m_type.front());
-
-    if(type == nullptr)
-        throw   std::runtime_error("wrong data/type");
-
-    m_type.pop_front();
-
-    return  type;
-}
-
-DataBuilder&    DataBuilder::integer(    int64_t             data)
-{
-    pop_type<TypeInteger>();
-
-    auto    buff    = htonll(data);
-    m_os.write(reinterpret_cast<char const*>(&buff), sizeof(buff));
-
-    return  *this;
-}
-
-DataBuilder&    DataBuilder::number(     double              data)
-{
-    pop_type<TypeNumber>();
-
-    auto    buff    = htonll(*reinterpret_cast<uint64_t*>(&data));
-    m_os.write(reinterpret_cast<char const*>(&buff), sizeof(buff));
-
-    return  *this;
-}
-
-DataBuilder&    DataBuilder::boolean(    bool                data)
-{
-    pop_type<TypeBoolean>();
-
-    m_os.write(reinterpret_cast<char const*>(&data), sizeof(data));
-
-    return  *this;
-}
-
-DataBuilder&    DataBuilder::string(     std::string const&  data)
-{
-    pop_type<TypeString>();
-
-    auto    size    = htonl(data.size());
-    m_os.write(reinterpret_cast<char const*>(&size), sizeof(size));
-    m_os.write(reinterpret_cast<char const*>(data.data()), data.size());
-    
-    return *this;
-}
-
-DataBuilder&    DataBuilder::size(       unsigned            size)
-{
-    auto*   type    = pop_type<TypeArray>();
-
-    if(type->size != 0 && type->size != size)
-        throw   std::runtime_error("invalid array size");
-
-    auto    buff    = htonl(size);
-    m_os.write(reinterpret_cast<char const*>(&buff), sizeof(buff));
-
-    for(auto i = 0; i < size; i++)
-    {
-        m_type.push_front(type->base);
-    }
-
-    return *this;
-}
-
-std::string     DataBuilder::build()
-{
-    return  m_os.str();
-}
-
 void print(Type* const type)
 {
     std::cout << "{";
@@ -629,7 +754,7 @@ void readCsv(Type* type, std::string name, std::string data)
     {
         std::deque<Type*>       types;
         std::deque<std::string> names;
-        DataBuilder             builder(type);
+        DataBuilder             builder;
 
         types.push_front(type);
         names.push_front(data);
