@@ -98,6 +98,7 @@ add_library(
     core/visitors/rewrite.cpp
     core/antlr2ast.cpp
     core/syntax.cpp
+    core/strings.cpp
     core/module.cpp
     core/utils.cpp
     ${ANTLR4_SRC_FILES_referee_parser}
@@ -122,6 +123,7 @@ target_link_libraries(
 add_executable(
     tests
     test/main.cpp
+    test/strings.cpp
     test/canonic.cpp)
 
 target_link_libraries(
