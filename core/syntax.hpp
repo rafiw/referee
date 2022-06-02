@@ -386,6 +386,20 @@ public:
     std::string const   name;
 };
 
+class ExprConf final
+    : public Visitable<ExprNullary, ExprConf>
+{
+public:
+    ExprConf(std::string name)
+        : Visitable<ExprNullary, ExprConf>()
+        , name(name)
+    {
+    }
+
+public:
+    std::string const   name;
+};
+
 class ExprData final
     : public Visitable<ExprNullary, ExprData>
 {
@@ -433,6 +447,14 @@ class DataReal
 public:
     DataReal(Type* type);
 };
+
+class DataConf
+    : public Visitable<Data, DataConf>
+{
+public:
+    DataConf(Type* type);
+};
+
 
 //  temp data, result of an external function call 
 class DataTemp

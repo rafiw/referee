@@ -37,9 +37,16 @@ public:
 
     void    addType(std::string name, Type* type);
     void    addData(std::string name, Type* data);
+    void    addConf(std::string name, Type* data);
 
     Type*   getType(std::string name);
     Type*   getData(std::string name);
+    Type*   getConf(std::string name);
+
+    bool    hasType(std::string name);
+    bool    hasData(std::string name);
+    bool    hasConf(std::string name);
+
     std::vector<std::string>    getTypeNames();
 
     void    pushContext(std::string name);
@@ -49,5 +56,6 @@ public:
 private:
     std::map<std::string, Type*>    m_name2type;
     std::map<std::string, Type*>    m_name2data;
+    std::map<std::string, Type*>    m_name2conf;
     std::vector<std::string>        m_context;
 };

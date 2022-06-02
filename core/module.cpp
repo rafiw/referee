@@ -54,6 +54,15 @@ void    Module::addData(std::string name, Type* data)
     m_name2data[name]   = data;
 }
 
+void    Module::addConf(std::string name, Type* data)
+{
+    if(m_name2conf.contains(name))
+    {
+        throw std::runtime_error(__PRETTY_FUNCTION__);
+    }
+    m_name2conf[name]   = data;
+}
+
 Type*   Module::getType(std::string name)
 {
     if(!m_name2type.contains(name))
@@ -70,6 +79,30 @@ Type*   Module::getData(std::string name)
         throw std::runtime_error(__PRETTY_FUNCTION__);
     }
     return m_name2data[name];
+}
+
+Type*   Module::getConf(std::string name)
+{
+    if(!m_name2conf.contains(name))
+    {
+        throw std::runtime_error(__PRETTY_FUNCTION__);
+    }
+    return m_name2conf[name];
+}
+
+bool    Module::hasType(std::string name)
+{
+    return m_name2type.contains(name);
+}
+
+bool    Module::hasData(std::string name)
+{
+    return m_name2data.contains(name);
+}
+
+bool    Module::hasConf(std::string name)
+{
+    return m_name2conf.contains(name);
 }
 
 std::vector<std::string>    Module::getTypeNames()

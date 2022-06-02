@@ -34,6 +34,7 @@ statement   : declaraion
 
 declaraion  : declType
             | declData
+            | declConf
             ;
 
 sign        : '+'
@@ -199,24 +200,24 @@ while           : 'while'           ;
 within          : 'within'          ;
 without         : 'without'         ;
 
-number      : integer
-            | floating
-            ;
+number          : integer
+                | floating
+                ;
 
-exprP       : expression ;
-exprS       : expression ;
-exprT       : expression ;
-exprZ       : expression ;
-exprN       : expression ;
+exprP           : expression ;
+exprS           : expression ;
+exprT           : expression ;
+exprZ           : expression ;
+exprN           : expression ;
 
 
-pshead      : globally
-            | before  expression
-            | after   expression
-            | while   expression
-            | between expression and   expression
-            | after   expression until expression
-            ;
+pshead          : globally
+                | before  expression
+                | after   expression
+                | while   expression
+                | between expression and   expression
+                | after   expression until expression
+                ;
 specUniversality        : it is always the case that exprP holds? timeBound                                         
                         ;
 specAbsence             : it is never the case that  exprP holds? timeBound                                         
@@ -309,6 +310,8 @@ typeID      : ID
 dataID      : ID
             ;
 
+confID      : ID
+            ;
 
 itemList    : (ID (',' ID)*)?
             ;
@@ -332,4 +335,7 @@ declType    : 'type' typeID ':' type
             ;
 
 declData    : 'data' dataID ':' type
+            ;
+
+declConf    : 'conf' confID ':' type
             ;

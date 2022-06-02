@@ -131,6 +131,17 @@ Position    Antlr2AST::position(antlr4::ParserRuleContext* rule)
     );
 }
 
+std::any Antlr2AST::visitDeclConf(      referee::refereeParser::DeclConfContext*    ctx)
+{
+    auto    name    = ctx->confID()->getText();
+    auto    type    = ctx->type()->accept(this);
+
+    module->addConf(name, std::any_cast<Type*>(type));
+
+    return nullptr;
+}
+
+
 std::any Antlr2AST::visitDeclData(      referee::refereeParser::DeclDataContext*    ctx)
 {
     auto    name    = ctx->dataID()->getText();
@@ -212,7 +223,8 @@ std::any Antlr2AST::visitExprData(      referee::refereeParser::ExprDataContext*
 
         return  expr;
     }
-    else
+    
+    if(module->hasData(name))
     {
         auto    ctxt    = build<ExprContext>(ctx, "__curr__");
         auto    type    = module->getData(name);
@@ -222,6 +234,19 @@ std::any Antlr2AST::visitExprData(      referee::refereeParser::ExprDataContext*
 
         return expr;
     }
+
+    if(module->hasConf(name))
+    {
+        auto    ctxt    = build<ExprContext>(ctx, "__conf__");
+        auto    type    = module->getConf(name);
+        auto    expr    = static_cast<Expr*>(build<ExprData>(ctx, ctxt, name));
+
+        expr->type(type);
+
+        return expr;
+    }
+
+    throw std::runtime_error(__PRETTY_FUNCTION__);
 }
 
 std::any Antlr2AST::visitExprDiv(       referee::refereeParser::ExprDivContext*     ctx)
@@ -338,9 +363,19 @@ std::any Antlr2AST::visitExprMmbr(      referee::refereeParser::ExprMmbrContext*
     auto ctxt   = dynamic_cast<ExprContext*>(base);
 
     if(ctxt != nullptr)
-        return static_cast<Expr*>(build<ExprData>(ctx, ctxt, name));
+    {
+        if(module->hasData(name))
+            return static_cast<Expr*>(build<ExprData>(ctx, ctxt, name));
+
+        if(module->hasConf(name))
+            throw std::runtime_error(__PRETTY_FUNCTION__);
+            
+        throw std::runtime_error(__PRETTY_FUNCTION__);
+    }
     else
+    {
         return static_cast<Expr*>(build<ExprMmbr>(ctx, base, name));
+    }
 }
 
 std::any Antlr2AST::visitExprMod(       referee::refereeParser::ExprModContext*     ctx)
