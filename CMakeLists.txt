@@ -96,6 +96,7 @@ add_library(
     core/visitors/typecalc.cpp
     core/visitors/printer.cpp
     core/visitors/rewrite.cpp
+    core/visitors/csvHeaders.cpp
     core/antlr2ast.cpp
     core/syntax.cpp
     core/strings.cpp

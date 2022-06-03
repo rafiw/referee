@@ -26,38 +26,8 @@
 
 #include "syntax.hpp"
 
-#include <map>
-#include <set>
-#include <string>
-
-class Module
+class CsvHeaders
 {
 public:
-    Module(std::string name);
-
-    void    addType(std::string name, Type* type);
-    void    addData(std::string name, Type* data);
-    void    addConf(std::string name, Type* data);
-
-    Type*   getType(std::string name);
-    Type*   getData(std::string name);
-    Type*   getConf(std::string name);
-
-    bool    hasType(std::string name);
-    bool    hasData(std::string name);
-    bool    hasConf(std::string name);
-
-    std::vector<std::string>    getTypeNames();
-    std::vector<std::string>    getDataNames();
-    std::vector<std::string>    getConfNames();
-
-    void    pushContext(std::string name);
-    void    popContext();
-    bool    hasContext( std::string name);
-
-private:
-    std::map<std::string, Type*>    m_name2type;
-    std::map<std::string, Type*>    m_name2data;
-    std::map<std::string, Type*>    m_name2conf;
-    std::vector<std::string>        m_context;
+    static std::vector<std::string> make(std::string const& name, Type* base);
 };

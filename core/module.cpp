@@ -117,6 +117,30 @@ std::vector<std::string>    Module::getTypeNames()
     return names;
 }
 
+std::vector<std::string>    Module::getDataNames()
+{
+    std::vector<std::string>    names;
+
+    for(auto iter: m_name2data)
+    {
+        names.push_back(iter.first);
+    }
+
+    return names;
+}
+
+
+std::vector<std::string>    Module::getConfNames()
+{
+    std::vector<std::string>    names;
+
+    for(auto iter: m_name2conf)
+    {
+        names.push_back(iter.first);
+    }
+
+    return names;
+}
 
 void    Module::pushContext(std::string name)
 {

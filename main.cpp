@@ -26,12 +26,14 @@
 #include <string>
 #include <memory>
 #include <map>
+#include <numeric>
 
 #include "visitor.hpp"
 #include "factory.hpp"
 #include "syntax.hpp"
 #include "visitors/canonic.hpp"
 #include "visitors/compile.hpp"
+#include "visitors/csvHeaders.hpp"
 
 #include "antlr4-runtime/antlr4-runtime.h"
 #include "refereeParser.h"
@@ -52,16 +54,34 @@
 
 #include "antlr2ast.hpp"
 
+#include <spdlog/spdlog.h>
+#include <spdlog/fmt/ostr.h>
+
+#include <CLI/App.hpp>
+#include "CLI/Formatter.hpp"
+#include "CLI/Config.hpp"
+
 static std::unique_ptr<llvm::LLVMContext>     TheContext;
 static std::unique_ptr<llvm::Module>          TheModule;
 static std::unique_ptr<llvm::IRBuilder<>>     Builder;
 static std::map<std::string, llvm::Value *>   NamedValues;
 
 
-int main(int argc, const char * argv[]) {
+int main(int argc, char * argv[])
+{
+    CLI::App    app("referee");
+    
+    std::string refFilename = "default";
+    bool        fCsvHeaders = false;
+
+    app.add_option( "--file",       refFilename,    "REF file to parse")
+        ->check(CLI::ExistingFile);
+    app.add_flag(   "--csv-headers",fCsvHeaders,    "Generate CSV headers");
+    
     try {
-        std::string                 filename    = argv[1];
-        std::ifstream               stream(filename);
+        app.parse(argc, argv);
+
+        std::ifstream               stream(refFilename);
 
         antlr4::ANTLRInputStream    input(stream);
         referee::refereeLexer       lexer(&input);
@@ -71,12 +91,43 @@ int main(int argc, const char * argv[]) {
 
         auto*   tree    = parser.program();
         auto*   module  = std::any_cast<Module*>(antlr2ast.visitProgram(tree));
+        
+        for(auto name: module->getTypeNames())
+        {
+            std::cout << "type: " <<  name << std::endl;
+        }
 
+        if(fCsvHeaders)
+        {
+            for(auto name: module->getDataNames())
+            {
+                auto type   = module->getData(name);
+                auto cols   = CsvHeaders::make(name, type);
+
+                auto init   = std::string("__time__");
+                auto headers= std::accumulate(cols.begin(), cols.end(), init, [](std::string a, std::string b) { return a + "," + b; });
+
+                std::cout << headers << std::endl;
+            }
+
+            for(auto name: module->getConfNames())
+            {
+                auto type   = module->getConf(name);
+                auto cols   = CsvHeaders::make(name, type);
+
+                auto init   = cols.front();
+                auto headers= std::accumulate(std::next(cols.begin()), cols.end(), init, [](std::string a, std::string b) { return a + "," + b; });
+
+                std::cout << headers << std::endl;
+            }
+        }
+
+#if 0
         TheContext  = std::make_unique<llvm::LLVMContext>();
-        TheModule   = std::make_unique<llvm::Module>(filename, *TheContext);
+        TheModule   = std::make_unique<llvm::Module>(refFilename, *TheContext);
         Builder     = std::make_unique<llvm::IRBuilder<>>(*TheContext);
 
-        TheModule->setSourceFileName(filename);
+        TheModule->setSourceFileName(refFilename);
 #if 0
         //llvm::StructType::create(llvm::getGlobalContext(), members_array_ref, struct_name, false)
         auto intType            = llvm::IntegerType::get(*TheContext, 32); // 32 bits integer
@@ -98,6 +149,11 @@ int main(int argc, const char * argv[]) {
             Compile::make(TheContext.get(), TheModule.get(), type)->print(llvm::outs());
             std::cout << std::endl;
         }
+#endif
+    }
+    catch (const CLI::ParseError &e)
+    {
+        return app.exit(e);
     }
     catch(Exception& e)
     {

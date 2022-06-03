@@ -495,14 +495,15 @@ std::any Antlr2AST::visitStatement(     referee::refereeParser::StatementContext
     if (ctx->expression())
     {
         auto    expr    = std::any_cast<Expr*>(ctx->expression()->accept(this));
-
         TypeCalc::make(expr);
+/*
         std::cout << Color::Modifier(Color::FG_GREEN);
         Printer::output(std::cout, expr);
         std::cout << Color::Modifier(Color::FG_DEFAULT);
 
         auto    temp    = Rewrite::make(Canonic::make(expr));
         Printer::output(std::cout, temp);
+*/
     }
 
     if (ctx->declaraion())
@@ -513,13 +514,14 @@ std::any Antlr2AST::visitStatement(     referee::refereeParser::StatementContext
     if(ctx->specPattern())
     {
         auto    spec    = std::any_cast<Spec*>(ctx->specPattern()->accept(this));
-        
+/*        
         std::cout << Color::Modifier(Color::FG_GREEN);
         Printer::output(std::cout, spec);
         std::cout << Color::Modifier(Color::FG_DEFAULT);
 
         auto    temp    = Rewrite::make(spec);
         Printer::output(std::cout, temp);
+*/
     }
 
     return nullptr;
