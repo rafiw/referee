@@ -553,6 +553,14 @@ std::any Antlr2AST::visitTypeAlias(     referee::refereeParser::TypeAliasContext
     return module->getType(name);
 }
 
+std::any Antlr2AST::visitTypeArray(     referee::refereeParser::TypeArrayContext*   ctx)
+{
+    auto size = std::any_cast<Expr*>(ctx->size()->integer()->accept(this));
+    auto type = std::any_cast<Type*>(ctx->type()->accept(this));
+
+    return static_cast<Type*>(Factory<TypeArray>::create(type, dynamic_cast<ExprConstInteger*>(size)->value));
+}
+
 std::any Antlr2AST::visitTypeEnum(      referee::refereeParser::TypeEnumContext*    ctx)
 {
     std::vector<std::string>    items;

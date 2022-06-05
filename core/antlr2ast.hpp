@@ -88,6 +88,7 @@ public:
     std::any visitTimeLower(    referee::refereeParser::TimeLowerContext*   ctx) override;
     std::any visitTimeUpper(    referee::refereeParser::TimeUpperContext*   ctx) override;
     std::any visitTypeAlias(    referee::refereeParser::TypeAliasContext*   ctx) override;
+    std::any visitTypeArray(    referee::refereeParser::TypeArrayContext*   ctx) override;
     std::any visitTypeEnum(     referee::refereeParser::TypeEnumContext*    ctx) override;
     std::any visitTypeStruct(   referee::refereeParser::TypeStructContext*  ctx) override;
 

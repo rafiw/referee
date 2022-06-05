@@ -60,22 +60,43 @@ void    CsvHeadersImpl::visit(TypeStruct*   type)
 
 void    CsvHeadersImpl::visit(TypeArray*    type)
 {
-    for(auto i = 0; i < type->size; i++)
+    std::vector<unsigned>   sizes;
+    Type* curr  = type;
+
+    while(auto array = dynamic_cast<TypeArray*>(curr))
     {
-        auto name       = "[" + std::to_string(i) + "]";
-        auto headers    = CsvHeaders::make(name, type->type);
-    
-        for(auto header: headers)
+        sizes.push_back(array->size);
+        curr    = array->type;
+    }
+
+    auto headers    = CsvHeaders::make("", curr);
+    for(auto size: sizes)
+    {
+        m_headers.push_back("#size");
+        for(auto i = 0; i < size; i++)
         {
-            m_headers.push_back(m_name + header);
+            auto index  = "[" + std::to_string(i) + "]";
+
+            for(auto header: headers)
+            {
+                m_headers.push_back(index + header);
+            }
         }
+
+        headers     = std::move(m_headers);
+        m_headers.clear();
+    }
+
+    for(auto header: headers)
+    {
+        m_headers.push_back(m_name + header);
     }
 }
 
 std::vector<std::string>    CsvHeadersImpl::make(std::string const& name, Type* type)
 {
     m_name = name;
-    
+
     type->accept(*this);
 
     return  m_headers;

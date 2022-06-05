@@ -328,7 +328,7 @@ size        : integer
 type        : 'struct' '{' mmbrList '}'                         # TypeStruct
             | 'enum'   '{' itemList '}'                         # TypeEnum
             | typeID                                            # TypeAlias
-            | typeID  ('[' size     ']')+                       # TypeArray              
+            | type     '[' size     ']'                         # TypeArray              
             ;
 
 declType    : 'type' typeID ':' type
