@@ -1,3 +1,8 @@
+type XYZ: struct {
+    a: integer;
+    b: number;
+};
+
 type ABC: struct {
     a: integer;
     b: number;
@@ -5,12 +10,9 @@ type ABC: struct {
     d: struct {
         x: integer;
     };
+    x: XYZ[1][2];
 };
 
-type XYZ: struct {
-    a: integer;
-    b: number;
-};
 
 conf xyz: XYZ;
 

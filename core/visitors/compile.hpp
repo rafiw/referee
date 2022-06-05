@@ -43,6 +43,6 @@
 class Compile
 {
 public:
-    static llvm::Type*  make(llvm::LLVMContext* context, llvm::Module* module, Type* type);
-    static void make(llvm::LLVMContext* context, llvm::Module* module, Expr* expr);
+    static llvm::Type*  make(llvm::LLVMContext* context, llvm::Module* module, Type* type, std::string name);
+    static void         make(llvm::LLVMContext* context, llvm::Module* module, Expr* expr);
 };

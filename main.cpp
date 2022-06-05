@@ -51,6 +51,7 @@
 #include "llvm/IR/Module.h"
 #include "llvm/IR/Type.h"
 #include "llvm/IR/Verifier.h"
+#include "llvm/IR/TypeFinder.h"
 
 #include "antlr2ast.hpp"
 
@@ -73,10 +74,12 @@ int main(int argc, char * argv[])
     
     std::string refFilename = "default";
     bool        fCsvHeaders = false;
+    bool        fLlvmTypes  = false;
 
     app.add_option( "--file",       refFilename,    "REF file to parse")
         ->check(CLI::ExistingFile);
     app.add_flag(   "--csv-headers",fCsvHeaders,    "Generate CSV headers");
+    app.add_flag(   "--llvm-types", fLlvmTypes,     "Dump LLVM types");
     
     try {
         app.parse(argc, argv);
@@ -121,6 +124,37 @@ int main(int argc, char * argv[])
                 std::cout << headers << std::endl;
             }
         }
+
+        if(fLlvmTypes)
+        {
+            TheContext  = std::make_unique<llvm::LLVMContext>();
+            TheModule   = std::make_unique<llvm::Module>(refFilename, *TheContext);
+            Builder     = std::make_unique<llvm::IRBuilder<>>(*TheContext);       
+
+            TheModule->setSourceFileName(refFilename);
+
+            for(auto name: module->getDataNames())
+            {
+                auto type = module->getData(name);
+                TheModule->getOrInsertGlobal(name, Compile::make(TheContext.get(), TheModule.get(), type, name));
+            }
+/*
+            for(auto name: module->getTypeNames())
+            {
+                auto    type    = module->getType(name);
+                Compile::make(TheContext.get(), TheModule.get(), type, name)->print(llvm::outs());
+                std::cout << std::endl;
+            } 
+            std::cout << std::endl;
+            */
+
+            llvm::TypeFinder    StructTypes;
+            StructTypes.run(*TheModule.get(), false);
+
+            for (auto *STy : StructTypes)
+                STy->dump();//print(llvm::outs());
+                std::cout << std::endl;
+            }
 
 #if 0
         TheContext  = std::make_unique<llvm::LLVMContext>();

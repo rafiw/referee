@@ -37,21 +37,24 @@ struct CompileTypeImpl
             llvm::LLVMContext*  context, 
             llvm::Module*       module);
 
-    llvm::Type* make(Type*  type);
+    llvm::Type* make(Type* type, std::string name);
 
-    void    visit(TypeInteger*          expr) override;
-    void    visit(TypeNumber*           expr) override;
-    void    visit(TypeString*           expr) override;
-    void    visit(TypeBoolean*          expr) override;
-    void    visit(TypeStruct*           expr) override;
-    void    visit(TypeEnum*             expr) override;
-    void    visit(TypeArray*            expr) override;
+    void    visit(TypeInteger*          type) override;
+    void    visit(TypeNumber*           type) override;
+    void    visit(TypeString*           type) override;
+    void    visit(TypeBoolean*          type) override;
+    void    visit(TypeStruct*           type) override;
+    void    visit(TypeEnum*             type) override;
+    void    visit(TypeArray*            type) override;
 
-    llvm::Type*         type    = nullptr;
+    llvm::Type*         m_type  = nullptr;
+    std::string         m_name;
 
 private:
     llvm::LLVMContext*  m_context;
     llvm::Module*       m_module;
+    std::unique_ptr<llvm::IRBuilder<>>
+                        m_builder;
 };
 
 
@@ -60,81 +63,75 @@ CompileTypeImpl::CompileTypeImpl(
             llvm::Module*       module)
     : m_context(context)
     , m_module(module)
+    , m_builder(std::make_unique<llvm::IRBuilder<>>(*m_context))
 {
 }
 
-void    CompileTypeImpl::visit(TypeInteger*          expr)
+void    CompileTypeImpl::visit(TypeInteger*          type)
 {
-    auto    builder = std::make_unique<llvm::IRBuilder<>>(*m_context);
-
-    type    = builder->getInt64Ty();
+    m_type  = m_builder->getInt64Ty();
 }
 
-void    CompileTypeImpl::visit(TypeNumber*           expr)
+void    CompileTypeImpl::visit(TypeNumber*           type)
 {
-    auto    builder = std::make_unique<llvm::IRBuilder<>>(*m_context);
-
-
-    type    = builder->getDoubleTy();
+    m_type  = m_builder->getDoubleTy();
 }
 
-void    CompileTypeImpl::visit(TypeString*           expr)
+void    CompileTypeImpl::visit(TypeString*           type)
 {
-    auto    builder = std::make_unique<llvm::IRBuilder<>>(*m_context);
-
-
-    type    = builder->getInt8PtrTy();
+    m_type  = m_builder->getInt8PtrTy();
 }
 
-void    CompileTypeImpl::visit(TypeBoolean*          expr)
+void    CompileTypeImpl::visit(TypeBoolean*          type)
 {
-    auto    builder = std::make_unique<llvm::IRBuilder<>>(*m_context);
-
-    type    = builder->getInt8Ty();
+    m_type  = m_builder->getInt8Ty();
 }
 
-void    CompileTypeImpl::visit(TypeStruct*           expr)
+void    CompileTypeImpl::visit(TypeStruct*           type)
 {
-    auto    builder = std::make_unique<llvm::IRBuilder<>>(*m_context);
     std::vector<llvm::Type*>    elements;
     
-    for(auto member: expr->members)
+    for(auto member: type->members)
     {
-        elements.push_back(Compile::make(m_context, m_module, member.data));
+        elements.push_back(Compile::make(m_context, m_module, member.data, m_name + "::" + member.name));
     }
-    type    = llvm::StructType::create(elements);
+    m_type  = llvm::StructType::create(*m_context, elements, m_name);
 }
 
-void    CompileTypeImpl::visit(TypeEnum*             expr)
+void    CompileTypeImpl::visit(TypeEnum*             type)
 {
-    auto    builder = std::make_unique<llvm::IRBuilder<>>(*m_context);
-
-    type    = builder->getInt8Ty();
+    m_type  = m_builder->getInt8Ty();
 }
 
-void    CompileTypeImpl::visit(TypeArray*            expr)
+void    CompileTypeImpl::visit(TypeArray*            type)
 {
-    auto    builder = std::make_unique<llvm::IRBuilder<>>(*m_context);
+    std::vector<llvm::Type*>    elements;
 
-    type    = builder->getInt8Ty();
+    elements.push_back(m_builder->getInt16Ty());
+    auto    base    = Compile::make(m_context, m_module, type->type, m_name + "[]");
+    elements.push_back(llvm::PointerType::get(base, 0));
+
+    m_type  = llvm::StructType::create(*m_context, elements, m_name);
 }
 
 
-llvm::Type* CompileTypeImpl::make(Type*  type)
+llvm::Type* CompileTypeImpl::make(Type*  type, std::string name)
 {
+    m_name = name;
+    
     type->accept(*this);
 
-    return  this->type;
+    return  this->m_type;
 }
 
-llvm::Type* Compile::make(llvm::LLVMContext* context, llvm::Module* module, Type* type)
+llvm::Type* Compile::make(llvm::LLVMContext* context, llvm::Module* module, Type* type, std::string name)
 {
     CompileTypeImpl impl(context, module);
 
-    return  impl.make(type);
+    return impl.make(type, name);
 }
 
-void Compile::make(llvm::LLVMContext* theContext, llvm::Module* theModule, Expr* expr)
+void Compile::make(llvm::LLVMContext* theContext, llvm::Module* theModule, Expr* type)
 {
 
 }

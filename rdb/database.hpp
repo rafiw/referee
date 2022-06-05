@@ -256,12 +256,12 @@ public:
 
     uint8_t declType(  Type*               type);
 
-    uint8_t declProp(   uint8_t             type,
+    uint8_t declConf(   uint8_t             type,
                         std::string         name);
     void    pushData(   uint8_t             prop,
                         std::string const&  data);
                         
-    uint8_t declFunc(   uint8_t             type,
+    uint8_t declProp(   uint8_t             type,
                         std::string         name);
 
     void    pushData(   uint8_t             func,

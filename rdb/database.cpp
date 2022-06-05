@@ -1186,7 +1186,7 @@ uint8_t Writer::declType(   Type*               type)
     return  0;
 }
 
-uint8_t Writer::declProp(   uint8_t             type,
+uint8_t Writer::declConf(   uint8_t             type,
                             std::string         name)
 {
     m_props.push_back(std::make_pair(name, type));
@@ -1204,7 +1204,7 @@ void    Writer::pushData(   uint8_t             prop,
     record(INFO(PUSH_PROP, prop), data);
 }
                     
-uint8_t Writer::declFunc(   uint8_t             type,
+uint8_t Writer::declProp(   uint8_t             type,
                             std::string         name)
 {
     uint32_t    info;
@@ -1358,7 +1358,7 @@ int main(int argc, char* argv[])
         Writer writer;
         writer.open("xyw.rdb");
         auto    typeID  = writer.declType(type);
-        auto    funcID  = writer.declFunc(typeID, "data");
+        auto    funcID  = writer.declProp(typeID, "data");
         writer.pushData(funcID, 1, data);
         writer.close();
 
