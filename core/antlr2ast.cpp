@@ -227,7 +227,7 @@ std::any Antlr2AST::visitExprData(      referee::refereeParser::ExprDataContext*
     if(module->hasData(name))
     {
         auto    ctxt    = build<ExprContext>(ctx, "__curr__");
-        auto    type    = module->getData(name);
+        auto    type    = module->getProp(name);
         auto    expr    = static_cast<Expr*>(build<ExprData>(ctx, ctxt, name));
 
         expr->type(type);
@@ -495,7 +495,10 @@ std::any Antlr2AST::visitStatement(     referee::refereeParser::StatementContext
     if (ctx->expression())
     {
         auto    expr    = std::any_cast<Expr*>(ctx->expression()->accept(this));
+        
         TypeCalc::make(expr);
+
+        module->addExpr(expr);
 /*
         std::cout << Color::Modifier(Color::FG_GREEN);
         Printer::output(std::cout, expr);

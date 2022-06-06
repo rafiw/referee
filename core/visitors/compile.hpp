@@ -25,6 +25,7 @@
 #pragma once
 
 #include "../syntax.hpp"
+#include "../module.hpp"
 
 #include "llvm/ADT/APFloat.h"
 #include "llvm/ADT/STLExtras.h"
@@ -44,5 +45,6 @@ class Compile
 {
 public:
     static llvm::Type*  make(llvm::LLVMContext* context, llvm::Module* module, Type* type, std::string name);
-    static void         make(llvm::LLVMContext* context, llvm::Module* module, Expr* expr);
+    static llvm::Value* make(llvm::LLVMContext* context, llvm::Module* module, Expr* expr);
+    static void         make(llvm::LLVMContext* context, llvm::Module* module, Module* mod);
 };

@@ -72,7 +72,7 @@ Type*   Module::getType(std::string name)
     return m_name2type[name];
 }
 
-Type*   Module::getData(std::string name)
+Type*   Module::getProp(std::string name)
 {
     if(!m_name2data.contains(name))
     {
@@ -117,7 +117,7 @@ std::vector<std::string>    Module::getTypeNames()
     return names;
 }
 
-std::vector<std::string>    Module::getDataNames()
+std::vector<std::string>    Module::getPropNames()
 {
     std::vector<std::string>    names;
 
@@ -155,4 +155,14 @@ void    Module::popContext()
 bool    Module::hasContext(std::string name)
 {
     return std::find(m_context.begin(), m_context.end(), name) != m_context.end();
+}
+
+void    Module::addExpr(    Expr*   expr)
+{
+    m_exprs.push_back(expr);
+}
+
+std::vector<Expr*> const&   Module::getExprs()
+{
+    return m_exprs;
 }

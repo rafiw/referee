@@ -72,7 +72,12 @@ void    CsvHeadersImpl::visit(TypeArray*    type)
     auto headers    = CsvHeaders::make("", curr);
     for(auto size: sizes)
     {
-        m_headers.push_back("#size");
+        if(size == 0)
+        {
+            m_headers.push_back("#size");
+            size = 1;
+        }
+        
         for(auto i = 0; i < size; i++)
         {
             auto index  = "[" + std::to_string(i) + "]";

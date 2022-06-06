@@ -140,7 +140,7 @@ void    NegatedImpl::visit(ExprSw*     expr) {m_negated = Factory<ExprTs>::creat
 void    NegatedImpl::visit(ExprTs*     expr) {m_negated = Factory<ExprSw>::create(expr->time, negated(expr->lhs), negated(expr->rhs));}
 void    NegatedImpl::visit(ExprTw*     expr) {m_negated = Factory<ExprSs>::create(expr->time, negated(expr->lhs), negated(expr->rhs));}
 
-void    NegatedImpl::visit(ExprParen*  expr) {m_negated = Factory<ExprParen>::create(negated(expr->arg));}
+void    NegatedImpl::visit(ExprParen*  expr) {m_negated = negated(expr->arg);}
 
 Expr*   NegatedImpl::negated(Expr* expr)
 {

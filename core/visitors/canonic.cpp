@@ -92,7 +92,7 @@ struct CanonicImpl
 };
 
 void    CanonicImpl::visit(Expr*        expr) {m_canonic = expr;}
-void    CanonicImpl::visit(ExprParen*   expr) {m_canonic = Factory<ExprParen>::create(canonic(expr->arg));}
+void    CanonicImpl::visit(ExprParen*   expr) {m_canonic = canonic(expr->arg);}
 void    CanonicImpl::visit(ExprConstBoolean*    expr) {m_canonic = expr;}
 void    CanonicImpl::visit(ExprAt*      expr) {m_canonic = Factory<ExprAt>::create(expr->name, canonic(expr->arg));}
 void    CanonicImpl::visit(ExprNot*     expr) {m_canonic = negated(expr->arg);}

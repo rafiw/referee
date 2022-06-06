@@ -40,7 +40,7 @@ public:
     void    addConf(std::string name, Type* data);
 
     Type*   getType(std::string name);
-    Type*   getData(std::string name);
+    Type*   getProp(std::string name);
     Type*   getConf(std::string name);
 
     bool    hasType(std::string name);
@@ -48,16 +48,20 @@ public:
     bool    hasConf(std::string name);
 
     std::vector<std::string>    getTypeNames();
-    std::vector<std::string>    getDataNames();
+    std::vector<std::string>    getPropNames();
     std::vector<std::string>    getConfNames();
 
     void    pushContext(std::string name);
     void    popContext();
     bool    hasContext( std::string name);
 
+    void    addExpr(    Expr*   expr);
+    std::vector<Expr*> const&   getExprs();
+
 private:
     std::map<std::string, Type*>    m_name2type;
     std::map<std::string, Type*>    m_name2data;
     std::map<std::string, Type*>    m_name2conf;
+    std::vector<Expr*>              m_exprs;
     std::vector<std::string>        m_context;
 };

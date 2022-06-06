@@ -102,9 +102,9 @@ int main(int argc, char * argv[])
 
         if(fCsvHeaders)
         {
-            for(auto name: module->getDataNames())
+            for(auto name: module->getPropNames())
             {
-                auto type   = module->getData(name);
+                auto type   = module->getProp(name);
                 auto cols   = CsvHeaders::make(name, type);
 
                 auto init   = std::string("__time__");
@@ -133,11 +133,14 @@ int main(int argc, char * argv[])
 
             TheModule->setSourceFileName(refFilename);
 
-            for(auto name: module->getDataNames())
+            Compile::make(TheContext.get(), TheModule.get(), module);
+/*
+            for(auto name: module->getPropNames())
             {
-                auto type = module->getData(name);
+                auto type = module->getProp(name);
                 TheModule->getOrInsertGlobal(name, Compile::make(TheContext.get(), TheModule.get(), type, name));
             }
+            */
 /*
             for(auto name: module->getTypeNames())
             {
@@ -155,6 +158,8 @@ int main(int argc, char * argv[])
                 STy->dump();//print(llvm::outs());
                 std::cout << std::endl;
             }
+
+            TheModule->dump();
 
 #if 0
         TheContext  = std::make_unique<llvm::LLVMContext>();

@@ -90,7 +90,7 @@ TypeContext::TypeContext(Module* module)
 
 Type*   TypeContext::member(std::string member)
 {
-    return  _module->getData(member);
+    return  _module->getProp(member);
 }
 
 TypeStruct::TypeStruct(std::vector<Named<Type>> members)
