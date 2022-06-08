@@ -43,15 +43,17 @@ void    Module::addType(std::string name, Type* type)
         throw std::runtime_error(__PRETTY_FUNCTION__);
     }
     m_name2type[name]   = type;
+    m_typeNames.push_back(name);
 }
 
-void    Module::addData(std::string name, Type* data)
+void    Module::addProp(std::string name, Type* data)
 {
     if(m_name2data.contains(name))
     {
         throw std::runtime_error(__PRETTY_FUNCTION__);
     }
     m_name2data[name]   = data;
+    m_propNames.push_back(name);
 }
 
 void    Module::addConf(std::string name, Type* data)
@@ -61,6 +63,7 @@ void    Module::addConf(std::string name, Type* data)
         throw std::runtime_error(__PRETTY_FUNCTION__);
     }
     m_name2conf[name]   = data;
+    m_confNames.push_back(name);
 }
 
 Type*   Module::getType(std::string name)
@@ -103,43 +106,6 @@ bool    Module::hasData(std::string name)
 bool    Module::hasConf(std::string name)
 {
     return m_name2conf.contains(name);
-}
-
-std::vector<std::string>    Module::getTypeNames()
-{
-    std::vector<std::string>    names;
-
-    for(auto iter: m_name2type)
-    {
-        names.push_back(iter.first);
-    }
-
-    return names;
-}
-
-std::vector<std::string>    Module::getPropNames()
-{
-    std::vector<std::string>    names;
-
-    for(auto iter: m_name2data)
-    {
-        names.push_back(iter.first);
-    }
-
-    return names;
-}
-
-
-std::vector<std::string>    Module::getConfNames()
-{
-    std::vector<std::string>    names;
-
-    for(auto iter: m_name2conf)
-    {
-        names.push_back(iter.first);
-    }
-
-    return names;
 }
 
 void    Module::pushContext(std::string name)

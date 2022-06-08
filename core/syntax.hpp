@@ -38,12 +38,12 @@ class Base
 public:
     virtual ~Base() = default;
 
-    Position    where()     {return _where;}
+    Position    where()     {return m_where;}
     void        where(Position where)
-                            {_where = where;}
+                            {m_where = where;}
 
 private:
-    Position    _where;
+    Position    m_where;
 }; 
 
 class Exception
@@ -84,7 +84,8 @@ class TypeComposite
     : public Visitable<Type, TypePrimitive>
 {
 public:
-    virtual Type*   member(std::string name) = 0;
+    virtual Type*       member(std::string name) = 0;
+    virtual unsigned    index(std::string name) = 0;
 };
 
 class TypeVoid    : public Visitable<TypePrimitive, TypeVoid> {};
@@ -113,10 +114,11 @@ class TypeContext
 public:
     TypeContext(Module* module);
 
-    Type*   member(std::string name) override;
+    Type*       member(std::string name) override;
+    unsigned    index(std::string name) override;
 
 private:
-    Module* const   _module;
+    Module* const   m_module;
 };
 
 class TypeStruct
@@ -127,10 +129,12 @@ public:
 
     std::vector<Named<Type>>        members;
 
-    Type*   member(std::string name) override;
+    Type*       member(std::string name) override;
+    unsigned    index(std::string name) override;
 
 private:
-    std::map<std::string, Type*>    _name2type;
+    std::map<std::string, Type*>    m_name2type;
+    std::map<std::string, unsigned> m_name2indx;
 };
 
 class TypeArray
@@ -149,9 +153,12 @@ class   TypeEnum
 public:
     TypeEnum(std::vector<std::string>   items);
 
-    Type*   member(std::string name) override;
+    Type*       member(std::string name) override;
+    unsigned    index(std::string name) override;
 
     std::vector<std::string> const  items;
+private:
+    std::map<std::string, unsigned> m_name2indx;
 };   
 
 
@@ -161,11 +168,11 @@ class Expr
 public:
     virtual bool is_temporal() {return false;}
 
-    Type*   type()              {return _type;}
-    void    type(Type* type)    {_type = type;}
+    Type*   type()              {return m_type;}
+    void    type(Type* type)    {m_type = type;}
 
 private:
-    Type*       _type   = nullptr;
+    Type*   m_type  = nullptr;
 };
 
 class   Time

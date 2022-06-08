@@ -147,7 +147,7 @@ std::any Antlr2AST::visitDeclData(      referee::refereeParser::DeclDataContext*
     auto    name    = ctx->dataID()->getText();
     auto    type    = ctx->type()->accept(this);
 
-    module->addData(name, std::any_cast<Type*>(type));
+    module->addProp(name, std::any_cast<Type*>(type));
 
     return nullptr;
 }
@@ -230,6 +230,7 @@ std::any Antlr2AST::visitExprData(      referee::refereeParser::ExprDataContext*
         auto    type    = module->getProp(name);
         auto    expr    = static_cast<Expr*>(build<ExprData>(ctx, ctxt, name));
 
+        ctxt->type(Factory<TypeContext>::create(module));
         expr->type(type);
 
         return expr;
@@ -496,7 +497,7 @@ std::any Antlr2AST::visitStatement(     referee::refereeParser::StatementContext
     {
         auto    expr    = std::any_cast<Expr*>(ctx->expression()->accept(this));
         
-        TypeCalc::make(expr);
+        TypeCalc::make(module, expr);
 
         module->addExpr(expr);
 /*

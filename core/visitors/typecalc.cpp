@@ -32,6 +32,7 @@ struct TypeCalcImpl
              , ExprConstInteger
              , ExprConstNumber
              , ExprConstString
+             , ExprContext
              , ExprParen
              , ExprData
              , ExprMmbr
@@ -57,6 +58,11 @@ struct TypeCalcImpl
              , Time
              , ExprAt>
 {
+    TypeCalcImpl(Module* module)
+        : m_module(module)
+    {
+    }
+    
     Type*   type    = nullptr;
 
     Type*   make(Expr*          expr);
@@ -68,6 +74,7 @@ struct TypeCalcImpl
     void    visit(ExprConstInteger*     expr) override;
     void    visit(ExprConstNumber*      expr) override;
     void    visit(ExprConstString*      expr) override;
+    void    visit(ExprContext*          expr) override;
     void    visit(ExprData*             expr) override;
     void    visit(ExprDiv*              expr) override;
     void    visit(ExprEq*               expr) override;
@@ -107,12 +114,15 @@ struct TypeCalcImpl
     Type*   typeNumber  = Factory<TypeNumber>::create();
     Type*   typeString  = Factory<TypeString>::create();
     Type*   typeVoid    = Factory<TypeVoid>::create();
+
+private:
+    Module* m_module;
 };
 
 void    TypeCalcImpl::visit(ExprAdd*                expr)
 {
-    auto    lhs = TypeCalc::make(expr->lhs);
-    auto    rhs = TypeCalc::make(expr->rhs);
+    auto    lhs = make(expr->lhs);
+    auto    rhs = make(expr->rhs);
 
     if(lhs != typeInteger && lhs != typeNumber && rhs != typeInteger && rhs != typeNumber)
     {
@@ -132,7 +142,7 @@ void    TypeCalcImpl::visit(ExprAnd*                expr)
 
 void    TypeCalcImpl::visit(ExprAt*                 expr)
 {
-    type = TypeCalc::make(expr->arg);
+    type = make(expr->arg);
 }
 
 void    TypeCalcImpl::visit(ExprConstBoolean*       expr)
@@ -155,10 +165,15 @@ void    TypeCalcImpl::visit(ExprConstString*        expr)
     type = Factory<TypeString>::create();
 }
 
+void    TypeCalcImpl::visit(ExprContext*            expr)
+{
+    type = Factory<TypeContext>::create(m_module);
+}
+
 void    TypeCalcImpl::visit(ExprDiv*                expr)
 {
-    auto    lhs = TypeCalc::make(expr->lhs);
-    auto    rhs = TypeCalc::make(expr->rhs);
+    auto    lhs = make(expr->lhs);
+    auto    rhs = make(expr->rhs);
 
     if(lhs != typeInteger && lhs != typeNumber && rhs != typeInteger && rhs != typeNumber)
     {
@@ -208,7 +223,7 @@ void    TypeCalcImpl::visit(ExprLt*                 expr)
 
 void    TypeCalcImpl::visit(ExprMmbr*               expr)
 {
-    auto    base    = dynamic_cast<TypeComposite*>(TypeCalc::make(expr->arg));
+    auto    base    = dynamic_cast<TypeComposite*>(make(expr->arg));
 
     if(base == nullptr)
     {
@@ -225,7 +240,7 @@ void    TypeCalcImpl::visit(ExprMmbr*               expr)
 
 void    TypeCalcImpl::visit(ExprData*               expr)
 {
-    auto    ctxt    = dynamic_cast<TypeComposite*>(TypeCalc::make(expr->ctxt));
+    auto    ctxt    = dynamic_cast<TypeComposite*>(make(expr->ctxt));
 
     if(ctxt == nullptr)
     {
@@ -240,12 +255,10 @@ void    TypeCalcImpl::visit(ExprData*               expr)
     }
 }
 
-
-
 void    TypeCalcImpl::visit(ExprMod*                expr)
 {
-    auto    lhs = TypeCalc::make(expr->lhs);
-    auto    rhs = TypeCalc::make(expr->rhs);
+    auto    lhs = make(expr->lhs);
+    auto    rhs = make(expr->rhs);
 
     if(lhs != typeInteger && rhs != typeInteger)
     {
@@ -258,8 +271,8 @@ void    TypeCalcImpl::visit(ExprMod*                expr)
 
 void    TypeCalcImpl::visit(ExprMul*                expr)
 {
-    auto    lhs = TypeCalc::make(expr->lhs);
-    auto    rhs = TypeCalc::make(expr->rhs);
+    auto    lhs = make(expr->lhs);
+    auto    rhs = make(expr->rhs);
 
     if(lhs != typeInteger && lhs != typeNumber && rhs != typeInteger && rhs != typeNumber)
     {
@@ -289,13 +302,13 @@ void    TypeCalcImpl::visit(ExprOr*                 expr)
 
 void    TypeCalcImpl::visit(ExprParen*              expr)
 {
-    type    = TypeCalc::make(expr->arg);
+    type    = make(expr->arg);
 }
 
 void    TypeCalcImpl::visit(ExprSub*                expr)
 {
-    auto    lhs = TypeCalc::make(expr->lhs);
-    auto    rhs = TypeCalc::make(expr->rhs);
+    auto    lhs = make(expr->lhs);
+    auto    rhs = make(expr->rhs);
 
     if(lhs != typeInteger && lhs != typeNumber && rhs != typeInteger && rhs != typeNumber)
     {
@@ -317,7 +330,7 @@ void    TypeCalcImpl::visit(Temporal<ExprBinary>*   expr)
 {
     if(expr->time)
     {
-        TypeCalc::make(expr->time);
+        make(expr->time);
     }
 
     type = boolBool2Bool(expr, expr->lhs, expr->rhs);
@@ -327,7 +340,7 @@ void    TypeCalcImpl::visit(Temporal<ExprUnary>*    expr)
 {
     if(expr->time)
     {
-        TypeCalc::make(expr->time);
+        make(expr->time);
     }
 
     type = bool2Bool(expr, expr->arg);
@@ -354,8 +367,8 @@ Type*   TypeCalcImpl::boolBool2Bool(
                     Expr*       lhs,
                     Expr*       rhs)
 {
-    auto    typeLhs = TypeCalc::make(lhs);    
-    auto    typeRhs = TypeCalc::make(rhs);
+    auto    typeLhs = make(lhs);    
+    auto    typeRhs = make(rhs);
 
     if(typeLhs != typeBoolean || typeRhs != typeBoolean)
     {
@@ -369,7 +382,7 @@ Type*   TypeCalcImpl::bool2Bool(
                     Expr*       expr,
                     Expr*       arg)
 {
-    auto    typeArg = TypeCalc::make(arg);    
+    auto    typeArg = make(arg);    
 
     if(typeArg != typeBoolean)
     {
@@ -384,8 +397,8 @@ Type*   TypeCalcImpl::nmbrNmbr2Bool(
                     Expr*       lhs,
                     Expr*       rhs)
 {
-    auto    typeLhs = TypeCalc::make(lhs);    
-    auto    typeRhs = TypeCalc::make(rhs);
+    auto    typeLhs = make(lhs);    
+    auto    typeRhs = make(rhs);
 
     if(     (typeLhs == typeInteger || typeLhs == typeNumber)
         &&  (typeRhs == typeInteger || typeRhs == typeNumber)
@@ -403,17 +416,21 @@ Type*   TypeCalcImpl::make(Expr* expr)
 {
     if(expr->type() == nullptr)
     {
+        auto    save    = type;
+
         type = nullptr;
         expr->accept(*this);
         expr->type(type);
+    
+        type    = save;
     }
     
     return expr->type();
 }
 
-Type*   TypeCalc::make(Expr* expr)
+Type*   TypeCalc::make(Module* module, Expr* expr)
 {
-    TypeCalcImpl impl;
+    TypeCalcImpl impl(module);
 
     return  impl.make(expr);
 }

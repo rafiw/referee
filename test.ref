@@ -20,7 +20,8 @@ data abc: ABC;
 data alpha: boolean;
 data beta: boolean;
 
-abc.a == 2;
+abc.a + 12 == 2;
+abc.d.x == 1;
 
 #x@(x.abc.a != 2);
 
@@ -44,6 +45,7 @@ data alarm:     State;
 data door:      Door;
 
 #F(button.DEPRESSED);
+button.DEPRESSED;
 
 before button.DEPRESSED, lock.ON eventually holds after 100 milliseconds;   
 globally, it is never the case that door.CLOSED && alarm.ON;    

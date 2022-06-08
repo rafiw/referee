@@ -84,33 +84,62 @@ TimeMax::TimeMax(Expr* hi)
 }
 
 TypeContext::TypeContext(Module* module)
-    : _module(module)
+    : m_module(module)
 {
 }
 
 Type*   TypeContext::member(std::string member)
 {
-    return  _module->getProp(member);
+    return  m_module->getProp(member);
 }
+
+unsigned    TypeContext::index(std::string name)
+{
+    auto    names   = m_module->getPropNames();
+    auto    index   = 0;
+
+    for(auto it: names)
+    {
+        if(it == name)
+            return index;
+
+        index ++;
+    }
+    
+    throw std::runtime_error(__PRETTY_FUNCTION__);
+}
+
 
 TypeStruct::TypeStruct(std::vector<Named<Type>> members)
     : members(members)
 {
     for(auto member: members)
     {
-        _name2type[member.name] = member.data;
+        m_name2type[member.name] = member.data;
+        m_name2indx[member.name] = m_name2indx.size();
     }
 }
 
 Type*   TypeStruct::member(std::string name)
 {
-    if(_name2type.contains(name))
+    if(m_name2type.contains(name))
     {
-        return _name2type[name];
+        return m_name2type[name];
     }
 
     return nullptr;
 }
+
+unsigned    TypeStruct::index(std::string name)
+{
+    if(m_name2indx.contains(name))
+    {
+        return m_name2indx[name];
+    }
+
+    throw std::runtime_error(__PRETTY_FUNCTION__);
+}
+
 
 TypeArray::TypeArray(Type* type, unsigned size)
     : type(type)
@@ -121,6 +150,10 @@ TypeArray::TypeArray(Type* type, unsigned size)
 TypeEnum::TypeEnum(std::vector<std::string>   items)
     : items(items)
 {
+    for(auto item: items)
+    {
+        m_name2indx[item] = m_name2indx.size();
+    }
 }
 
 Type*   TypeEnum::member(std::string name)
@@ -131,4 +164,14 @@ Type*   TypeEnum::member(std::string name)
     }
 
     return  nullptr;
+}
+
+unsigned    TypeEnum::index(std::string name)
+{
+    if(m_name2indx.contains(name))
+    {
+        return m_name2indx[name] + 1;
+    }
+
+    throw std::runtime_error(__PRETTY_FUNCTION__);
 }

@@ -36,7 +36,7 @@ public:
     Module(std::string name);
 
     void    addType(std::string name, Type* type);
-    void    addData(std::string name, Type* data);
+    void    addProp(std::string name, Type* data);
     void    addConf(std::string name, Type* data);
 
     Type*   getType(std::string name);
@@ -47,9 +47,9 @@ public:
     bool    hasData(std::string name);
     bool    hasConf(std::string name);
 
-    std::vector<std::string>    getTypeNames();
-    std::vector<std::string>    getPropNames();
-    std::vector<std::string>    getConfNames();
+    std::vector<std::string>    getTypeNames()  {return m_typeNames;}
+    std::vector<std::string>    getPropNames()  {return m_propNames;}
+    std::vector<std::string>    getConfNames()  {return m_confNames;}
 
     void    pushContext(std::string name);
     void    popContext();
@@ -64,4 +64,8 @@ private:
     std::map<std::string, Type*>    m_name2conf;
     std::vector<Expr*>              m_exprs;
     std::vector<std::string>        m_context;
+
+    std::vector<std::string>        m_propNames;
+    std::vector<std::string>        m_confNames;
+    std::vector<std::string>        m_typeNames;
 };

@@ -23,6 +23,9 @@
  */
 
 #include "compile.hpp"
+#include "../factory.hpp"
+
+#include <functional>
 
 struct CompileTypeImpl
     : Visitor<  TypeInteger
@@ -111,7 +114,8 @@ struct CompileExprImpl
             llvm::LLVMContext*  context, 
             llvm::Module*       module,
             llvm::IRBuilder<>*  builder,
-            llvm::Function*     function);
+            llvm::Function*     function,
+            Module*             refmod);
 
     void    visit(ExprAdd*          expr) override;
     void    visit(ExprAnd*          expr) override;
@@ -160,6 +164,15 @@ struct CompileExprImpl
     void    visit(ExprYs*           expr) override;
     void    visit(ExprYw*           expr) override;
 
+    void    compare(
+                llvm::CmpInst::Predicate    ipred, 
+                llvm::CmpInst::Predicate    fpred, ExprBinary* expr);
+    void    arithmetic(
+                ExprBinary* expr,
+                std::function<llvm::Value*(llvm::Value*, llvm::Value*)> ifunc,
+                std::function<llvm::Value*(llvm::Value*, llvm::Value*)> ffunc);
+
+
     llvm::Value*    make(Expr* expr);
 
 private:
@@ -169,6 +182,8 @@ private:
     llvm::IRBuilder<>*  m_builder;
 
     llvm::Value*        m_value;
+
+    Module*             m_refmod;
 };
 
 
@@ -251,20 +266,29 @@ CompileExprImpl::CompileExprImpl(
             llvm::LLVMContext*  context, 
             llvm::Module*       module,
             llvm::IRBuilder<>*  builder,
-            llvm::Function*     function)
+            llvm::Function*     function,
+            Module*             refmod)
     : m_context(context)
     , m_module(module)
     , m_function(function)
     , m_builder(builder)
+    , m_refmod(refmod)
 {
 }
-
+ 
 void    CompileExprImpl::visit(ExprAdd*          expr)
 {
+    arithmetic(
+        expr, 
+        [this](llvm::Value* lhs, llvm::Value* rhs) {return m_builder->CreateAdd(lhs, rhs);},
+        [this](llvm::Value* lhs, llvm::Value* rhs) {return m_builder->CreateFAdd(lhs, rhs);});
 }
 
 void    CompileExprImpl::visit(ExprAnd*          expr)
 {
+    auto    lhs = make(expr->lhs);
+    auto    rhs = make(expr->rhs);
+    m_value = m_builder->CreateLogicalAnd(lhs, rhs);
 }
 
 void    CompileExprImpl::visit(ExprAt*           expr)
@@ -281,12 +305,12 @@ void    CompileExprImpl::visit(ExprConstBoolean* expr)
 
 void    CompileExprImpl::visit(ExprConstInteger* expr)
 {
-    printf("%s\n", __func__);
     m_value = llvm::ConstantInt::getSigned(m_builder->getInt64Ty(), expr->value);
 }
 
 void    CompileExprImpl::visit(ExprConstNumber*  expr)
 {
+    m_value = llvm::ConstantFP::get(m_builder->getDoubleTy(), expr->value);
 }
 
 void    CompileExprImpl::visit(ExprConstString*  expr)
@@ -295,43 +319,126 @@ void    CompileExprImpl::visit(ExprConstString*  expr)
 
 void    CompileExprImpl::visit(ExprContext*      expr)
 {
+    printf("%s\n", __PRETTY_FUNCTION__);
+
     if(expr->name == "__curr__")
         m_value = m_function->arg_begin();
     else
-        throw std::runtime_error("implement");
+        throw std::runtime_error(__PRETTY_FUNCTION__);
 }
 
 void    CompileExprImpl::visit(ExprData*         expr)
 {
-    printf("%s\n", __func__);
+    printf("%s\n", __PRETTY_FUNCTION__);
 
     auto    ctxtPtr     = make(expr->ctxt);
     auto    ctxtPtrType = cast<llvm::PointerType>(ctxtPtr->getType());
     auto    ctxtType    = ctxtPtrType->getPointerElementType();
 
-    auto    propPtrPtr      = m_builder->CreateStructGEP(ctxtType, ctxtPtr, 1);
+    auto    propPtrPtr      = m_builder->CreateStructGEP(ctxtType, ctxtPtr, dynamic_cast<TypeContext*>(expr->ctxt->type())->index(expr->name) + 1); //  +1 to skip __time__
     auto    propPtrPtrType  = cast<llvm::PointerType>(propPtrPtr->getType());
     auto    propPtrType     = cast<llvm::PointerType>(propPtrPtrType->getPointerElementType());
     auto    propType        = propPtrType->getPointerElementType();
     
-    auto    propPtr = m_builder->CreateLoad(propPtrType, propPtrPtr, "load_prop");
+    m_value = m_builder->CreateLoad(propPtrType, propPtrPtr, "ptr_data");
 }
 
 void    CompileExprImpl::visit(ExprDiv*          expr)
 {
+    arithmetic(
+        expr, 
+        [this](llvm::Value* lhs, llvm::Value* rhs) {return m_builder->CreateSDiv(lhs, rhs);},
+        [this](llvm::Value* lhs, llvm::Value* rhs) {return m_builder->CreateFDiv(lhs, rhs);});
+}
+
+void    CompileExprImpl::compare(
+            llvm::CmpInst::Predicate    ipred, 
+            llvm::CmpInst::Predicate    fpred, ExprBinary* expr)
+{
+    auto    lhs     = make(expr->lhs);
+    auto    rhs     = make(expr->rhs);
+    auto    lhsT    = expr->lhs->type();
+    auto    rhsT    = expr->rhs->type();
+
+    if(     lhsT == Factory<TypeNumber>::create() 
+        && rhsT == Factory<TypeInteger>::create())
+    {
+        rhs = m_builder->CreateSIToFP(rhs, lhs->getType());
+        m_value = m_builder->CreateFCmp(fpred, lhs, rhs);
+    }
+    else if(lhsT == Factory<TypeInteger>::create() 
+        &&  rhsT == Factory<TypeNumber>::create())
+    {
+        lhs = m_builder->CreateSIToFP(lhs, rhs->getType());
+        m_value = m_builder->CreateFCmp(fpred, lhs, rhs);
+    }
+    else if(lhsT == Factory<TypeInteger>::create() 
+        &&  rhsT == Factory<TypeInteger>::create())
+    {
+        m_value = m_builder->CreateICmp(ipred, lhs, rhs);
+    }
+    else if(lhsT == Factory<TypeNumber>::create() 
+        &&  rhsT == Factory<TypeNumber>::create())
+    {
+        m_value = m_builder->CreateFCmp(fpred, lhs, rhs);
+    }
+    else if(lhsT == Factory<TypeString>::create()
+        &&  rhsT == Factory<TypeString>::create())
+    {
+        m_value = m_builder->CreateICmp(ipred, lhs, rhs);   //  TODO: check
+    }
+    else if(lhsT == Factory<TypeBoolean>::create()
+        &&  rhsT == Factory<TypeBoolean>::create())
+    {
+        m_value = m_builder->CreateICmp(ipred, lhs, rhs);   //  TODO: check
+    }
+    else
+    {
+        throw std::runtime_error(__PRETTY_FUNCTION__);
+    }
+}
+
+void    CompileExprImpl::arithmetic(
+                ExprBinary* expr,
+                std::function<llvm::Value*(llvm::Value*, llvm::Value*)> ifunc,
+                std::function<llvm::Value*(llvm::Value*, llvm::Value*)> ffunc)
+{
+    auto    lhs     = make(expr->lhs);
+    auto    rhs     = make(expr->rhs);
+    auto    lhsT    = expr->lhs->type();
+    auto    rhsT    = expr->rhs->type();
+
+    if(     lhsT == Factory<TypeNumber>::create() 
+        && rhsT == Factory<TypeInteger>::create())
+    {
+        rhs = m_builder->CreateSIToFP(rhs, lhs->getType());
+        m_value = ffunc(lhs, rhs);
+    }
+    else if(lhsT == Factory<TypeInteger>::create() 
+        &&  rhsT == Factory<TypeNumber>::create())
+    {
+        lhs = m_builder->CreateSIToFP(lhs, rhs->getType());
+        m_value = ffunc(lhs, rhs);
+    }
+    else if(lhsT == Factory<TypeInteger>::create() 
+        &&  rhsT == Factory<TypeInteger>::create())
+    {
+        m_value = ifunc(lhs, rhs);
+    }
+    else if(lhsT == Factory<TypeNumber>::create() 
+        &&  rhsT == Factory<TypeNumber>::create())
+    {
+        m_value = ffunc(lhs, rhs);
+    }
+    else
+    {
+        throw std::runtime_error(__PRETTY_FUNCTION__);
+    }    
 }
 
 void    CompileExprImpl::visit(ExprEq*           expr)
 {
-    printf("%s\n", __func__);
-
-    auto    lhs     = make(expr->lhs);
-    auto    rhs     = make(expr->rhs);
-
-    lhs->print(llvm::outs());  std::cout << std::endl;
-    rhs->print(llvm::outs());  std::cout << std::endl;
-
-    m_value = m_builder->CreateICmp(llvm::CmpInst::Predicate::ICMP_NE, lhs, rhs);
+    compare(llvm::CmpInst::Predicate::ICMP_EQ, llvm::CmpInst::Predicate::FCMP_OEQ, expr);
 }
 
 void    CompileExprImpl::visit(ExprEqu*          expr)
@@ -348,10 +455,12 @@ void    CompileExprImpl::visit(ExprG*            expr)
 
 void    CompileExprImpl::visit(ExprGe*           expr)
 {
+    compare(llvm::CmpInst::Predicate::ICMP_SGE, llvm::CmpInst::Predicate::FCMP_OGE, expr);
 }
 
 void    CompileExprImpl::visit(ExprGt*           expr)
 {
+    compare(llvm::CmpInst::Predicate::ICMP_SGT, llvm::CmpInst::Predicate::FCMP_OGT, expr);
 }
 
 void    CompileExprImpl::visit(ExprH*            expr)
@@ -360,6 +469,9 @@ void    CompileExprImpl::visit(ExprH*            expr)
 
 void    CompileExprImpl::visit(ExprImp*          expr)
 {
+    auto    lhs = make(expr->lhs);
+    auto    rhs = make(expr->rhs);
+    m_value = m_builder->CreateOr(m_builder->CreateNot(lhs), rhs);
 }
 
 void    CompileExprImpl::visit(ExprIndx*         expr)
@@ -372,24 +484,51 @@ void    CompileExprImpl::visit(ExprInt*          expr)
 
 void    CompileExprImpl::visit(ExprLe*           expr)
 {
+    compare(llvm::CmpInst::Predicate::ICMP_SLE, llvm::CmpInst::Predicate::FCMP_OLE, expr);
 }
 
 void    CompileExprImpl::visit(ExprLt*           expr)
 {
+    compare(llvm::CmpInst::Predicate::ICMP_SLT, llvm::CmpInst::Predicate::FCMP_OLT, expr);
 }
 
 void    CompileExprImpl::visit(ExprMmbr*         expr)
 {
+    printf("%s\n", __PRETTY_FUNCTION__);
+
+    auto    exprType    = expr->type();
     auto    basePtr     = make(expr->arg);
     auto    basePtrType = cast<llvm::PointerType>(basePtr->getType());
     auto    baseType    = basePtrType->getPointerElementType();
 
-    auto    dataPtr     = m_builder->CreateStructGEP(baseType, basePtr, 0);   //  TODO: get field name
-    auto    dataPtrType = cast<llvm::PointerType>(dataPtr->getType());
-    auto    dataType    = dataPtrType->getPointerElementType();
+    if(auto type = dynamic_cast<TypeComposite*>(exprType))
+    {
+        auto    temp        = dynamic_cast<TypeComposite*>(expr->arg->type());
 
-    m_value = m_builder->CreateLoad(dataType, dataPtr, "load_data");
-        m_value->print(llvm::outs());  std::cout << std::endl;
+        m_value = m_builder->CreateStructGEP(baseType, basePtr, temp->index(expr->mmbr), "ptr_" + expr->mmbr);
+    }
+    else if(auto type = dynamic_cast<TypePrimitive*>(exprType))
+    {
+        auto    temp        = dynamic_cast<TypeComposite*>(expr->arg->type());
+
+        if(dynamic_cast<TypeEnum*>(expr->arg->type()))
+        {
+            auto    data        = m_builder->CreateLoad(baseType, basePtr);
+            m_value = m_builder->CreateICmp(llvm::CmpInst::Predicate::ICMP_EQ, data, llvm::ConstantInt::getSigned(baseType, temp->index(expr->mmbr)));
+        }
+        else
+        {
+            auto    dataPtr     = m_builder->CreateStructGEP(baseType, basePtr, temp->index(expr->mmbr), "ptr_" + expr->mmbr);
+            auto    dataPtrType = cast<llvm::PointerType>(dataPtr->getType());
+            auto    dataType    = dataPtrType->getPointerElementType();
+            
+            m_value = m_builder->CreateLoad(dataType, dataPtr, "val_" + expr->mmbr);
+        }
+    }
+    else
+    {
+        throw std::runtime_error(__PRETTY_FUNCTION__);    
+    }
 }
 
 void    CompileExprImpl::visit(ExprMod*          expr)
@@ -398,15 +537,15 @@ void    CompileExprImpl::visit(ExprMod*          expr)
 
 void    CompileExprImpl::visit(ExprMul*          expr)
 {
+    arithmetic(
+        expr, 
+        [this](llvm::Value* lhs, llvm::Value* rhs) {return m_builder->CreateMul(lhs, rhs);},
+        [this](llvm::Value* lhs, llvm::Value* rhs) {return m_builder->CreateFMul(lhs, rhs);});
 }
 
 void    CompileExprImpl::visit(ExprNe*           expr)
 {
-        printf("%s\n", __func__);
-
-    auto    lhs     = make(expr->lhs);
-    auto    rhs     = make(expr->rhs);
-    m_value = m_builder->CreateICmp(llvm::CmpInst::Predicate::ICMP_NE, lhs, rhs);
+    compare(llvm::CmpInst::Predicate::ICMP_NE, llvm::CmpInst::Predicate::FCMP_ONE, expr);
 }
 
 void    CompileExprImpl::visit(ExprNeg*          expr)
@@ -415,6 +554,8 @@ void    CompileExprImpl::visit(ExprNeg*          expr)
 
 void    CompileExprImpl::visit(ExprNot*          expr)
 {
+    auto    arg = make(expr->arg);
+    m_value = m_builder->CreateNot(arg);
 }
 
 void    CompileExprImpl::visit(ExprO*            expr)
@@ -423,10 +564,14 @@ void    CompileExprImpl::visit(ExprO*            expr)
 
 void    CompileExprImpl::visit(ExprOr*           expr)
 {
+    auto    lhs = make(expr->lhs);
+    auto    rhs = make(expr->rhs);
+    m_value = m_builder->CreateLogicalOr(lhs, rhs);
 }
 
 void    CompileExprImpl::visit(ExprParen*        expr)
 {
+    m_value = make(expr->arg);
 }
 
 void    CompileExprImpl::visit(ExprRs*           expr)
@@ -443,6 +588,10 @@ void    CompileExprImpl::visit(ExprSs*           expr)
 
 void    CompileExprImpl::visit(ExprSub*          expr)
 {
+    arithmetic(
+        expr, 
+        [this](llvm::Value* lhs, llvm::Value* rhs) {return m_builder->CreateSub(lhs, rhs);},
+        [this](llvm::Value* lhs, llvm::Value* rhs) {return m_builder->CreateFSub(lhs, rhs);});
 }
 
 void    CompileExprImpl::visit(ExprSw*           expr)
@@ -467,6 +616,9 @@ void    CompileExprImpl::visit(ExprUw*           expr)
 
 void    CompileExprImpl::visit(ExprXor*          expr)
 {
+    auto    lhs = make(expr->lhs);
+    auto    rhs = make(expr->rhs);
+    m_value = m_builder->CreateXor(lhs, rhs);   //  TODO: fix
 }
 
 void    CompileExprImpl::visit(ExprXs*           expr)
@@ -487,11 +639,16 @@ void    CompileExprImpl::visit(ExprYw*           expr)
 
 llvm::Value*    CompileExprImpl::make(Expr* expr)
 {
+    auto    save    = m_value;
+
     m_value = llvm::ConstantInt::getTrue(*m_context);
 
     expr->accept(*this);
+
+    auto    result  = m_value;
+    m_value = save;
     
-    return  m_value;
+    return  result;
 }
 
 llvm::Type* Compile::make(llvm::LLVMContext* context, llvm::Module* module, Type* type, std::string name)
@@ -506,16 +663,16 @@ llvm::Value*Compile::make(llvm::LLVMContext* context, llvm::Module* module, Expr
     return nullptr;
 }
 
-void Compile::make(llvm::LLVMContext* context, llvm::Module* module, Module* mod)
+void Compile::make(llvm::LLVMContext* context, llvm::Module* module, Module* refmod)
 {
     auto    builder = std::make_unique<llvm::IRBuilder<>>(*context);
 
     //  create __conf__
     std::vector<llvm::Type*>    confTypes;
-    auto    confNames   = mod->getConfNames();
+    auto    confNames   = refmod->getConfNames();
     for(auto name: confNames)
     {
-        auto    type    = mod->getConf(name);
+        auto    type    = refmod->getConf(name);
         confTypes.push_back(llvm::PointerType::get(make(context, module, type, name), 0));
     }
     auto    confType    = llvm::StructType::create(*context, confTypes, "__conf__");
@@ -523,7 +680,7 @@ void Compile::make(llvm::LLVMContext* context, llvm::Module* module, Module* mod
     module->getOrInsertGlobal("__conf__", confType);
 
     //  create __prop__
-    auto    propNames   = mod->getPropNames();
+    auto    propNames   = refmod->getPropNames();
     std::vector<llvm::Type*>    propTypes;
     propTypes.push_back(builder->getInt64Ty()); //  __time__
     for(auto name: propNames)
@@ -532,7 +689,7 @@ void Compile::make(llvm::LLVMContext* context, llvm::Module* module, Module* mod
             continue;
             
         std::cout << "prop: " << name << std::endl;
-        auto    type    = mod->getProp(name);
+        auto    type    = refmod->getProp(name);
         propTypes.push_back(llvm::PointerType::get(make(context, module, type, name), 0));
     }
     auto    propType    = llvm::StructType::create(*context, propTypes, "__prop__");
@@ -540,7 +697,7 @@ void Compile::make(llvm::LLVMContext* context, llvm::Module* module, Module* mod
     module->getOrInsertGlobal("__prop__", propPtrType);
 
 
-    auto    exprs   = mod->getExprs();
+    auto    exprs   = refmod->getExprs();
     for(auto expr: exprs)
     {
         auto    pos         = expr->where();
@@ -555,7 +712,7 @@ void Compile::make(llvm::LLVMContext* context, llvm::Module* module, Module* mod
         auto    bb          = llvm::BasicBlock::Create(*context, "entry", funcBody);
         builder->SetInsertPoint(bb);
 
-        CompileExprImpl compExpr(context, module, builder.get(), funcBody);
+        CompileExprImpl compExpr(context, module, builder.get(), funcBody, refmod);
 
         builder->CreateRet(compExpr.make(expr));
     }

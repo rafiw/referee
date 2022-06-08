@@ -93,15 +93,6 @@ expression  : sign? integer                                     # ExprConst
             | expression '.' mmbrID                             # ExprMmbr
             | expression '[' expression ']'                     # ExprIndx
 
-            | expression '=='  expression                       # ExprEq
-            | expression '!='  expression                       # ExprNe
-
-            | expression '<'   expression                       # ExprLt
-            | expression '<='  expression                       # ExprLe
-
-            | expression '>'   expression                       # ExprGt
-            | expression '>='  expression                       # ExprGe
-
             | expression '+'   expression                       # ExprAdd
             | expression '-'   expression                       # ExprSub
             | expression '*'   expression                       # ExprMul
@@ -113,6 +104,15 @@ expression  : sign? integer                                     # ExprConst
             | expression '^'   expression                       # ExprXor
             | expression '=>'  expression                       # ExprImp
             | expression '<=>' expression                       # ExprEqu
+
+            | expression '=='  expression                       # ExprEq
+            | expression '!='  expression                       # ExprNe
+
+            | expression '<'   expression                       # ExprLt
+            | expression '<='  expression                       # ExprLe
+
+            | expression '>'   expression                       # ExprGt
+            | expression '>='  expression                       # ExprGe
 
             | expression '?' expression ':' expression          # ExprTer
 

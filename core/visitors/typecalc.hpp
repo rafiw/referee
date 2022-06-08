@@ -29,5 +29,5 @@
 class TypeCalc
 {
 public:
-    static Type*    make(Expr* expr);
+    static Type*    make(Module* module, Expr* expr);
 };
