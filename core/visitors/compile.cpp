@@ -26,6 +26,7 @@
 #include "../factory.hpp"
 
 #include <functional>
+#include <vector>
 
 struct CompileTypeImpl
     : Visitor<  TypeInteger
@@ -182,8 +183,12 @@ private:
     llvm::IRBuilder<>*  m_builder;
 
     llvm::Value*        m_value;
+    std::vector<llvm::Value*>
+                        m_curr;
 
     Module*             m_refmod;
+    llvm::Value*        m_0;
+    llvm::Value*        m_1;
 };
 
 
@@ -225,7 +230,6 @@ void    CompileTypeImpl::visit(TypeStruct*           type)
         elements.push_back(Compile::make(m_context, m_module, member.data, m_name + "::" + member.name));
     }
     m_type  = llvm::StructType::create(*m_context, elements, m_name);
-    m_type->print(llvm::outs()); std::cout << std::endl;
 }
 
 void    CompileTypeImpl::visit(TypeEnum*             type)
@@ -274,6 +278,14 @@ CompileExprImpl::CompileExprImpl(
     , m_builder(builder)
     , m_refmod(refmod)
 {
+    auto    propPtr     = function->arg_begin();
+    auto    propPtrType = cast<llvm::PointerType>(propPtr->getType());
+    auto    propType    = propPtrType->getPointerElementType();
+
+    m_0 = llvm::ConstantInt::getSigned(m_builder->getInt64Ty(), 0);
+    m_1 = llvm::ConstantInt::getSigned(m_builder->getInt64Ty(), 1);
+
+    m_curr.push_back(propPtr);
 }
  
 void    CompileExprImpl::visit(ExprAdd*          expr)
@@ -319,28 +331,41 @@ void    CompileExprImpl::visit(ExprConstString*  expr)
 
 void    CompileExprImpl::visit(ExprContext*      expr)
 {
-    printf("%s\n", __PRETTY_FUNCTION__);
-
     if(expr->name == "__curr__")
-        m_value = m_function->arg_begin();
+        m_value = m_curr.back();
     else
         throw std::runtime_error(__PRETTY_FUNCTION__);
 }
 
 void    CompileExprImpl::visit(ExprData*         expr)
 {
-    printf("%s\n", __PRETTY_FUNCTION__);
-
     auto    ctxtPtr     = make(expr->ctxt);
     auto    ctxtPtrType = cast<llvm::PointerType>(ctxtPtr->getType());
     auto    ctxtType    = ctxtPtrType->getPointerElementType();
 
-    auto    propPtrPtr      = m_builder->CreateStructGEP(ctxtType, ctxtPtr, dynamic_cast<TypeContext*>(expr->ctxt->type())->index(expr->name) + 1); //  +1 to skip __time__
-    auto    propPtrPtrType  = cast<llvm::PointerType>(propPtrPtr->getType());
-    auto    propPtrType     = cast<llvm::PointerType>(propPtrPtrType->getPointerElementType());
-    auto    propType        = propPtrType->getPointerElementType();
-    
-    m_value = m_builder->CreateLoad(propPtrType, propPtrPtr, "ptr_data");
+    if(expr->name == "__time__")
+    {
+        auto    propPtr         = m_builder->CreateStructGEP(ctxtType, ctxtPtr, 0);     //  skip __time__
+        auto    propPtrType     = cast<llvm::PointerType>(propPtr->getType());
+        auto    propType        = propPtrType->getPointerElementType();
+
+        m_value = m_builder->CreateLoad(propType, propPtr, "__time__");
+    }
+    else
+    {
+        auto    propPtrPtr      = m_builder->CreateStructGEP(ctxtType, ctxtPtr, dynamic_cast<TypeContext*>(expr->ctxt->type())->index(expr->name) + 1); //  +1 to skip __time__
+        auto    propPtrPtrType  = cast<llvm::PointerType>(propPtrPtr->getType());
+        auto    propPtrType     = cast<llvm::PointerType>(propPtrPtrType->getPointerElementType());
+
+        auto    propType        = propPtrType->getPointerElementType();
+
+        m_value = m_builder->CreateLoad(propPtrType, propPtrPtr, "ptr_" + expr->name);
+
+        if(dynamic_cast<TypePrimitive*>(expr->type()))
+        {
+            m_value = m_builder->CreateLoad(propPtrType->getPointerElementType(), m_value, "val_" + expr->name);
+        }
+    }
 }
 
 void    CompileExprImpl::visit(ExprDiv*          expr)
@@ -476,6 +501,20 @@ void    CompileExprImpl::visit(ExprImp*          expr)
 
 void    CompileExprImpl::visit(ExprIndx*         expr)
 {
+    auto    exprType    = expr->type();
+    auto    basePtr     = make(expr->lhs);
+    auto    indx        = make(expr->rhs);
+    auto    basePtrType = cast<llvm::PointerType>(basePtr->getType());
+    auto    baseType    = cast<llvm::ArrayType>(basePtrType->getPointerElementType());
+    auto    elemType    = baseType->getElementType();
+
+    m_value = m_builder->CreateGEP(baseType, basePtr, {m_0, indx}, "ptr_[]");
+    m_value->print(llvm::outs()); std::cout << std::endl;
+
+    if(dynamic_cast<TypePrimitive*>(exprType))
+    {
+        m_value = m_builder->CreateLoad(elemType, m_value, indx, "val_[]");
+    }
 }
 
 void    CompileExprImpl::visit(ExprInt*          expr)
@@ -494,14 +533,12 @@ void    CompileExprImpl::visit(ExprLt*           expr)
 
 void    CompileExprImpl::visit(ExprMmbr*         expr)
 {
-    printf("%s\n", __PRETTY_FUNCTION__);
-
     auto    exprType    = expr->type();
     auto    basePtr     = make(expr->arg);
     auto    basePtrType = cast<llvm::PointerType>(basePtr->getType());
     auto    baseType    = basePtrType->getPointerElementType();
 
-    if(auto type = dynamic_cast<TypeComposite*>(exprType))
+    if(dynamic_cast<TypeComposite*>(exprType) || dynamic_cast<TypeArray*>(exprType))
     {
         auto    temp        = dynamic_cast<TypeComposite*>(expr->arg->type());
 
@@ -513,7 +550,7 @@ void    CompileExprImpl::visit(ExprMmbr*         expr)
 
         if(dynamic_cast<TypeEnum*>(expr->arg->type()))
         {
-            auto    data        = m_builder->CreateLoad(baseType, basePtr);
+            auto    data        = m_builder->CreateLoad(baseType, basePtr, "val_" + expr->mmbr);
             m_value = m_builder->CreateICmp(llvm::CmpInst::Predicate::ICMP_EQ, data, llvm::ConstantInt::getSigned(baseType, temp->index(expr->mmbr)));
         }
         else

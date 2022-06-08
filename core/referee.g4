@@ -50,7 +50,7 @@ BININT      : '0'[bB][0-1]+;
 OCTINT      : '0'[oO][0-7]+;
 HEXINT      : '0'[xX][0-9a-fA-F]+;
 
-INTEGER     : [1-9][0-9]* ;
+INTEGER     : [1-9][0-9]* | '0';
 integer     : INTEGER
             | BININT
             | OCTINT
@@ -67,7 +67,7 @@ floating    : FLOATING EXPONENT?
 STRING      : '"' [a-zA-Z_0-9] '"' ;         
 string      : STRING;
 
-ID          : [a-zA-Z_][a-zA-Z0-9]*
+ID          : [a-zA-Z_][a-zA-Z0-9_]*
             ;
 
 WHITESPACE  : [ \t\n]+ -> skip

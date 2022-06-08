@@ -439,7 +439,6 @@ public:
 
 using ExprIndx  = Final<SetOper<'[]',  ExprBinary>>;
 
-
 class Data
     : public Visitable<>
 {

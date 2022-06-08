@@ -11,6 +11,7 @@ type ABC: struct {
         x: integer;
     };
     x: XYZ[1][2];
+    z: integer[7][6];
 };
 
 
@@ -19,9 +20,15 @@ conf xyz: XYZ;
 data abc: ABC;
 data alpha: boolean;
 data beta: boolean;
+data plain: integer;
 
-abc.a + 12 == 2;
-abc.d.x == 1;
+#abc.a + 12 == 2;
+#abc.d.x == 1;
+#__time__ == 1;
+#plain == 3;
+
+abc.x[2][3].a == 3;
+abc.z[2][3] == 2;
 
 #x@(x.abc.a != 2);
 

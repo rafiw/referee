@@ -36,6 +36,7 @@ struct TypeCalcImpl
              , ExprParen
              , ExprData
              , ExprMmbr
+             , ExprIndx
              , ExprEq
              , ExprNe
              , ExprGt
@@ -63,7 +64,7 @@ struct TypeCalcImpl
     {
     }
     
-    Type*   type    = nullptr;
+    Type*   m_type  = nullptr;
 
     Type*   make(Expr*          expr);
 
@@ -85,6 +86,7 @@ struct TypeCalcImpl
     void    visit(ExprLe*               expr) override;
     void    visit(ExprLt*               expr) override;
     void    visit(ExprMmbr*             expr) override;
+    void    visit(ExprIndx*             expr) override;
     void    visit(ExprMod*              expr) override;
     void    visit(ExprMul*              expr) override;
     void    visit(ExprNe*               expr) override;
@@ -130,44 +132,44 @@ void    TypeCalcImpl::visit(ExprAdd*                expr)
     }
 
     if(lhs == rhs)
-        type    = lhs;
+        m_type  = lhs;
     else 
-        type    = typeNumber;
+        m_type  = typeNumber;
 }
 
 void    TypeCalcImpl::visit(ExprAnd*                expr)
 {
-    type = boolBool2Bool(expr, expr->lhs, expr->rhs);
+    m_type = boolBool2Bool(expr, expr->lhs, expr->rhs);
 }
 
 void    TypeCalcImpl::visit(ExprAt*                 expr)
 {
-    type = make(expr->arg);
+    m_type = make(expr->arg);
 }
 
 void    TypeCalcImpl::visit(ExprConstBoolean*       expr)
 {
-    type = Factory<TypeBoolean>::create();
+    m_type = Factory<TypeBoolean>::create();
 }
 
 void    TypeCalcImpl::visit(ExprConstInteger*       expr)
 {
-    type = Factory<TypeInteger>::create();
+    m_type = Factory<TypeInteger>::create();
 }
 
 void    TypeCalcImpl::visit(ExprConstNumber*        expr)
 {
-    type = Factory<TypeNumber>::create();
+    m_type = Factory<TypeNumber>::create();
 }
 
 void    TypeCalcImpl::visit(ExprConstString*        expr)
 {
-    type = Factory<TypeString>::create();
+    m_type = Factory<TypeString>::create();
 }
 
 void    TypeCalcImpl::visit(ExprContext*            expr)
 {
-    type = Factory<TypeContext>::create(m_module);
+    m_type = Factory<TypeContext>::create(m_module);
 }
 
 void    TypeCalcImpl::visit(ExprDiv*                expr)
@@ -181,44 +183,44 @@ void    TypeCalcImpl::visit(ExprDiv*                expr)
     }
 
     if(lhs == rhs)
-        type    = lhs;
+        m_type  = lhs;
     else 
-        type    = typeNumber;
+        m_type  = typeNumber;
 }
 
 void    TypeCalcImpl::visit(ExprEq*                 expr)
 {
-    type = nmbrNmbr2Bool(expr, expr->lhs, expr->rhs);
+    m_type = nmbrNmbr2Bool(expr, expr->lhs, expr->rhs);
 }
 
 void    TypeCalcImpl::visit(ExprEqu*                expr)
 {
-    type = boolBool2Bool(expr, expr->lhs, expr->rhs);
+    m_type = boolBool2Bool(expr, expr->lhs, expr->rhs);
 }
 
 void    TypeCalcImpl::visit(ExprGe*                 expr)
 {
-    type = nmbrNmbr2Bool(expr, expr->lhs, expr->rhs);
+    m_type = nmbrNmbr2Bool(expr, expr->lhs, expr->rhs);
 }
 
 void    TypeCalcImpl::visit(ExprGt*                 expr)
 {
-    type = nmbrNmbr2Bool(expr, expr->lhs, expr->rhs);
+    m_type = nmbrNmbr2Bool(expr, expr->lhs, expr->rhs);
 }
 
 void    TypeCalcImpl::visit(ExprImp*                expr)
 {
-    type = boolBool2Bool(expr, expr->lhs, expr->rhs);
+    m_type = boolBool2Bool(expr, expr->lhs, expr->rhs);
 }
 
 void    TypeCalcImpl::visit(ExprLe*                 expr)
 {
-    type = nmbrNmbr2Bool(expr, expr->lhs, expr->rhs);
+    m_type = nmbrNmbr2Bool(expr, expr->lhs, expr->rhs);
 }
 
 void    TypeCalcImpl::visit(ExprLt*                 expr)
 {
-    type = nmbrNmbr2Bool(expr, expr->lhs, expr->rhs);
+    m_type = nmbrNmbr2Bool(expr, expr->lhs, expr->rhs);
 }
 
 void    TypeCalcImpl::visit(ExprMmbr*               expr)
@@ -230,13 +232,33 @@ void    TypeCalcImpl::visit(ExprMmbr*               expr)
         throw Exception(expr->where(), "bad type");
     }
 
-    type    = base->member(expr->mmbr);
+    m_type  = base->member(expr->mmbr);
 
-    if(type == nullptr)
+    if(m_type == nullptr)
     {
         throw Exception(expr->where(), "no such a member");
     }
 }
+
+void    TypeCalcImpl::visit(ExprIndx*               expr)
+{
+    auto    lhs     = make(expr->lhs);
+    auto    rhs     = make(expr->rhs);
+    auto    base    = dynamic_cast<TypeArray*>(lhs);
+
+    if(base == nullptr)
+    {
+        throw Exception(expr->where(), "bad type");
+    }
+
+    if(rhs != Factory<TypeInteger>::create())
+    {
+        throw Exception(expr->where(), "index should be integer");
+    }
+
+    m_type  = base->type;
+}
+
 
 void    TypeCalcImpl::visit(ExprData*               expr)
 {
@@ -247,9 +269,9 @@ void    TypeCalcImpl::visit(ExprData*               expr)
         throw Exception(expr->where(), "bad type");
     }
 
-    type    = ctxt->member(expr->name);
+    m_type  = ctxt->member(expr->name);
 
-    if(type == nullptr)
+    if(m_type == nullptr)
     {
         throw Exception(expr->where(), "no such a member");
     }
@@ -265,7 +287,7 @@ void    TypeCalcImpl::visit(ExprMod*                expr)
         throw Exception(expr->where(), "bad type");
     }
 
-    type    = typeInteger;
+    m_type  = typeInteger;
 }
 
 
@@ -280,29 +302,29 @@ void    TypeCalcImpl::visit(ExprMul*                expr)
     }
 
     if(lhs == rhs)
-        type    = lhs;
+        m_type  = lhs;
     else 
-        type    = typeNumber;
+        m_type  = typeNumber;
 }
 
 void    TypeCalcImpl::visit(ExprNe*                 expr)
 {
-    type = nmbrNmbr2Bool(expr, expr->lhs, expr->rhs);
+    m_type = nmbrNmbr2Bool(expr, expr->lhs, expr->rhs);
 }
 
 void    TypeCalcImpl::visit(ExprNot*                expr)
 {
-    type = bool2Bool(expr, expr->arg);
+    m_type = bool2Bool(expr, expr->arg);
 }
 
 void    TypeCalcImpl::visit(ExprOr*                 expr)
 {
-    type = boolBool2Bool(expr, expr->lhs, expr->rhs);
+    m_type = boolBool2Bool(expr, expr->lhs, expr->rhs);
 }
 
 void    TypeCalcImpl::visit(ExprParen*              expr)
 {
-    type    = make(expr->arg);
+    m_type  = make(expr->arg);
 }
 
 void    TypeCalcImpl::visit(ExprSub*                expr)
@@ -316,14 +338,14 @@ void    TypeCalcImpl::visit(ExprSub*                expr)
     }
 
     if(lhs == rhs)
-        type    = lhs;
+        m_type  = lhs;
     else 
-        type    = typeNumber;
+        m_type  = typeNumber;
 }
 
 void    TypeCalcImpl::visit(ExprXor*                expr)
 {   
-    type = boolBool2Bool(expr, expr->lhs, expr->rhs);
+    m_type = boolBool2Bool(expr, expr->lhs, expr->rhs);
 }
 
 void    TypeCalcImpl::visit(Temporal<ExprBinary>*   expr)
@@ -333,7 +355,7 @@ void    TypeCalcImpl::visit(Temporal<ExprBinary>*   expr)
         make(expr->time);
     }
 
-    type = boolBool2Bool(expr, expr->lhs, expr->rhs);
+    m_type = boolBool2Bool(expr, expr->lhs, expr->rhs);
 }
 
 void    TypeCalcImpl::visit(Temporal<ExprUnary>*    expr)
@@ -343,7 +365,7 @@ void    TypeCalcImpl::visit(Temporal<ExprUnary>*    expr)
         make(expr->time);
     }
 
-    type = bool2Bool(expr, expr->arg);
+    m_type = bool2Bool(expr, expr->arg);
 }
 
 
@@ -358,7 +380,7 @@ void    TypeCalcImpl::visit(Time*                   time)
     if (hi != typeInteger)
         throw std::runtime_error(__PRETTY_FUNCTION__);
 
-    type = typeVoid;
+    m_type = typeVoid;
 }
 
 
@@ -416,13 +438,13 @@ Type*   TypeCalcImpl::make(Expr* expr)
 {
     if(expr->type() == nullptr)
     {
-        auto    save    = type;
+        auto    save    = m_type;
 
-        type = nullptr;
+        m_type = nullptr;
         expr->accept(*this);
-        expr->type(type);
+        expr->type(m_type);
     
-        type    = save;
+        m_type  = save;
     }
     
     return expr->type();
