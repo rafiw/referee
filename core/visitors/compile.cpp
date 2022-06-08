@@ -185,10 +185,19 @@ private:
     llvm::Value*        m_value;
     std::vector<llvm::Value*>
                         m_curr;
+    std::vector<std::pair<std::string, llvm::Value*>>
+                        m_name2value;
 
     Module*             m_refmod;
     llvm::Value*        m_0;
     llvm::Value*        m_1;
+    llvm::Value*        m_T;
+    llvm::Value*        m_F;
+    llvm::Value*        m_frst;
+    llvm::Value*        m_last;
+    llvm::Value*        m_conf;
+    llvm::Type*         m_propType;
+    llvm::Type*         m_confType;
 };
 
 
@@ -218,7 +227,7 @@ void    CompileTypeImpl::visit(TypeString*           type)
 
 void    CompileTypeImpl::visit(TypeBoolean*          type)
 {
-    m_type  = m_builder->getInt8Ty();
+    m_type  = m_builder->getInt1Ty();
 }
 
 void    CompileTypeImpl::visit(TypeStruct*           type)
@@ -278,14 +287,20 @@ CompileExprImpl::CompileExprImpl(
     , m_builder(builder)
     , m_refmod(refmod)
 {
-    auto    propPtr     = function->arg_begin();
-    auto    propPtrType = cast<llvm::PointerType>(propPtr->getType());
-    auto    propType    = propPtrType->getPointerElementType();
+    m_0     = llvm::ConstantInt::getSigned(m_builder->getInt64Ty(), 0);
+    m_1     = llvm::ConstantInt::getSigned(m_builder->getInt64Ty(), 1);
+    m_T     = llvm::ConstantInt::getTrue(*m_context);
+    m_F     = llvm::ConstantInt::getFalse(*m_context);
 
-    m_0 = llvm::ConstantInt::getSigned(m_builder->getInt64Ty(), 0);
-    m_1 = llvm::ConstantInt::getSigned(m_builder->getInt64Ty(), 1);
+    auto    iter    = function->arg_begin();
+    
+    m_frst  = iter++;
+    m_last  = iter++;
+    m_conf  = iter;
+    m_propType  = cast<llvm::PointerType>(m_frst->getType())->getPointerElementType();
+    m_confType  = cast<llvm::PointerType>(m_conf->getType())->getPointerElementType();
 
-    m_curr.push_back(propPtr);
+    m_curr.push_back(m_frst);
 }
  
 void    CompileExprImpl::visit(ExprAdd*          expr)
@@ -305,6 +320,9 @@ void    CompileExprImpl::visit(ExprAnd*          expr)
 
 void    CompileExprImpl::visit(ExprAt*           expr)
 {
+    m_name2value.push_back(std::make_pair(expr->name, m_curr.back()));
+    m_value = make(expr->arg);
+    m_name2value.pop_back();
 }
 
 void    CompileExprImpl::visit(ExprChoice*       expr)
@@ -313,6 +331,7 @@ void    CompileExprImpl::visit(ExprChoice*       expr)
 
 void    CompileExprImpl::visit(ExprConstBoolean* expr)
 {
+    m_value = llvm::ConstantInt::getBool(*m_context, expr->value);
 }
 
 void    CompileExprImpl::visit(ExprConstInteger* expr)
@@ -332,9 +351,22 @@ void    CompileExprImpl::visit(ExprConstString*  expr)
 void    CompileExprImpl::visit(ExprContext*      expr)
 {
     if(expr->name == "__curr__")
+    {
         m_value = m_curr.back();
+    }
     else
+    {
+        for(auto it = m_name2value.rbegin(); it != m_name2value.rend(); it++)
+        {
+            if(expr->name == it->first)
+            {
+                m_value = it->second;
+                return;
+            }
+        }
+    
         throw std::runtime_error(__PRETTY_FUNCTION__);
+    }
 }
 
 void    CompileExprImpl::visit(ExprData*         expr)
@@ -645,10 +677,191 @@ void    CompileExprImpl::visit(ExprTw*           expr)
 
 void    CompileExprImpl::visit(ExprUs*           expr)
 {
+    auto    bbHead      = llvm::BasicBlock::Create(*m_context, "Us-head", m_function);
+    auto    bbBodyRhs   = llvm::BasicBlock::Create(*m_context, "Us-body-rhs");
+    auto    bbBodyLhs   = llvm::BasicBlock::Create(*m_context, "Us-body-lhs");
+    auto    bbTail      = llvm::BasicBlock::Create(*m_context, "Us-tail");
+    auto    frst        = m_curr.back();
+    auto    last        = m_last;
+
+    m_builder->CreateBr(bbHead);
+
+    //  head
+    m_builder->SetInsertPoint(bbHead);
+    auto    frstGTlast  = m_builder->CreateICmpUGT(frst, last, "frst > last");
+    m_builder->CreateCondBr(frstGTlast, bbTail, bbBodyRhs);
+
+    //  body RHS
+    m_function->getBasicBlockList().push_back(bbBodyRhs);
+    m_builder->SetInsertPoint(bbBodyRhs);
+    auto    curr        = m_builder->CreatePHI(frst->getType(), 2, "curr");
+    m_curr.push_back(curr);
+    auto    rhs         = make(expr->rhs);
+    m_curr.pop_back();
+    bbBodyRhs   = m_builder->GetInsertBlock();
+    m_builder->CreateCondBr(rhs, bbTail, bbBodyLhs);
+
+    //  body LHS
+    m_function->getBasicBlockList().push_back(bbBodyLhs);
+    m_builder->SetInsertPoint(bbBodyLhs);
+    m_curr.push_back(curr);
+    auto    lhs         = make(expr->rhs);
+    m_curr.pop_back();
+    bbBodyLhs           = m_builder->GetInsertBlock();
+    auto    nlhs        = m_builder->CreateNot(lhs, "!lhs");    
+    auto    next        = m_builder->CreateGEP(m_propType, curr, m_1, "next");
+    auto    nextGTlast  = m_builder->CreateICmpUGT(next, last, "next > last");
+    auto    which       = m_builder->CreateSelect(nlhs, m_T, nextGTlast);
+
+    m_builder->CreateCondBr(which, bbTail, bbBodyRhs);
+
+    //  tail
+    m_function->getBasicBlockList().push_back(bbTail);
+    m_builder->SetInsertPoint(bbTail);
+    auto    result      = m_builder->CreatePHI(m_builder->getInt1Ty(), 3, "Us");
+
+    //  edges
+    result->addIncoming(m_F, bbHead);
+    result->addIncoming(rhs, bbBodyLhs);
+    result->addIncoming(rhs, bbBodyRhs);
+
+    curr->addIncoming(frst, bbHead);
+    curr->addIncoming(next, bbBodyLhs);
+
+    m_value = result;
+    /*
+        auto    iter    = frst;
+        while(iter <= last)
+        {
+            if(eval(rhs) == true)
+                return True
+            
+            if(eval(lhs) == false)
+                return False
+
+            iter++
+        }
+        return false
+
+        define zeroext i1 @_Z4evalPbS_(i8* %frst, i8* readnone %last) local_unnamed_addr #0 {
+            head
+                %frstGTlast = icmp ugt i8* %frst, %last
+                br i1 %frstGTlast, label %tail, label %bodyRhs
+
+            bodyRhs:
+                %curr = phi i8* [ %next, %bodyLhs ], [ %frst, %head ]
+                %rhs = tail call zeroext i1 @_Z3rhsPb(i8* %curr)
+                br i1 %rhs, label %tail, label %bodyLhs
+
+            bodyLhs:
+                %lhs = tail call zeroext i1 @_Z3lhsPb(i8* %curr)
+                %next = getelementptr inbounds i8, i8* %curr, i64 1
+                %not_lhs = xor i1 %lhs, true
+                %nextGTlast = icmp ugt i8* %next, %last
+                %12 = select i1 %not_lhs, i1 true, i1 %nextGTlast
+                br i1 %12, label %tail, label %bodyRhs
+
+            tail:
+                %result = phi i1 [ false, %head ], [ %rhs, %bodyLhs ], [ %rhs, %bodyRhs ]
+                ret i1 %result
+        }
+    */
 }
 
 void    CompileExprImpl::visit(ExprUw*           expr)
 {
+    auto    bbTest      = llvm::BasicBlock::Create(*m_context, "Us-test");
+    auto    bbBodyRhs   = llvm::BasicBlock::Create(*m_context, "Us-body-rhs");
+    auto    bbBodyLhs   = llvm::BasicBlock::Create(*m_context, "Us-body-lhs");
+    auto    bbTail      = llvm::BasicBlock::Create(*m_context, "Us-tail");
+    auto    frst        = m_curr.back();
+    auto    last        = m_last;
+
+    //  entry
+    auto    bbEntry     = m_builder->GetInsertBlock();
+    auto    frstGTlast  = m_builder->CreateICmpUGT(frst, last, "frst > last");
+    m_builder->CreateCondBr(frstGTlast, bbTail, bbBodyRhs);
+
+    //  bodyRhs
+    m_function->getBasicBlockList().push_back(bbBodyRhs);
+    m_builder->SetInsertPoint(bbBodyRhs);
+    auto    curr        = m_builder->CreatePHI(frst->getType(), 2, "curr");
+    m_curr.push_back(curr);
+    auto    rhs         = make(expr->rhs);
+    m_curr.pop_back();
+    bbBodyRhs           = m_builder->GetInsertBlock();
+    m_builder->CreateCondBr(rhs, bbTail, bbBodyLhs);
+
+    //  bodyLhs
+    m_function->getBasicBlockList().push_back(bbBodyLhs);
+    m_builder->SetInsertPoint(bbBodyLhs);
+    m_curr.push_back(curr);
+    auto    lhs         = make(expr->lhs);
+    m_curr.pop_back();    
+    bbBodyLhs           = m_builder->GetInsertBlock();
+    auto    next        = m_builder->CreateGEP(m_propType, curr, m_1, "next");
+    m_builder->CreateCondBr(lhs, bbTest, bbTail);
+
+    //  head
+    m_function->getBasicBlockList().push_back(bbTest);
+    m_builder->SetInsertPoint(bbTest);
+    auto    nextGTlast  = m_builder->CreateICmpUGT(next, last, "next > last");
+    m_builder->CreateCondBr(nextGTlast, bbTail, bbBodyRhs);
+
+    //  tail
+    m_function->getBasicBlockList().push_back(bbTail);
+    m_builder->SetInsertPoint(bbTail);
+    auto    result      = m_builder->CreatePHI(m_builder->getInt1Ty(), 4, "Uw");
+
+    //  link
+    curr->addIncoming(next, bbTest);
+    curr->addIncoming(frst, bbEntry);
+
+    result->addIncoming(m_T, bbEntry);
+    result->addIncoming(m_T, bbTest);
+    result->addIncoming(m_F, bbBodyLhs);
+    result->addIncoming(m_T, bbBodyRhs);
+
+    m_value = result;
+
+/*
+    auto    iter    = frst;
+    while(iter <= last)
+    {
+        if(eval(rhs) == true)
+            return True
+        
+        if(eval(lhs) == false)
+            return False
+
+        iter++
+    }
+    return true
+
+
+    entry:
+        %frstGTlast = icmp ugt irhs* %frst, %last`
+        br i1 %frstGTlast, label %tail, label %bodyRhs
+
+    test:
+        %nextGTlast = icmp ugt irhs* %next, %last
+        br i1 %nextGTlast, label %tail, label %bodyRhs
+
+    bodyRhs:
+        %curr = phi irhs* [ %next, %test ], [ %frst, %entry ]
+        %rhs = tail call zeroext i1 @_ZfrstGTlastrhsPb(irhs* %curr)
+        br i1 %rhs, label %tail, label %bodyLhs
+
+    bodyLhs:
+        %lhs = tail call zeroext i1 @_ZfrstGTlastlhsPb(irhs* %curr)
+        %next = getelementptr inbounds irhs, irhs* %curr, ibodyRhshead 1
+        br i1 %lhs, label %test, label %tail
+
+    tail:
+        %result = phi i1 [ true, %entry ], [ true, %test ], [ false, %bodyLhs ], [ true, %bodyRhs ]
+        ret i1 %result
+
+*/
 }
 
 void    CompileExprImpl::visit(ExprXor*          expr)
@@ -739,11 +952,12 @@ void Compile::make(llvm::LLVMContext* context, llvm::Module* module, Module* ref
     {
         auto    pos         = expr->where();
         auto    funcName    = std::to_string(pos.beg.row) + ":" + std::to_string(pos.beg.col) + " .. " + std::to_string(pos.end.row) + ":" + std::to_string(pos.end.col);
-        auto    funcType    = llvm::FunctionType::get(builder->getInt8Ty(), {propPtrType, confPtrType}, false);
+        auto    funcType    = llvm::FunctionType::get(builder->getInt8Ty(), {propPtrType, propPtrType, confPtrType}, false);
         auto    funcBody    = llvm::Function::Create(funcType, llvm::Function::ExternalLinkage, funcName, module);
         auto    funcArgs    = funcBody->args().begin();
 
-        funcArgs->setName("prop");    funcArgs++;
+        funcArgs->setName("frst");  funcArgs++;
+        funcArgs->setName("last");  funcArgs++;
         funcArgs->setName("conf");
 
         auto    bb          = llvm::BasicBlock::Create(*context, "entry", funcBody);
@@ -752,5 +966,7 @@ void Compile::make(llvm::LLVMContext* context, llvm::Module* module, Module* ref
         CompileExprImpl compExpr(context, module, builder.get(), funcBody, refmod);
 
         builder->CreateRet(compExpr.make(expr));
+
+        llvm::verifyFunction(*funcBody);
     }
 }

@@ -22,13 +22,17 @@ data alpha: boolean;
 data beta: boolean;
 data plain: integer;
 
+
+Us(true, false);
+Uw(true, false);
+
 #abc.a + 12 == 2;
 #abc.d.x == 1;
 #__time__ == 1;
 #plain == 3;
 
-abc.x[2][3].a == 3;
-abc.z[2][3] == 2;
+#abc.x[2][3].a == 3;
+#abc.z[2][3] == 2;
 
 #x@(x.abc.a != 2);
 
@@ -52,7 +56,7 @@ data alarm:     State;
 data door:      Door;
 
 #F(button.DEPRESSED);
-button.DEPRESSED;
+#button.DEPRESSED;
 
 before button.DEPRESSED, lock.ON eventually holds after 100 milliseconds;   
 globally, it is never the case that door.CLOSED && alarm.ON;    
