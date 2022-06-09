@@ -833,10 +833,78 @@ void    CompileExprImpl::visit(ExprXor*          expr)
 
 void    CompileExprImpl::visit(ExprXs*           expr)
 {
+    auto    bbHead  = llvm::BasicBlock::Create(*m_context, "Xs-head");
+    auto    bbBody  = llvm::BasicBlock::Create(*m_context, "Xs-body");
+    auto    bbTail  = llvm::BasicBlock::Create(*m_context, "Xs-tail");
+    auto    frst        = m_curr.back();
+    auto    last        = m_last;
+
+    m_builder->CreateBr(bbHead);
+
+    //  head
+    m_function->getBasicBlockList().push_back(bbHead);
+    m_builder->SetInsertPoint(bbHead);
+    auto    frstGTlast  = m_builder->CreateICmpUGT(frst, last, "frst > last");
+    m_builder->CreateCondBr(frstGTlast, bbTail, bbBody);
+
+    //  body
+    m_function->getBasicBlockList().push_back(bbBody);
+    m_builder->SetInsertPoint(bbBody);
+    auto    next        = m_builder->CreateGEP(m_propType, frst, m_1, "next");
+    m_curr.push_back(next);
+    auto    body        = make(expr->arg);
+    m_curr.pop_back();
+    bbBody              = m_builder->GetInsertBlock();
+    m_builder->CreateBr(bbTail);
+
+    //  tail
+    m_function->getBasicBlockList().push_back(bbTail);
+    m_builder->SetInsertPoint(bbTail);
+    auto    result      = m_builder->CreatePHI(m_builder->getInt1Ty(), 2, "Xs");
+
+    //  link
+    result->addIncoming(body, bbBody);
+    result->addIncoming(m_F, bbHead);
+
+    m_value = result;
 }
 
 void    CompileExprImpl::visit(ExprXw*           expr)
 {
+    auto    bbHead  = llvm::BasicBlock::Create(*m_context, "Xw-head");
+    auto    bbBody  = llvm::BasicBlock::Create(*m_context, "Xw-body");
+    auto    bbTail  = llvm::BasicBlock::Create(*m_context, "Xw-tail");
+    auto    frst        = m_curr.back();
+    auto    last        = m_last;
+
+    m_builder->CreateBr(bbHead);
+
+    //  head
+    m_function->getBasicBlockList().push_back(bbHead);
+    m_builder->SetInsertPoint(bbHead);
+    auto    frstGTlast  = m_builder->CreateICmpUGT(frst, last, "frst > last");
+    m_builder->CreateCondBr(frstGTlast, bbTail, bbBody);
+
+    //  body
+    m_function->getBasicBlockList().push_back(bbBody);
+    m_builder->SetInsertPoint(bbBody);
+    auto    next        = m_builder->CreateGEP(m_propType, frst, m_1, "next");
+    m_curr.push_back(next);
+    auto    body        = make(expr->arg);
+    m_curr.pop_back();
+    bbBody              = m_builder->GetInsertBlock();
+    m_builder->CreateBr(bbTail);
+
+    //  tail
+    m_function->getBasicBlockList().push_back(bbTail);
+    m_builder->SetInsertPoint(bbTail);
+    auto    result      = m_builder->CreatePHI(m_builder->getInt1Ty(), 2, "Xs");
+
+    //  link
+    result->addIncoming(body, bbBody);
+    result->addIncoming(m_T, bbHead);
+
+    m_value = result;
 }
 
 void    CompileExprImpl::visit(ExprYs*           expr)
