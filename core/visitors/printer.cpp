@@ -173,11 +173,15 @@ void    PrinterImpl::visit( Temporal<ExprBinary>*   expr)
 
 void    PrinterImpl::visit( ExprContext*   expr)
 {
-    os << expr->name;
+    if(expr->name != "__curr__")
+    {
+        os << expr->name << ".";
+    }
 }
 
 void    PrinterImpl::visit( ExprData*       expr)
 {
+    expr->ctxt->accept(*this);
     os << expr->name;
 }
 

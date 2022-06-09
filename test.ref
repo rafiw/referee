@@ -23,9 +23,11 @@ data beta: boolean;
 data plain: integer;
 
 
-Us(true, false);
-Uw(true, false);
+#Us(__time__ < 5, __time__ == 5);
+#Uw(__time__ < 5, __time__ == 5);
+Us[abc.a: abc.a + 777](abc.a == 2, abc.a == 3);
 
+#F(abc.a == 2);
 #abc.a + 12 == 2;
 #abc.d.x == 1;
 #__time__ == 1;

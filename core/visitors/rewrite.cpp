@@ -97,9 +97,12 @@ struct RewriteImpl
 
 {
 public:
-    Expr*   make(   Expr*           expr);
-    Time*   make(   Time*           time);
-    Expr*   make(   Spec*           spec);
+    Expr*   make(   Expr*           expr,
+                    std::string     curr = "__curr__");
+    Time*   make(   Time*           time,
+                    std::string     curr = "__curr__");
+    Expr*   make(   Spec*           spec,
+                    std::string     curr = "__curr__");
 
     void    visit(ExprAdd*          expr) override;
     void    visit(ExprAnd*          expr) override;
@@ -170,8 +173,9 @@ public:
     Expr*   negated(Expr* expr);
 
 private:
-    Expr*   m_expr  = nullptr;
-    Time*   m_time  = nullptr;
+    Expr*       m_expr  = nullptr;
+    Time*       m_time  = nullptr;
+    std::string m_bind  = "__curr__";
 };
 
 void    RewriteImpl::visit( ExprAdd*            expr)
@@ -237,16 +241,32 @@ void    RewriteImpl::visit( ExprConstString*    expr)
 
 void    RewriteImpl::visit( ExprContext*        expr)
 {
-    m_expr =  Factory<ExprContext>::create(
-        expr->where(),
-        expr->name);
+    if(expr->name == "__curr__")
+    {
+        m_expr =  Factory<ExprContext>::create(expr->where(), m_bind);
+    }
+    else
+    {
+        m_expr =  Factory<ExprContext>::create(expr->where(), expr->name);
+    }
+
 }
 void    RewriteImpl::visit( ExprData*           expr)
 {
-    m_expr =  Factory<ExprData>::create(
-        expr->where(),
-        expr->ctxt,
-        expr->name);
+    if(expr->ctxt->name == "__curr__" && expr->ctxt->name != m_bind)
+    {
+        m_expr =  Factory<ExprData>::create(
+            expr->where(),
+            Factory<ExprContext>::create(m_bind),
+            expr->name);
+    }
+    else
+    {
+        m_expr =  Factory<ExprData>::create(
+            expr->where(),
+            expr->ctxt,
+            expr->name);
+    }
 }
 
 void    RewriteImpl::visit( ExprDiv*            expr)
@@ -472,11 +492,11 @@ void    RewriteImpl::visit( ExprSs*             expr)
 {
     if(expr->time)
     {
-        auto    time        = make(expr->time);
+        auto    time        = make(expr->time, "starting");
         auto    lo          = Wrapper(time->lo);
         auto    hi          = Wrapper(time->hi);
-        auto    prev_time   = Wrapper(Factory<ExprMmbr>::create(Factory<ExprContext>::create("starting"), "__time__"));
-        auto    curr_time   = Wrapper(Factory<ExprMmbr>::create(Factory<ExprContext>::create("__curr__"), "__time__"));
+        auto    prev_time   = Wrapper(Factory<ExprData>::create(Factory<ExprContext>::create("starting"), "__time__"));
+        auto    curr_time   = Wrapper(Factory<ExprData>::create(Factory<ExprContext>::create("__curr__"), "__time__"));
         auto    cT_lt_hi    = (prev_time - curr_time) < hi;
         auto    lo_lt_Nt    = Yw(lo < (prev_time - curr_time));
         auto    lhs         = (Wrapper(make(expr->lhs)) && cT_lt_hi) || !lo_lt_Nt;
@@ -506,11 +526,11 @@ void    RewriteImpl::visit( ExprSw*             expr)
 {
     if(expr->time)
     {
-        auto    time        = make(expr->time);
+        auto    time        = make(expr->time, "starting");
         auto    lo          = Wrapper(time->lo);
         auto    hi          = Wrapper(time->hi);
-        auto    prev_time   = Wrapper(Factory<ExprMmbr>::create(Factory<ExprContext>::create("starting"), "__time__"));
-        auto    curr_time   = Wrapper(Factory<ExprMmbr>::create(Factory<ExprContext>::create("__curr__"), "__time__"));
+        auto    prev_time   = Wrapper(Factory<ExprData>::create(Factory<ExprContext>::create("starting"), "__time__"));
+        auto    curr_time   = Wrapper(Factory<ExprData>::create(Factory<ExprContext>::create("__curr__"), "__time__"));
         auto    cT_lt_hi    = (prev_time - curr_time) < hi;
         auto    lo_lt_Nt    = Yw(lo < (prev_time - curr_time));
         auto    lhs         = (Wrapper(make(expr->lhs)) && cT_lt_hi) || !lo_lt_Nt;
@@ -563,11 +583,11 @@ void    RewriteImpl::visit( ExprUs*             expr)
 {
     if(expr->time)
     {
-        auto    time        = make(expr->time);
+        auto    time        = make(expr->time, "starting");
         auto    lo          = Wrapper(time->lo);
         auto    hi          = Wrapper(time->hi);
-        auto    prev_time   = Wrapper(Factory<ExprMmbr>::create(Factory<ExprContext>::create("starting"), "__time__"));
-        auto    curr_time   = Wrapper(Factory<ExprMmbr>::create(Factory<ExprContext>::create("__curr__"), "__time__"));
+        auto    prev_time   = Wrapper(Factory<ExprData>::create(Factory<ExprContext>::create("starting"), "__time__"));
+        auto    curr_time   = Wrapper(Factory<ExprData>::create(Factory<ExprContext>::create("__curr__"), "__time__"));
         auto    cT_lt_hi    = (curr_time - prev_time) < hi;
         auto    lo_lt_Nt    = Xw(lo < (curr_time - prev_time));
         auto    lhs         = (Wrapper(make(expr->lhs)) && cT_lt_hi) || !lo_lt_Nt;
@@ -588,11 +608,11 @@ void    RewriteImpl::visit( ExprUw*             expr)
 {
     if(expr->time)
     {
-        auto    time        = make(expr->time);
+        auto    time        = make(expr->time, "starting");
         auto    lo          = Wrapper(time->lo);
         auto    hi          = Wrapper(time->hi);
-        auto    prev_time   = Wrapper(Factory<ExprMmbr>::create(Factory<ExprContext>::create("starting"), "__time__"));
-        auto    curr_time   = Wrapper(Factory<ExprMmbr>::create(Factory<ExprContext>::create("__curr__"), "__time__"));
+        auto    prev_time   = Wrapper(Factory<ExprData>::create(Factory<ExprContext>::create("starting"), "__time__"));
+        auto    curr_time   = Wrapper(Factory<ExprData>::create(Factory<ExprContext>::create("__curr__"), "__time__"));
         auto    cT_lt_hi    = (curr_time - prev_time) < hi;
         auto    lo_lt_Nt    = Xw(lo < (curr_time - prev_time));
         auto    lhs         = (Wrapper(make(expr->lhs)) && cT_lt_hi) || !lo_lt_Nt;
@@ -775,30 +795,64 @@ void    RewriteImpl::visit( SpecUntil*              spec)
     m_expr  = Us(tPS, P, S);
 }
 
-Expr*   RewriteImpl::make(Expr* expr)
+Expr*   RewriteImpl::make(Expr* expr, std::string curr)
 {
+    m_expr  = Factory<ExprConstBoolean>::create(false);
+
     if(expr)
-        expr->accept(*this);
-    else 
-        m_expr  = Factory<ExprConstBoolean>::create(false);
+    {
+        if(curr != "__curr__")
+        {
+            assert(m_bind == "__curr__");
+
+            m_bind  = curr;
+            expr->accept(*this);
+            m_bind  = "__curr__";
+        }
+        else
+        {
+            expr->accept(*this);
+        }
+    }    
     
     return  canonic(m_expr);
 }
 
-Time*   RewriteImpl::make(Time* time)
+Time*   RewriteImpl::make(Time* time, std::string curr)
 {
     if(time)
     {
-        time->accept(*this);
-        
+        if(curr != "__curr__")
+        {
+            assert(m_bind == "__curr__");
+
+            m_bind  = curr;
+            time->accept(*this);
+            m_bind  = "__curr__";
+        }
+        else
+        {
+            time->accept(*this);
+        }        
         return  m_time;
     }
     return nullptr;
 }
 
-Expr*   RewriteImpl::make(Spec* spec)
+Expr*   RewriteImpl::make(Spec* spec, std::string curr)
 {
-    spec->accept(*this);
+    if(curr != "__curr__")
+    {
+        assert(m_bind == "__curr__");
+
+        m_bind  = curr;
+        spec->accept(*this);
+        m_bind  = "__curr__";
+    }
+    else
+    {
+        spec->accept(*this);
+    }
     
     return  canonic(m_expr);
 }

@@ -23,6 +23,9 @@
  */
 
 #include "compile.hpp"
+#include "rewrite.hpp"
+#include "printer.hpp"
+#include "typecalc.hpp"
 #include "../factory.hpp"
 
 #include <functional>
@@ -677,95 +680,75 @@ void    CompileExprImpl::visit(ExprTw*           expr)
 
 void    CompileExprImpl::visit(ExprUs*           expr)
 {
-    auto    bbHead      = llvm::BasicBlock::Create(*m_context, "Us-head", m_function);
+    auto    bbTest      = llvm::BasicBlock::Create(*m_context, "Us-test");
     auto    bbBodyRhs   = llvm::BasicBlock::Create(*m_context, "Us-body-rhs");
     auto    bbBodyLhs   = llvm::BasicBlock::Create(*m_context, "Us-body-lhs");
     auto    bbTail      = llvm::BasicBlock::Create(*m_context, "Us-tail");
     auto    frst        = m_curr.back();
     auto    last        = m_last;
 
-    m_builder->CreateBr(bbHead);
-
-    //  head
-    m_builder->SetInsertPoint(bbHead);
+    //  entry
+    auto    bbEntry     = m_builder->GetInsertBlock();
     auto    frstGTlast  = m_builder->CreateICmpUGT(frst, last, "frst > last");
     m_builder->CreateCondBr(frstGTlast, bbTail, bbBodyRhs);
 
-    //  body RHS
+    //  bodyRhs
     m_function->getBasicBlockList().push_back(bbBodyRhs);
     m_builder->SetInsertPoint(bbBodyRhs);
     auto    curr        = m_builder->CreatePHI(frst->getType(), 2, "curr");
     m_curr.push_back(curr);
     auto    rhs         = make(expr->rhs);
     m_curr.pop_back();
-    bbBodyRhs   = m_builder->GetInsertBlock();
+    bbBodyRhs           = m_builder->GetInsertBlock();
     m_builder->CreateCondBr(rhs, bbTail, bbBodyLhs);
 
-    //  body LHS
+    //  bodyLhs
     m_function->getBasicBlockList().push_back(bbBodyLhs);
     m_builder->SetInsertPoint(bbBodyLhs);
     m_curr.push_back(curr);
-    auto    lhs         = make(expr->rhs);
-    m_curr.pop_back();
+    auto    lhs         = make(expr->lhs);
+    m_curr.pop_back();    
     bbBodyLhs           = m_builder->GetInsertBlock();
     auto    nlhs        = m_builder->CreateNot(lhs, "!lhs");    
     auto    next        = m_builder->CreateGEP(m_propType, curr, m_1, "next");
-    auto    nextGTlast  = m_builder->CreateICmpUGT(next, last, "next > last");
-    auto    which       = m_builder->CreateSelect(nlhs, m_T, nextGTlast);
+    m_builder->CreateCondBr(nlhs, bbTest, bbTail);
 
-    m_builder->CreateCondBr(which, bbTail, bbBodyRhs);
+    //  test
+    m_function->getBasicBlockList().push_back(bbTest);
+    m_builder->SetInsertPoint(bbTest);
+    auto    nextGTlast  = m_builder->CreateICmpUGT(next, last, "next > last");
+    m_builder->CreateCondBr(nextGTlast, bbTail, bbBodyRhs);
 
     //  tail
     m_function->getBasicBlockList().push_back(bbTail);
     m_builder->SetInsertPoint(bbTail);
-    auto    result      = m_builder->CreatePHI(m_builder->getInt1Ty(), 3, "Us");
+    auto    result      = m_builder->CreatePHI(m_builder->getInt1Ty(), 4, "Us");
 
-    //  edges
-    result->addIncoming(m_F, bbHead);
-    result->addIncoming(rhs, bbBodyLhs);
-    result->addIncoming(rhs, bbBodyRhs);
+    //  link
+    curr->addIncoming(next, bbTest);
+    curr->addIncoming(frst, bbEntry);
 
-    curr->addIncoming(frst, bbHead);
-    curr->addIncoming(next, bbBodyLhs);
+    result->addIncoming(m_F, bbEntry);
+    result->addIncoming(m_F, bbTest);
+    result->addIncoming(m_F, bbBodyLhs);
+    result->addIncoming(m_T, bbBodyRhs);
 
     m_value = result;
-    /*
-        auto    iter    = frst;
-        while(iter <= last)
-        {
-            if(eval(rhs) == true)
-                return True
-            
-            if(eval(lhs) == false)
-                return False
 
-            iter++
-        }
-        return false
+/*
+    auto    iter    = frst;
+    while(iter <= last)
+    {
+        if(eval(rhs) == true)
+            return True
+        
+        if(eval(lhs) == false)
+            return False
 
-        define zeroext i1 @_Z4evalPbS_(i8* %frst, i8* readnone %last) local_unnamed_addr #0 {
-            head
-                %frstGTlast = icmp ugt i8* %frst, %last
-                br i1 %frstGTlast, label %tail, label %bodyRhs
-
-            bodyRhs:
-                %curr = phi i8* [ %next, %bodyLhs ], [ %frst, %head ]
-                %rhs = tail call zeroext i1 @_Z3rhsPb(i8* %curr)
-                br i1 %rhs, label %tail, label %bodyLhs
-
-            bodyLhs:
-                %lhs = tail call zeroext i1 @_Z3lhsPb(i8* %curr)
-                %next = getelementptr inbounds i8, i8* %curr, i64 1
-                %not_lhs = xor i1 %lhs, true
-                %nextGTlast = icmp ugt i8* %next, %last
-                %12 = select i1 %not_lhs, i1 true, i1 %nextGTlast
-                br i1 %12, label %tail, label %bodyRhs
-
-            tail:
-                %result = phi i1 [ false, %head ], [ %rhs, %bodyLhs ], [ %rhs, %bodyRhs ]
-                ret i1 %result
-        }
-    */
+        iter++
+    }
+    return true
+*/
 }
 
 void    CompileExprImpl::visit(ExprUw*           expr)
@@ -799,10 +782,11 @@ void    CompileExprImpl::visit(ExprUw*           expr)
     auto    lhs         = make(expr->lhs);
     m_curr.pop_back();    
     bbBodyLhs           = m_builder->GetInsertBlock();
+    auto    nlhs        = m_builder->CreateNot(lhs, "!lhs");    
     auto    next        = m_builder->CreateGEP(m_propType, curr, m_1, "next");
-    m_builder->CreateCondBr(lhs, bbTest, bbTail);
+    m_builder->CreateCondBr(nlhs, bbTest, bbTail);
 
-    //  head
+    //  test
     m_function->getBasicBlockList().push_back(bbTest);
     m_builder->SetInsertPoint(bbTest);
     auto    nextGTlast  = m_builder->CreateICmpUGT(next, last, "next > last");
@@ -837,30 +821,6 @@ void    CompileExprImpl::visit(ExprUw*           expr)
         iter++
     }
     return true
-
-
-    entry:
-        %frstGTlast = icmp ugt irhs* %frst, %last`
-        br i1 %frstGTlast, label %tail, label %bodyRhs
-
-    test:
-        %nextGTlast = icmp ugt irhs* %next, %last
-        br i1 %nextGTlast, label %tail, label %bodyRhs
-
-    bodyRhs:
-        %curr = phi irhs* [ %next, %test ], [ %frst, %entry ]
-        %rhs = tail call zeroext i1 @_ZfrstGTlastrhsPb(irhs* %curr)
-        br i1 %rhs, label %tail, label %bodyLhs
-
-    bodyLhs:
-        %lhs = tail call zeroext i1 @_ZfrstGTlastlhsPb(irhs* %curr)
-        %next = getelementptr inbounds irhs, irhs* %curr, ibodyRhshead 1
-        br i1 %lhs, label %test, label %tail
-
-    tail:
-        %result = phi i1 [ true, %entry ], [ true, %test ], [ false, %bodyLhs ], [ true, %bodyRhs ]
-        ret i1 %result
-
 */
 }
 
@@ -965,7 +925,10 @@ void Compile::make(llvm::LLVMContext* context, llvm::Module* module, Module* ref
 
         CompileExprImpl compExpr(context, module, builder.get(), funcBody, refmod);
 
-        builder->CreateRet(compExpr.make(expr));
+        auto    temp        = Rewrite::make(expr);
+        TypeCalc::make(refmod, temp);
+        Printer::output(std::cout, temp) << std::endl;
+        builder->CreateRet(compExpr.make(temp));
 
         llvm::verifyFunction(*funcBody);
     }
