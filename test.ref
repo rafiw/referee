@@ -29,7 +29,16 @@ data plain: integer;
 #Xw(abc.a == 567);
 #abc.a == 456;
 
-Xs(Us[123:345](abc.a == 2, abc.a == 3));
+#Xs(Us[abc.a + 123:abc.a + 345](abc.a == 2, abc.a == 3));
+#Xw(Us[abc.a + 123:abc.a + 345](abc.a == 2, abc.a == 3));
+#Xs(Uw[abc.a + 123:abc.a + 345](abc.a == 2, abc.a == 3));
+#Xw(Uw[abc.a + 123:abc.a + 345](abc.a == 2, abc.a == 3));
+
+#Xs(Us[abc.a + 123:abc.a + 345](abc.a == 2, abc.a == 3));
+#Us[abc.a + 123:abc.a + 345](abc.a == 2, abc.a == 3);
+#Us[abc.a + 123:abc.a + 345](abc.a == 2, abc.a == 3);
+
+starting@(Us(starting.abc.a == 1234, abc.x[1][1].a == 3));
 
 #F(abc.a == 2);
 #abc.a + 12 == 2;

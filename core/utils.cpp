@@ -25,6 +25,8 @@
 #include "utils.hpp"
 
 #include <cmath>
+#include <stdexcept>
+#include <limits.h>
 
 int64_t     parse_integer(  std::string const& text, unsigned base)
 {

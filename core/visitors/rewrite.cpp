@@ -29,6 +29,7 @@
 #include "../builder.hpp"
 
 #include <exception>
+#include <assert.h>
 
 struct RewriteImpl
     : Visitor< ExprAdd

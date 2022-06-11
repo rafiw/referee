@@ -52,6 +52,23 @@
 #include "llvm/IR/Type.h"
 #include "llvm/IR/Verifier.h"
 #include "llvm/IR/TypeFinder.h"
+#include "llvm/ADT/StringRef.h"
+#include "llvm/ExecutionEngine/JITSymbol.h"
+#include "llvm/ExecutionEngine/Orc/CompileUtils.h"
+#include "llvm/ExecutionEngine/Orc/Core.h"
+#include "llvm/ExecutionEngine/Orc/ExecutionUtils.h"
+#include "llvm/ExecutionEngine/Orc/ExecutorProcessControl.h"
+#include "llvm/ExecutionEngine/Orc/IRCompileLayer.h"
+#include "llvm/ExecutionEngine/Orc/IRTransformLayer.h"
+#include "llvm/ExecutionEngine/Orc/JITTargetMachineBuilder.h"
+#include "llvm/ExecutionEngine/Orc/RTDyldObjectLinkingLayer.h"
+#include "llvm/ExecutionEngine/SectionMemoryManager.h"
+#include "llvm/IR/DataLayout.h"
+#include "llvm/IR/LLVMContext.h"
+#include "llvm/IR/LegacyPassManager.h"
+#include "llvm/Transforms/InstCombine/InstCombine.h"
+#include "llvm/Transforms/Scalar.h"
+#include "llvm/Transforms/Scalar/GVN.h"
 
 #include "antlr2ast.hpp"
 
@@ -159,6 +176,37 @@ int main(int argc, char * argv[])
                 std::cout << std::endl;
             }
 
+            std::cout << std::endl << std::endl;
+            std::cout << "non optimized" << std::endl;
+            TheModule->dump();
+/*
+            auto EPC    = llvm::orc::SelfExecutorProcessControl::Create();
+            auto ES     = std::make_unique<llvm::orc::ExecutionSession>(std::move(*EPC));
+            auto JTMB   = llvm::orc::JITTargetMachineBuilder(ES->getExecutorProcessControl().getTargetTriple());
+            auto DL     = JTMB.getDefaultDataLayoutForTarget();
+*/
+              // Create a new pass manager attached to it.
+            auto    TheFPM = std::make_unique<llvm::legacy::FunctionPassManager>(TheModule.get());
+
+            TheFPM->add(llvm::createLoopStrengthReducePass());
+            TheFPM->add(llvm::createLoopLoadEliminationPass());
+            TheFPM->add(llvm::createLoopDataPrefetchPass());
+            TheFPM->add(llvm::createLoopSimplifyCFGPass());
+            TheFPM->add(llvm::createLoopGuardWideningPass());
+            TheFPM->add(llvm::createLoopDistributePass());
+            TheFPM->add(llvm::createInstructionCombiningPass());
+            TheFPM->add(llvm::createReassociatePass());
+            TheFPM->add(llvm::createGVNPass());
+            TheFPM->add(llvm::createCFGSimplificationPass());
+
+
+            TheFPM->doInitialization();
+            auto& functions = TheModule->getFunctionList();
+
+            for(auto iter = functions.begin(); iter != functions.end(); iter++)
+                TheFPM->run(*iter);
+            std::cout << std::endl << std::endl;
+            std::cout << "optimized" << std::endl;
             TheModule->dump();
 
 #if 0

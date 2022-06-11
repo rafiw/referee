@@ -25,6 +25,7 @@
 #include "strings.hpp"
 
 #include <memory>
+#include <string.h>
 
 struct cstrless {
     bool operator()(const char* a, const char* b) const
