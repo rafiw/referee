@@ -52,6 +52,7 @@ struct PrinterImpl
              , Temporal<ExprUnary>
              , ExprContext
              , ExprData
+             , ExprConf
              , ExprMmbr
              , ExprConstBoolean
              , ExprConstInteger
@@ -93,6 +94,7 @@ struct PrinterImpl
     void    visit(ExprConstNumber*      expr) override;
     void    visit(ExprContext*          expr) override;
     void    visit(ExprData*             expr) override;
+    void    visit(ExprConf*             expr) override;
     void    visit(ExprMmbr*             expr) override;
     void    visit(ExprParen*            expr) override;
     void    visit(ExprUnary*            expr) override;
@@ -182,6 +184,11 @@ void    PrinterImpl::visit( ExprContext*   expr)
 void    PrinterImpl::visit( ExprData*       expr)
 {
     expr->ctxt->accept(*this);
+    os << expr->name;
+}
+
+void    PrinterImpl::visit( ExprConf*       expr)
+{
     os << expr->name;
 }
 

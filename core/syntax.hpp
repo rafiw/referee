@@ -397,14 +397,16 @@ class ExprConf final
     : public Visitable<ExprNullary, ExprConf>
 {
 public:
-    ExprConf(std::string name)
+    ExprConf(ExprContext* ctxt, std::string name)
         : Visitable<ExprNullary, ExprConf>()
+        , ctxt(ctxt)
         , name(name)
     {
     }
 
 public:
     std::string const   name;
+    ExprContext* const  ctxt;
 };
 
 class ExprData final

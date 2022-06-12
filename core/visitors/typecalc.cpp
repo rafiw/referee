@@ -33,6 +33,7 @@ struct TypeCalcImpl
              , ExprConstNumber
              , ExprConstString
              , ExprContext
+             , ExprConf
              , ExprParen
              , ExprData
              , ExprMmbr
@@ -77,6 +78,7 @@ struct TypeCalcImpl
     void    visit(ExprConstString*      expr) override;
     void    visit(ExprContext*          expr) override;
     void    visit(ExprData*             expr) override;
+    void    visit(ExprConf*             expr) override;
     void    visit(ExprDiv*              expr) override;
     void    visit(ExprEq*               expr) override;
     void    visit(ExprEqu*              expr) override;
@@ -268,6 +270,18 @@ void    TypeCalcImpl::visit(ExprData*               expr)
     {
         throw Exception(expr->where(), "bad type");
     }
+
+    m_type  = ctxt->member(expr->name);
+
+    if(m_type == nullptr)
+    {
+        throw Exception(expr->where(), "no such a member");
+    }
+}
+
+void    TypeCalcImpl::visit(ExprConf*               expr)
+{
+    auto    ctxt    = Factory<TypeContext>::create(m_module);
 
     m_type  = ctxt->member(expr->name);
 

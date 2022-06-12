@@ -90,12 +90,19 @@ TypeContext::TypeContext(Module* module)
 
 Type*   TypeContext::member(std::string member)
 {
+    if(m_module->hasConf(member))
+    {
+        return m_module->getConf(member);
+    }
+
     return  m_module->getProp(member);
 }
 
 unsigned    TypeContext::index(std::string name)
 {
-    auto    names   = m_module->getPropNames();
+    auto    names   = m_module->hasConf(name) 
+                    ? m_module->getConfNames() 
+                    : m_module->getPropNames();
     auto    index   = 0;
 
     for(auto it: names)

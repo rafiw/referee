@@ -22,6 +22,9 @@ data alpha: boolean;
 data beta: boolean;
 data plain: integer;
 
+#abc.a == 456;
+xyz.a == 1;
+xyz.b == 1.2;
 
 #Us(__time__ < 5, __time__ == 5);
 #Uw(__time__ < 5, __time__ == 5);
@@ -38,7 +41,7 @@ data plain: integer;
 #Us[abc.a + 123:abc.a + 345](abc.a == 2, abc.a == 3);
 #Us[abc.a + 123:abc.a + 345](abc.a == 2, abc.a == 3);
 
-starting@(Us(starting.abc.a == 1234, abc.x[1][1].a == 3));
+#starting@(Us(starting.abc.a == 1234, abc.x[1][1].a == 3));
 
 #F(abc.a == 2);
 #abc.a + 12 == 2;

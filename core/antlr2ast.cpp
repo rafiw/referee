@@ -240,8 +240,9 @@ std::any Antlr2AST::visitExprData(      referee::refereeParser::ExprDataContext*
     {
         auto    ctxt    = build<ExprContext>(ctx, "__conf__");
         auto    type    = module->getConf(name);
-        auto    expr    = static_cast<Expr*>(build<ExprData>(ctx, ctxt, name));
+        auto    expr    = static_cast<Expr*>(build<ExprConf>(ctx, ctxt, name));
 
+        ctxt->type(Factory<TypeContext>::create(module));
         expr->type(type);
 
         return expr;

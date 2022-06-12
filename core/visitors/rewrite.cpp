@@ -42,6 +42,7 @@ struct RewriteImpl
              , ExprConstString
              , ExprContext
              , ExprData
+             , ExprConf
              , ExprDiv
              , ExprEq
              , ExprEqu
@@ -115,6 +116,7 @@ public:
     void    visit(ExprConstString*  expr) override;
     void    visit(ExprContext*      expr) override;
     void    visit(ExprData*         expr) override;
+    void    visit(ExprConf*         expr) override;
     void    visit(ExprDiv*          expr) override;
     void    visit(ExprEq*           expr) override;
     void    visit(ExprEqu*          expr) override;
@@ -252,6 +254,7 @@ void    RewriteImpl::visit( ExprContext*        expr)
     }
 
 }
+
 void    RewriteImpl::visit( ExprData*           expr)
 {
     if(expr->ctxt->name == "__curr__" && expr->ctxt->name != m_bind)
@@ -268,6 +271,14 @@ void    RewriteImpl::visit( ExprData*           expr)
             expr->ctxt,
             expr->name);
     }
+}
+
+void    RewriteImpl::visit( ExprConf*           expr)
+{
+    m_expr =  Factory<ExprConf>::create(
+        expr->where(),
+        expr->ctxt,
+        expr->name);
 }
 
 void    RewriteImpl::visit( ExprDiv*            expr)
