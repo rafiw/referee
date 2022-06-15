@@ -86,10 +86,10 @@ Wrapper     O(Expr* arg)                            { return Wrapper(Factory<Exp
 Wrapper     H(Time* time, Expr* arg)                { return Wrapper(Factory<ExprH>::create( time, arg));}
 Wrapper     O(Time* time, Expr* arg)                { return Wrapper(Factory<ExprO>::create( time, arg));}
 
-Wrapper     Xs(Expr* arg)                           { return Wrapper(Factory<ExprXs>::create( arg));}
-Wrapper     Xw(Expr* arg)                           { return Wrapper(Factory<ExprXw>::create( arg));}
-Wrapper     Ys(Expr* arg)                           { return Wrapper(Factory<ExprYs>::create( arg));}
-Wrapper     Yw(Expr* arg)                           { return Wrapper(Factory<ExprYw>::create( arg));}
+Wrapper     Xs(Expr* arg)                           { return Wrapper(Factory<ExprXs>::create( Factory<ExprConstInteger>::create(1), arg));}
+Wrapper     Xw(Expr* arg)                           { return Wrapper(Factory<ExprXw>::create( Factory<ExprConstInteger>::create(1), arg));}
+Wrapper     Ys(Expr* arg)                           { return Wrapper(Factory<ExprYs>::create( Factory<ExprConstInteger>::create(1), arg));}
+Wrapper     Yw(Expr* arg)                           { return Wrapper(Factory<ExprYw>::create( Factory<ExprConstInteger>::create(1), arg));}
 
 Wrapper     Us(Expr* lhs, Expr* rhs)                { return Wrapper(Factory<ExprUs>::create( lhs, rhs));}
 Wrapper     Uw(Expr* lhs, Expr* rhs)                { return Wrapper(Factory<ExprUw>::create( lhs, rhs));}

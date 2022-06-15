@@ -654,7 +654,8 @@ void    RewriteImpl::visit( ExprXs*             expr)
     m_expr =  Factory<ExprXs>::create(
         expr->where(),
         make(expr->time),
-        make(expr->arg));
+        make(expr->lhs),
+        make(expr->rhs));
 }
 
 void    RewriteImpl::visit( ExprXw*             expr)
@@ -662,7 +663,8 @@ void    RewriteImpl::visit( ExprXw*             expr)
     m_expr =  Factory<ExprXw>::create(
         expr->where(),
         make(expr->time),
-        make(expr->arg));
+        make(expr->lhs),
+        make(expr->rhs));
 }
 
 void    RewriteImpl::visit( ExprYs*             expr)
@@ -670,7 +672,8 @@ void    RewriteImpl::visit( ExprYs*             expr)
     m_expr =  Factory<ExprYs>::create(
         expr->where(),
         make(expr->time),
-        make(expr->arg));
+        make(expr->lhs),
+        make(expr->rhs));
 }
 
 void    RewriteImpl::visit( ExprYw*             expr)
@@ -678,7 +681,8 @@ void    RewriteImpl::visit( ExprYw*             expr)
     m_expr =  Factory<ExprYw>::create(
         expr->where(),
         make(expr->time),
-        make(expr->arg));
+        make(expr->lhs),
+        make(expr->rhs));
 }
 
 void    RewriteImpl::visit( Time*               expr)

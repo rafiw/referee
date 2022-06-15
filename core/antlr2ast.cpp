@@ -395,6 +395,11 @@ std::any Antlr2AST::visitExprNe(        referee::refereeParser::ExprNeContext*  
     return acceptBinary<ExprNe>(ctx);
 }
 
+std::any Antlr2AST::visitExprNot(       referee::refereeParser::ExprNotContext*     ctx)
+{
+    return acceptUnary<ExprNot>(ctx);
+}
+
 std::any Antlr2AST::visitExprO(         referee::refereeParser::ExprOContext*       ctx)
 {
     return acceptTemporalUnary<ExprO>(ctx);
@@ -468,22 +473,73 @@ std::any Antlr2AST::visitExprXor(       referee::refereeParser::ExprXorContext* 
 
 std::any Antlr2AST::visitExprXs(        referee::refereeParser::ExprXsContext*      ctx)
 {
-    return acceptTemporalUnary<ExprXs>(ctx);
+    auto    args    = ctx->expression();
+
+    if(args.size() == 1)
+    {
+        auto    lhs     = Factory<ExprConstInteger>::create(1);
+        auto    rhs     = std::any_cast<Expr*>(args[0]->accept(this));
+        return  static_cast<Expr*>(build<ExprXs>(ctx, lhs, rhs));
+    }
+    else
+    {
+        auto    lhs     = std::any_cast<Expr*>(args[0]->accept(this));
+        auto    rhs     = std::any_cast<Expr*>(args[1]->accept(this));
+        return  static_cast<Expr*>(build<ExprXs>(ctx, lhs, rhs));
+    }
 }
 
 std::any Antlr2AST::visitExprXw(        referee::refereeParser::ExprXwContext*      ctx)
 {
-    return acceptTemporalUnary<ExprXw>(ctx);
-}
+    auto    args    = ctx->expression();
+
+    if(args.size() == 1)
+    {
+        auto    lhs     = Factory<ExprConstInteger>::create(1);
+        auto    rhs     = std::any_cast<Expr*>(args[0]->accept(this));
+        return  static_cast<Expr*>(build<ExprXw>(ctx, lhs, rhs));
+    }
+    else
+    {
+        auto    lhs     = std::any_cast<Expr*>(args[0]->accept(this));
+        auto    rhs     = std::any_cast<Expr*>(args[1]->accept(this));
+        return  static_cast<Expr*>(build<ExprXw>(ctx, lhs, rhs));
+    }}
 
 std::any Antlr2AST::visitExprYs(        referee::refereeParser::ExprYsContext*      ctx)
 {
-    return acceptTemporalUnary<ExprYs>(ctx);
+    auto    args    = ctx->expression();
+
+    if(args.size() == 1)
+    {
+        auto    lhs     = Factory<ExprConstInteger>::create(1);
+        auto    rhs     = std::any_cast<Expr*>(args[0]->accept(this));
+        return  static_cast<Expr*>(build<ExprYs>(ctx, lhs, rhs));
+    }
+    else
+    {
+        auto    lhs     = std::any_cast<Expr*>(args[0]->accept(this));
+        auto    rhs     = std::any_cast<Expr*>(args[1]->accept(this));
+        return  static_cast<Expr*>(build<ExprYs>(ctx, lhs, rhs));
+    }
 }
 
 std::any Antlr2AST::visitExprYw(        referee::refereeParser::ExprYwContext*      ctx)
 {
-    return acceptTemporalUnary<ExprYw>(ctx);
+    auto    args    = ctx->expression();
+
+    if(args.size() == 1)
+    {
+        auto    lhs     = Factory<ExprConstInteger>::create(1);
+        auto    rhs     = std::any_cast<Expr*>(args[0]->accept(this));
+        return  static_cast<Expr*>(build<ExprYw>(ctx, lhs, rhs));
+    }
+    else
+    {
+        auto    lhs     = std::any_cast<Expr*>(args[0]->accept(this));
+        auto    rhs     = std::any_cast<Expr*>(args[1]->accept(this));
+        return  static_cast<Expr*>(build<ExprYw>(ctx, lhs, rhs));
+    }
 }
 
 std::any Antlr2AST::visitProgram(       referee::refereeParser::ProgramContext*     ctx)

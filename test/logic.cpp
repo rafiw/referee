@@ -139,14 +139,14 @@ typedef struct state_t {
 class LogicTest : public ::testing::Test {
 
 protected:
-    state_t     state[27];
+    state_t     state[26];
     bool        T   = true;
     bool        F   = false;
 
 protected:
     void SetUp() override
     {
-        for(int i = 0 ; i < 27; i++)
+        for(int i = 0 ; i < 26; i++)
         {
             state[i].time   = i * 1000;
 
@@ -176,6 +176,8 @@ protected:
     }
 };
 
+static llvm::ExitOnError ExitOnErr;
+
 TEST_F(LogicTest, Pass)
 {
     std::string                 filename    = "../test/logic/pass.ref";
@@ -193,14 +195,14 @@ TEST_F(LogicTest, Pass)
     auto    TheModule   = std::make_unique<llvm::Module>(filename, *TheContext);
     auto    TheBuilder  = std::make_unique<llvm::IRBuilder<>>(*TheContext);   
     auto    TheFPM      = std::make_unique<llvm::legacy::FunctionPassManager>(TheModule.get());
-    auto    TheJIT      = RefereeJIT::Create();
 
-    TheModule->setDataLayout(TheJIT.get()->getDataLayout());
-
-    LLVMInitializeNativeTarget();
     llvm::InitializeNativeTarget();
     llvm::InitializeNativeTargetAsmPrinter();
     llvm::InitializeNativeTargetAsmParser();
+    auto    TheJIT      = ExitOnErr(RefereeJIT::Create());
+        
+    TheModule->setDataLayout(TheJIT->getDataLayout());
+
     try {
         auto*   tree    = parser.program();
         auto*   module  = std::any_cast<Module*>(antlr2ast.visitProgram(tree));
@@ -215,9 +217,14 @@ TEST_F(LogicTest, Pass)
         TheFPM->doInitialization();
 
         auto& functions = TheModule->getFunctionList();
+        std::vector<std::string>    names;
 
         for(auto iter = functions.begin(); iter != functions.end(); iter++)
+        {
+            names.push_back(iter->getName().str());
+
             TheFPM->run(*iter);
+        }
 /*
         TheFPM->add(llvm::createLoopStrengthReducePass());
         TheFPM->add(llvm::createLoopLoadEliminationPass());
@@ -236,12 +243,21 @@ TEST_F(LogicTest, Pass)
 */
         TheModule->dump();
 
-        TheJIT.get()->addModule(llvm::orc::ThreadSafeModule(std::move(TheModule), std::move(TheContext)));
-        //.get()->addModule(std::move(TheModule));
-        //for(auto iter = functions.begin(); iter != functions.end(); iter++)
-        //{
-            //TheJIT.get()->findSymbol("__anon_expr");
-        //}
+        ExitOnErr(TheJIT->addModule(llvm::orc::ThreadSafeModule(std::move(TheModule), std::move(TheContext))));
+
+        //auto    symbol  = ExitOnErr(TheJIT->lookup("30:3 .. 30:13"));
+        //auto    func    = (bool (*)(state_t*, state_t*, void*))(intptr_t)symbol.getAddress();
+        //auto    result  = func(&state[0], &state[26], nullptr);
+        //std::cout << "result: " << result << std::endl; 
+        {
+            for(auto name: names)
+            {
+                auto    symbol  = ExitOnErr(TheJIT->lookup(name));
+                auto    func    = (bool (*)(state_t*, state_t*, void*))(intptr_t)symbol.getAddress();
+                auto    result  = func(&state[0], &state[25], nullptr);
+                std::cout << std::setw(20) << std::left << name << " eval: " << result << std::endl; 
+            }
+        }
     }
     catch(Exception& e)
     {

@@ -26,5 +26,27 @@ data    y:  boolean;
 data    z:  boolean;
 
 a == true;
+b == false;
 Xs(a == false);
 Xw(a == false);
+Xs(b == true);
+Xw(b == true);
+F(a == true);
+Xs(F(a == true)) == false;
+F(b == true);
+G(a == true) == false;
+G(a == false) == false;
+Xs(G(a == false));
+Xs(G(!a));
+G(true);
+F(z);
+G(z => Xw(a));
+G(z => !Xs(a));
+
+Xs( 0, a) == true;
+Xs( 1, b) == true;
+Xs(25, z) == true;
+Xs(26, z) == false;
+Xw(26, z) == true;
+Xs(26, true) == false;
+Xw(26, false) == true;

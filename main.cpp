@@ -198,7 +198,6 @@ int main(int argc, char * argv[])
             TheFPM->add(llvm::createGVNPass());
             TheFPM->add(llvm::createCFGSimplificationPass());
 
-
             TheFPM->doInitialization();
             auto& functions = TheModule->getFunctionList();
 

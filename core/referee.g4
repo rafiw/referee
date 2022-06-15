@@ -93,6 +93,8 @@ expression  : sign? integer                                     # ExprConst
             | expression '.' mmbrID                             # ExprMmbr
             | expression '[' expression ']'                     # ExprIndx
 
+            | '!' expression                                    # ExprNot
+
             | expression '+'   expression                       # ExprAdd
             | expression '-'   expression                       # ExprSub
             | expression '*'   expression                       # ExprMul
@@ -118,8 +120,8 @@ expression  : sign? integer                                     # ExprConst
 
             | 'G'  time? '(' expression ')'                     # ExprG
             | 'F'  time? '(' expression ')'                     # ExprF
-            | 'Xs' time? '(' expression ')'                     # ExprXs
-            | 'Xw' time? '(' expression ')'                     # ExprXw
+            | 'Xs'       '(' (expression ',')? expression ')'   # ExprXs
+            | 'Xw'       '(' (expression ',')? expression ')'   # ExprXw
             | 'Us' time? '(' expression ',' expression ')'      # ExprUs
             | 'Uw' time? '(' expression ',' expression ')'      # ExprUw
             | 'Rs' time? '(' expression ',' expression ')'      # ExprRs
@@ -127,8 +129,8 @@ expression  : sign? integer                                     # ExprConst
 
             | 'H'  time? '(' expression ')'                     # ExprH
             | 'O'  time? '(' expression ')'                     # ExprO
-            | 'Ys' time? '(' expression ')'                     # ExprYs
-            | 'Yw' time? '(' expression ')'                     # ExprYw
+            | 'Ys'       '(' (expression ',')? expression ')'   # ExprYs
+            | 'Yw'       '(' (expression ',')? expression ')'   # ExprYw
             | 'Ss' time? '(' expression ',' expression ')'      # ExprSs
             | 'Sw' time? '(' expression ',' expression ')'      # ExprSw
             | 'Ts' time? '(' expression ',' expression ')'      # ExprTs

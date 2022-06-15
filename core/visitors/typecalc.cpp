@@ -57,6 +57,10 @@ struct TypeCalcImpl
              , ExprMod
              , Temporal<ExprUnary>
              , Temporal<ExprBinary>
+             , ExprXs
+             , ExprXw
+             , ExprYs
+             , ExprYw
              , Time
              , ExprAt>
 {
@@ -100,6 +104,10 @@ struct TypeCalcImpl
     void    visit(Temporal<ExprBinary>* expr) override;
     void    visit(Temporal<ExprUnary>*  expr) override;
     void    visit(Time*                 time) override;
+    void    visit(ExprXs*               expr) override;
+    void    visit(ExprXw*               expr) override;
+    void    visit(ExprYs*               expr) override;
+    void    visit(ExprYw*               expr) override;
 
     Type*    boolBool2Bool(  
                     Expr*       expr,
@@ -397,6 +405,61 @@ void    TypeCalcImpl::visit(Time*                   time)
     m_type = typeVoid;
 }
 
+void    TypeCalcImpl::visit(ExprXs*               expr)
+{
+    auto    lhs = make(expr->lhs);
+    auto    rhs = make(expr->rhs);
+
+    if (lhs != typeInteger)
+        throw std::runtime_error(__PRETTY_FUNCTION__);
+
+    if (rhs != typeBoolean)
+        throw std::runtime_error(__PRETTY_FUNCTION__);
+
+    m_type = typeBoolean;
+}
+
+void    TypeCalcImpl::visit(ExprXw*               expr)
+{
+    auto    lhs = make(expr->lhs);
+    auto    rhs = make(expr->rhs);
+
+    if (lhs != typeInteger)
+        throw std::runtime_error(__PRETTY_FUNCTION__);
+
+    if (rhs != typeBoolean)
+        throw std::runtime_error(__PRETTY_FUNCTION__);
+
+    m_type = typeBoolean;
+}
+
+void    TypeCalcImpl::visit(ExprYs*               expr)
+{
+    auto    lhs = make(expr->lhs);
+    auto    rhs = make(expr->rhs);
+
+    if (lhs != typeInteger)
+        throw std::runtime_error(__PRETTY_FUNCTION__);
+
+    if (rhs != typeBoolean)
+        throw std::runtime_error(__PRETTY_FUNCTION__);
+
+    m_type = typeBoolean;
+}
+
+void    TypeCalcImpl::visit(ExprYw*               expr)
+{
+    auto    lhs = make(expr->lhs);
+    auto    rhs = make(expr->rhs);
+
+    if (lhs != typeInteger)
+        throw std::runtime_error(__PRETTY_FUNCTION__);
+
+    if (rhs != typeBoolean)
+        throw std::runtime_error(__PRETTY_FUNCTION__);
+
+    m_type = typeBoolean;
+}
 
 Type*   TypeCalcImpl::boolBool2Bool(  
                     Expr*       expr,

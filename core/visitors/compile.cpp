@@ -674,10 +674,112 @@ void    CompileExprImpl::visit(ExprParen*        expr)
 
 void    CompileExprImpl::visit(ExprRs*           expr)
 {
+    auto    bbBodyRhsHi = llvm::BasicBlock::Create(*m_context, "Rs-body-rhs", m_function);
+    auto    bbBodyRhsLo = bbBodyRhsHi;
+    auto    bbBodyLhsHi = llvm::BasicBlock::Create(*m_context, "Rs-body-lhs", m_function);
+    auto    bbBodyLhsLo = bbBodyLhsHi;
+    auto    bbTest      = llvm::BasicBlock::Create(*m_context, "Rs-test", m_function);
+    auto    bbTail      = llvm::BasicBlock::Create(*m_context, "Rs-tail", m_function);
+    auto    frst        = m_curr.back();
+    auto    last        = m_last;
+
+    //  entry
+    auto    bbEntry     = m_builder->GetInsertBlock();
+    auto    frstGTlast  = m_builder->CreateICmpUGT(frst, last, "frst > last");
+    m_builder->CreateCondBr(frstGTlast, bbTail, bbBodyRhsHi);
+
+    //  bodyRhs
+    m_builder->SetInsertPoint(bbBodyRhsHi);
+    auto    curr        = m_builder->CreatePHI(frst->getType(), 2, "curr");
+    m_curr.push_back(curr);
+    auto    rhs         = make(expr->rhs);
+    bbBodyRhsLo         = m_builder->GetInsertBlock();
+    m_curr.pop_back();
+    m_builder->CreateCondBr(rhs, bbBodyLhsHi, bbTail);
+
+    //  bodyLhs
+    m_builder->SetInsertPoint(bbBodyLhsHi);
+    m_curr.push_back(curr);
+    auto    lhs         = make(expr->lhs);
+    bbBodyLhsLo         = m_builder->GetInsertBlock();
+    m_curr.pop_back();    
+    auto    next        = m_builder->CreateGEP(m_propType, curr, m_1, "next");
+    m_builder->CreateCondBr(lhs, bbTail, bbTest);
+
+    //  test
+    m_builder->SetInsertPoint(bbTest);
+    auto    nextGTlast  = m_builder->CreateICmpUGT(next, last, "next > last");
+    m_builder->CreateCondBr(nextGTlast, bbTail, bbBodyRhsHi);
+
+    //  tail
+    m_builder->SetInsertPoint(bbTail);
+    auto    result      = m_builder->CreatePHI(m_builder->getInt1Ty(), 4, "Rs");
+
+    //  link
+    curr->addIncoming(next, bbTest);
+    curr->addIncoming(frst, bbEntry);
+
+    result->addIncoming(m_F, bbEntry);
+    result->addIncoming(m_F, bbTest);
+    result->addIncoming(m_T, bbBodyLhsLo);
+    result->addIncoming(m_F, bbBodyRhsLo);
+
+    m_value = result;
 }
 
 void    CompileExprImpl::visit(ExprRw*           expr)
 {
+    auto    bbBodyRhsHi = llvm::BasicBlock::Create(*m_context, "Rw-body-rhs", m_function);
+    auto    bbBodyRhsLo = bbBodyRhsHi;
+    auto    bbBodyLhsHi = llvm::BasicBlock::Create(*m_context, "Rw-body-lhs", m_function);
+    auto    bbBodyLhsLo = bbBodyLhsHi;
+    auto    bbTest      = llvm::BasicBlock::Create(*m_context, "Rw-test", m_function);
+    auto    bbTail      = llvm::BasicBlock::Create(*m_context, "Rw-tail", m_function);
+    auto    frst        = m_curr.back();
+    auto    last        = m_last;
+
+    //  entry
+    auto    bbEntry     = m_builder->GetInsertBlock();
+    auto    frstGTlast  = m_builder->CreateICmpUGT(frst, last, "frst > last");
+    m_builder->CreateCondBr(frstGTlast, bbTail, bbBodyRhsHi);
+
+    //  bodyRhs
+    m_builder->SetInsertPoint(bbBodyRhsHi);
+    auto    curr        = m_builder->CreatePHI(frst->getType(), 2, "curr");
+    m_curr.push_back(curr);
+    auto    rhs         = make(expr->rhs);
+    bbBodyRhsLo         = m_builder->GetInsertBlock();
+    m_curr.pop_back();
+    m_builder->CreateCondBr(rhs, bbBodyLhsHi, bbTail);
+
+    //  bodyLhs
+    m_builder->SetInsertPoint(bbBodyLhsHi);
+    m_curr.push_back(curr);
+    auto    lhs         = make(expr->lhs);
+    bbBodyLhsLo         = m_builder->GetInsertBlock();
+    m_curr.pop_back();    
+    auto    next        = m_builder->CreateGEP(m_propType, curr, m_1, "next");
+    m_builder->CreateCondBr(lhs, bbTail, bbTest);
+
+    //  test
+    m_builder->SetInsertPoint(bbTest);
+    auto    nextGTlast  = m_builder->CreateICmpUGT(next, last, "next > last");
+    m_builder->CreateCondBr(nextGTlast, bbTail, bbBodyRhsHi);
+
+    //  tail
+    m_builder->SetInsertPoint(bbTail);
+    auto    result      = m_builder->CreatePHI(m_builder->getInt1Ty(), 4, "Rw");
+
+    //  link
+    curr->addIncoming(next, bbTest);
+    curr->addIncoming(frst, bbEntry);
+
+    result->addIncoming(m_T, bbEntry);
+    result->addIncoming(m_T, bbTest);
+    result->addIncoming(m_T, bbBodyLhsLo);
+    result->addIncoming(m_F, bbBodyRhsLo);
+
+    m_value = result;
 }
 
 void    CompileExprImpl::visit(ExprSs*           expr)
@@ -853,25 +955,31 @@ void    CompileExprImpl::visit(ExprXor*          expr)
 
 void    CompileExprImpl::visit(ExprXs*           expr)
 {
-    auto    bbHead  = llvm::BasicBlock::Create(*m_context, "Xs-head", m_function);
+    auto    bbHeadHi= llvm::BasicBlock::Create(*m_context, "Xs-head", m_function);
+    auto    bbHeadLo= bbHeadHi;
     auto    bbBodyHi= llvm::BasicBlock::Create(*m_context, "Xs-body", m_function);
     auto    bbBodyLo= bbBodyHi;
     auto    bbTail  = llvm::BasicBlock::Create(*m_context, "Xs-tail", m_function);
-    auto    frst    = m_curr.back();
+    auto    frst    = m_frst;
+    auto    curr    = m_curr.back();
     auto    last    = m_last;
 
-    m_builder->CreateBr(bbHead);
+    m_builder->CreateBr(bbHeadHi);
 
     //  head
-    m_builder->SetInsertPoint(bbHead);
-    auto    frstGTlast  = m_builder->CreateICmpUGT(frst, last, "frst > last");
-    m_builder->CreateCondBr(frstGTlast, bbTail, bbBodyHi);
+    m_builder->SetInsertPoint(bbHeadHi);
+    auto    incr        = make(expr->lhs);
+    auto    next        = m_builder->CreateGEP(m_propType, curr, incr, "next");
+    bbHeadLo            = m_builder->GetInsertBlock();
+    auto    nextGTlast  = m_builder->CreateICmpUGT(next, last, "next > last");
+    auto    nextLTfrst  = m_builder->CreateICmpULT(next, frst, "next < frst");
+    auto    outside     = m_builder->CreateOr(nextGTlast, nextLTfrst);
+    m_builder->CreateCondBr(outside, bbTail, bbBodyHi);
 
     //  body
     m_builder->SetInsertPoint(bbBodyHi);
-    auto    next        = m_builder->CreateGEP(m_propType, frst, m_1, "next");
     m_curr.push_back(next);
-    auto    body        = make(expr->arg);
+    auto    body        = make(expr->rhs);
     m_curr.pop_back();
     bbBodyLo            = m_builder->GetInsertBlock();
     m_builder->CreateBr(bbTail);
@@ -882,34 +990,40 @@ void    CompileExprImpl::visit(ExprXs*           expr)
 
     //  link
     result->addIncoming(body, bbBodyLo);
-    result->addIncoming(m_F, bbHead);
+    result->addIncoming(m_F, bbHeadLo);
 
     m_value = result;
 }
 
 void    CompileExprImpl::visit(ExprXw*           expr)
 {
-    auto    bbHead  = llvm::BasicBlock::Create(*m_context, "Xw-head", m_function);
+    auto    bbHeadHi= llvm::BasicBlock::Create(*m_context, "Xw-head", m_function);
+    auto    bbHeadLo= bbHeadHi;
     auto    bbBodyHi= llvm::BasicBlock::Create(*m_context, "Xw-body", m_function);
     auto    bbBodyLo= bbBodyHi;
     auto    bbTail  = llvm::BasicBlock::Create(*m_context, "Xw-tail", m_function);
-    auto    frst    = m_curr.back();
+    auto    frst    = m_frst;
+    auto    curr    = m_curr.back();
     auto    last    = m_last;
 
-    m_builder->CreateBr(bbHead);
+    m_builder->CreateBr(bbHeadHi);
 
     //  head
-    m_builder->SetInsertPoint(bbHead);
-    auto    frstGTlast  = m_builder->CreateICmpUGT(frst, last, "frst > last");
-    m_builder->CreateCondBr(frstGTlast, bbTail, bbBodyHi);
+    m_builder->SetInsertPoint(bbHeadHi);
+    auto    incr        = make(expr->lhs);
+    auto    next        = m_builder->CreateGEP(m_propType, curr, incr, "next");
+    bbHeadLo            = m_builder->GetInsertBlock();
+    auto    nextGTlast  = m_builder->CreateICmpUGT(next, last, "next > last");
+    auto    nextLTfrst  = m_builder->CreateICmpULT(next, frst, "next < frst");
+    auto    outside     = m_builder->CreateOr(nextGTlast, nextLTfrst);
+    m_builder->CreateCondBr(outside, bbTail, bbBodyHi);
 
     //  body
     m_builder->SetInsertPoint(bbBodyHi);
-    auto    next        = m_builder->CreateGEP(m_propType, frst, m_1, "next");
     m_curr.push_back(next);
-    auto    body        = make(expr->arg);
-    bbBodyLo            = m_builder->GetInsertBlock();
+    auto    body        = make(expr->rhs);
     m_curr.pop_back();
+    bbBodyLo            = m_builder->GetInsertBlock();
     m_builder->CreateBr(bbTail);
 
     //  tail
@@ -918,7 +1032,7 @@ void    CompileExprImpl::visit(ExprXw*           expr)
 
     //  link
     result->addIncoming(body, bbBodyLo);
-    result->addIncoming(m_T, bbHead);
+    result->addIncoming(m_T, bbHeadLo);
 
     m_value = result;
 }
