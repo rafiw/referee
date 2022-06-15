@@ -26,6 +26,8 @@
 
 #include <cmath>
 #include <stdexcept>
+#include <iostream>
+#include <iomanip>
 #include <limits.h>
 
 int64_t     parse_integer(  std::string const& text, unsigned base)
@@ -80,4 +82,35 @@ bool        parse_boolean(  std::string const& text)
         return false;
 
     throw std::runtime_error(__PRETTY_FUNCTION__);
+}
+
+std::ostream&   printHex(std::string const& data)
+{
+    std::cout << std::endl;
+    char    text[17]    = "                ";
+    for(unsigned i = 0; i < data.size(); i++)
+    {
+        text[i % 16]    = isprint(data[i]) ? data[i] : '.';
+
+        if(i % 16 == 0)
+        {
+            std::cout << std::hex << std::setw(4) << std::setfill('0') <<  i << ": ";
+        }
+
+        std::cout << std::hex << std::setw(2) << std::setfill('0') << (0xff & (unsigned)data[i]) << " ";
+        if((i + 1) % 16 == 0)
+        {
+            std::cout << " | " << text << std::endl;
+        }
+    }
+
+    if(data.size() % 16 != 0)
+    {
+        auto i = data.size() % 16;
+
+        text[i] = 0;
+        std::cout << std::setfill(' ') << std::setw(3 * (16 - i)) << " " << " | " << text << std::endl;
+    }
+
+    return std::cout;
 }

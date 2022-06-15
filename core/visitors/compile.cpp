@@ -877,7 +877,6 @@ void    CompileExprImpl::visit(ExprXs*           expr)
     m_builder->CreateBr(bbTail);
 
     //  tail
-    m_function->getBasicBlockList().push_back(bbTail);
     m_builder->SetInsertPoint(bbTail);
     auto    result      = m_builder->CreatePHI(m_builder->getInt1Ty(), 2, "Xs");
 

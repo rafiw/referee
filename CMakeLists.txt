@@ -76,7 +76,7 @@ link_directories(
 
 separate_arguments(LLVM_DEFINITIONS_LIST NATIVE_COMMAND ${LLVM_DEFINITIONS})
 add_definitions(${LLVM_DEFINITIONS_LIST})
-llvm_map_components_to_libnames(llvm_libs support core irreader orcjit)
+llvm_map_components_to_libnames(llvm_libs support core irreader orcjit aarch64asmparser aarch64codegen aarch64info)
 
 file(GLOB_RECURSE ALL_CODE_FILES
     ${PROJECT_SOURCE_DIR}/core/*.[ch]pp
@@ -102,6 +102,7 @@ add_library(
     core/strings.cpp
     core/module.cpp
     core/utils.cpp
+    rdb/database.cpp
     ${ANTLR4_SRC_FILES_referee_parser}
 )
 
@@ -125,21 +126,26 @@ add_executable(
     tests
     test/main.cpp
     test/strings.cpp
-    test/canonic.cpp)
+    test/canonic.cpp
+    test/logic.cpp
+)
 
 target_link_libraries(
     tests
     core
     gtest
     gtest_main
-    pthread)
+    pthread
+    antlr4_shared
+    ${llvm_libs}
+)
 add_test(tests tests)
 
-#target_code_coverage(tests)
-#target_code_coverage(referee)
-
+target_code_coverage(tests)
+target_code_coverage(referee)
 
 add_executable(
     rdb
     rdb/database.cpp
+    rdb/main.cpp
 )

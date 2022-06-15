@@ -34,6 +34,9 @@
 #include <arpa/inet.h>
 
 #include "rapidcsv.h"
+#include "utils.hpp"
+
+namespace referee::db {
 
 class DataWriter::Impl
 {
@@ -1163,7 +1166,7 @@ std::string Writer::encode( Type*   type)
 {
     std::ostringstream  os;
     os << "{";
-    ::encode(os, type);
+    referee::db::encode(os, type);
     os << "}";
 
     return os.str();
@@ -1171,62 +1174,64 @@ std::string Writer::encode( Type*   type)
 #define     INFO(type, ID)  (((type) << 16) | (ID))
 #define     ROOT        0x0001
 #define     DECL_TYPE   0x0002
-#define     DECL_FUNC   0x0003
-#define     DECL_PROP   0x0004
-#define     PUSH_FUNC   0x0005
-#define     PUSH_PROP   0x0006
+#define     DECL_PROP   0x0003
+#define     DECL_CONF   0x0004
+#define     PUSH_PROP   0x0005
+#define     PUSH_CONF   0x0006
 
 uint8_t Writer::declType(   Type*               type)
 {
     std::string encoded = encode(type);
 
     m_types.push_back(type);
-    auto    indx    = m_types.size();
 
-    record(INFO(DECL_TYPE, indx), encoded);
-    return  0;
+    record(INFO(DECL_TYPE, 0), encoded);
+
+    return  m_types.size();
 }
 
 uint8_t Writer::declConf(   uint8_t             type,
                             std::string         name)
 {
-    m_props.push_back(std::make_pair(name, type));
+    m_confs.push_back(std::make_pair(name, type));
 
-    auto    indx    = m_props.size();
+    record(INFO(DECL_CONF, type), name);
 
-    record(INFO(DECL_PROP, type), name);
-
-    return m_funcs.size();
+    return m_confs.size();
 }
 
-void    Writer::pushData(   uint8_t             prop,
+void    Writer::pushData(   uint8_t             conf,
                             std::string const&  data)
 {
-    record(INFO(PUSH_PROP, prop), data);
+    record(INFO(PUSH_CONF, conf), data);
 }
                     
 uint8_t Writer::declProp(   uint8_t             type,
                             std::string         name)
 {
-    uint32_t    info;
+    m_props.push_back(std::make_pair(name, type));
 
-    m_funcs.push_back(std::make_pair(name, type));
+    record(INFO(DECL_PROP, type), name);
 
-    record(INFO(DECL_FUNC, type), name);
-
-    return m_funcs.size();
+    return m_props.size();
 }
 
-void    Writer::pushData(   uint8_t             func,
+void    Writer::pushData(   uint8_t             prop,
                             uint64_t            time,
                             std::string const&  data)
 {
-    record(INFO(PUSH_FUNC, func), time, data);
+    record(INFO(PUSH_PROP, prop), time, data);
 }
 
 void    readDB(std::string filename)
 {
     std::ifstream   is(filename, std::ios_base::binary | std::ios_base::in);
+
+    std::vector<std::string>    prop2name;
+    std::vector<std::string>    conf2name;
+
+    conf2name.push_back("-");
+    prop2name.push_back("-");
 
     while(is.eof() == false)
     {
@@ -1234,6 +1239,7 @@ void    readDB(std::string filename)
         uint32_t    info;
         uint32_t    size;
         uint64_t    time;
+        uint8_t     indx;
         std::string data;
         is.read(reinterpret_cast<char*>(&info), sizeof(info));
         is.read(reinterpret_cast<char*>(&size), sizeof(size));
@@ -1241,6 +1247,8 @@ void    readDB(std::string filename)
         info    = ntohl(info);
         size    = ntohl(size);
         type    = info >> 16;
+        indx    = info & 0xff;
+
 
         switch(type)
         {
@@ -1252,29 +1260,32 @@ void    readDB(std::string filename)
             case DECL_TYPE:
                 data.resize(size);
                 is.read(reinterpret_cast<char*>(data.data()), size);
-                std::cout << data << std::endl;
-                break;
-            case DECL_FUNC:
-                data.resize(size);
-                is.read(reinterpret_cast<char*>(data.data()), data.size());
-                std::cout << data << std::endl;
+                std::cout << "decl type: "  << data << std::endl;
                 break;
             case DECL_PROP:
                 data.resize(size);
-                is.read(reinterpret_cast<char*>(data.data()), size);
-                std::cout << data << std::endl;
+                is.read(reinterpret_cast<char*>(data.data()), data.size());
+                std::cout << "decl prop: " << data << std::endl;
+                prop2name.push_back(data);
                 break;
-            case PUSH_FUNC:
+            case DECL_CONF:
+                data.resize(size);
+                is.read(reinterpret_cast<char*>(data.data()), size);
+                std::cout << "decl conf: "  << data << std::endl;
+                conf2name.push_back(data);
+                break;
+            case PUSH_PROP:
                 data.resize(size - sizeof(time));
                 is.read(reinterpret_cast<char*>(&time), sizeof(time));
                 time    = ntohll(time);
                 is.read(reinterpret_cast<char*>(data.data()), data.size());
-                std::cout << time << std::endl;
+                std::cout << prop2name[indx] << " @ " << std::dec << std::setw(16) << std::setfill('0') << time << ":";
                 printHex(data) << std::endl;
                 break;
-            case PUSH_PROP:
+            case PUSH_CONF:
                 data.resize(size);
                 is.read(reinterpret_cast<char*>(data.data()), data.size());
+                std::cout << prop2name[indx];
                 printHex(data) << std::endl;
                 break;
             default:
@@ -1284,92 +1295,4 @@ void    readDB(std::string filename)
     }
 }
 
-int main(int argc, char* argv[])
-{
-    try 
-    {
-        auto    type    = 
-            TypeBuilderRecord()
-                .integer("i")
-                .number("n")
-                .string("s")
-                .array("xyz", 
-                    TypeBuilderArray()
-                        .integer()
-                        .size(5)
-                        .build())
-                .record("rec", 
-                    TypeBuilderRecord()
-                        .boolean("b")
-                        .integer("c")
-                        .record("what", 
-                            TypeBuilderRecord()
-                                .integer("X")
-                                .build())
-                        .build())
-                .build();
-        print(type);
-
-        std::string     data    = 
-            DataWriter(type)
-                .integer(0x1234567890abcdef)
-                .number(0.5)
-                .string("hello")
-                .size(5)
-                    .integer(1)
-                    .integer(2)
-                    .integer(3)
-                    .integer(4)
-                    .integer(5)
-                .boolean(true)
-                .integer('what')
-                    .integer(0x777)
-            .build();
-
-        DataReader  reader(data, type);
-        int64_t     i;
-        double      n;
-        bool        b;
-        std::string s;
-        unsigned    size;
-
-        reader
-            .integer(i)
-            .number(n)
-            .string(s)
-            .size(size)
-                .integer(i)
-                .integer(i)
-                .integer(i)
-                .integer(i)
-                .integer(i)
-            .boolean(b)
-            .integer(i)
-                .integer(i)
-            .done();
-
-        printHex(data) << std::endl;
-
-        readData(type, data);
-
-        names(type, "abc");
-
-        readCsv(type, "../test.csv", "abc");
-    
-        Writer writer;
-        writer.open("xyw.rdb");
-        auto    typeID  = writer.declType(type);
-        auto    funcID  = writer.declProp(typeID, "data");
-        writer.pushData(funcID, 1, data);
-        writer.close();
-
-        readDB("xyw.rdb");
-    }
-    catch(std::exception& ex)
-    {
-        std::cerr << std::endl << "exception: " << ex.what() << std::endl;
-        return 1;
-    }
-
-    return 0;
 }

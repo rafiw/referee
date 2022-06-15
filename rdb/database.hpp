@@ -92,6 +92,8 @@ private:
 };
 */
 
+namespace referee::db {
+
 class   Type
 {
 public:
@@ -279,6 +281,12 @@ private:
 private:
     std::ofstream       m_os;
     std::vector<Type*>  m_types;
+    std::vector<std::pair<std::string, uint8_t>>    m_confs;
     std::vector<std::pair<std::string, uint8_t>>    m_props;
-    std::vector<std::pair<std::string, uint8_t>>    m_funcs;
 };
+
+void    readData(Type* main, std::string const& data);
+void    readDB(std::string filename);
+
+
+}

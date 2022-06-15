@@ -34,3 +34,5 @@ int64_t     parse_hexint(   std::string const& text);
 double      parse_number(   std::string const& text);
 std::string parse_string(   std::string const& text);
 bool        parse_boolean(  std::string const& text);
+
+std::ostream&   printHex(   std::string const& data);
