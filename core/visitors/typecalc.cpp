@@ -38,6 +38,7 @@ struct TypeCalcImpl
              , ExprData
              , ExprMmbr
              , ExprIndx
+             , ExprInt
              , ExprEq
              , ExprNe
              , ExprGt
@@ -93,6 +94,7 @@ struct TypeCalcImpl
     void    visit(ExprLt*               expr) override;
     void    visit(ExprMmbr*             expr) override;
     void    visit(ExprIndx*             expr) override;
+    void    visit(ExprInt*              expr) override;
     void    visit(ExprMod*              expr) override;
     void    visit(ExprMul*              expr) override;
     void    visit(ExprNe*               expr) override;
@@ -248,6 +250,24 @@ void    TypeCalcImpl::visit(ExprMmbr*               expr)
     {
         throw Exception(expr->where(), "no such a member");
     }
+}
+
+void    TypeCalcImpl::visit(ExprInt*              expr)
+{
+    auto    lhs = make(expr->lhs);
+    auto    rhs = make(expr->rhs);
+
+    if(lhs != typeBoolean)
+    {
+        throw Exception(expr->lhs->where(), "bad type");
+    }
+
+    if(rhs != typeInteger && rhs != typeNumber)
+    {
+        throw Exception(expr->rhs->where(), "bad type");
+    }
+
+    m_type  = rhs;
 }
 
 void    TypeCalcImpl::visit(ExprIndx*               expr)

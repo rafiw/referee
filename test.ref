@@ -23,7 +23,7 @@ data beta: boolean;
 data plain: integer;
 
 #abc.a == 456;
-xyz.a == 1;
+xyz.a == 0x12345678;
 xyz.b == 1.2;
 
 #Us(__time__ < 5, __time__ == 5);

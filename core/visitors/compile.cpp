@@ -580,6 +580,169 @@ void    CompileExprImpl::visit(ExprIndx*         expr)
 
 void    CompileExprImpl::visit(ExprInt*          expr)
 {
+/*
+typedef long long uint64_t;
+typedef struct prop_t
+{
+    uint64_t    __time__;
+    uint64_t    a;
+} prop_t;
+
+bool        boolean(prop_t const* curr);
+bool        integer(prop_t const* curr);
+
+uint64_t    integral(uint64_t lo, uint64_t hi, prop_t const* curr, prop_t const* frst, prop_t const* last)
+{
+    prop_t const*   next    = curr + 1;
+    uint64_t        result  = 0;
+
+    lo  = lo + curr->__time__;
+    hi  = hi + curr->__time__;
+
+    while(next <= last)
+    {
+        if(hi <= curr->__time__)
+        {
+            break;
+        }
+
+        uint64_t    _lo = curr->__time__ < lo ? lo : curr->__time__;
+        uint64_t    _hi = hi < next->__time__ ? hi : next->__time__;
+
+        if(_lo < _hi)
+        {
+            if(boolean(curr))
+            {
+                uint64_t value   = integer(curr);
+                uint64_t length  = (_hi - _lo);
+                result  +=  value * length;
+            }
+        }
+
+        curr    = next;
+        next    = next + 1;
+    }
+
+    return  result;
+}
+
+uint64_t    integral(prop_t const* curr, prop_t const* frst, prop_t const* last)
+{
+    prop_t const*   next    = curr + 1;
+    uint64_t        result  = 0;
+
+    while(next <= last)
+    {
+        uint64_t    _lo = curr->__time__;
+        uint64_t    _hi = next->__time__;
+
+        if(_lo < _hi)
+        {
+            if(boolean(curr))
+            {
+                uint64_t value   = integer(curr);
+                uint64_t length  = (_hi - _lo);
+                result  +=  value * length;
+            }
+        }
+
+        curr    = next;
+        next    = next + 1;
+    }
+
+    return  result;
+}
+*/
+//    auto    debug = m_module->getFunction("debug");
+//    m_builder->CreateCall(debug, {result});
+
+    auto    bbHead  = llvm::BasicBlock::Create(*m_context, "I-head", m_function);
+
+    auto    bbOuter = llvm::BasicBlock::Create(*m_context, "I-outer", m_function);
+    auto    bbInnerHi   = llvm::BasicBlock::Create(*m_context, "I-inner", m_function);
+    auto    bbInnerLo   = bbInnerHi;
+    auto    bbBodyHi= llvm::BasicBlock::Create(*m_context, "I-body", m_function);
+    auto    bbBodyLo= bbBodyHi;
+    auto    bbNext  = llvm::BasicBlock::Create(*m_context, "I-next", m_function);
+    auto    bbTail  = llvm::BasicBlock::Create(*m_context, "I-tail", m_function);
+
+    auto    frst    = m_frst;
+    auto    curr0   = m_curr.back();
+    auto    next0   = m_builder->CreateGEP(m_propType, curr0, m_1, "next");
+    auto    last    = m_last;
+
+    auto    bbEntry = m_builder->GetInsertBlock();
+    m_builder->CreateBr(bbHead);
+
+    auto    type    = m_builder->getInt64Ty();
+
+    //  head
+    m_builder->SetInsertPoint(bbHead);
+    auto    sumHead   = m_builder->CreatePHI(type, 2, "total@head");
+
+    auto    curr    = m_builder->CreatePHI(frst->getType(), 2, "curr");
+    auto    next    = m_builder->CreatePHI(frst->getType(), 2, "next");
+    auto    nextLElast  = m_builder->CreateICmpSLE(next, last);
+    m_builder->CreateCondBr(nextLElast, bbOuter, bbTail);
+
+    //  outer
+    m_builder->SetInsertPoint(bbOuter);
+    auto    lo      = m_builder->CreateLoad(m_builder->getInt64Ty(), m_builder->CreateStructGEP(m_propType, curr, 0), false, "curr->__time__");
+    auto    hi      = m_builder->CreateLoad(m_builder->getInt64Ty(), m_builder->CreateStructGEP(m_propType, next, 0), false, "next->__time__");
+    auto    loLThi  = m_builder->CreateICmpSLT(lo, hi);
+    m_builder->CreateCondBr(loLThi, bbInnerHi, bbNext);
+
+    //  inner
+    m_builder->SetInsertPoint(bbInnerHi);
+    m_curr.push_back(curr);
+    auto    cond    = make(expr->lhs);
+    m_curr.pop_back();
+    bbInnerLo       = m_builder->GetInsertBlock();
+    m_builder->CreateCondBr(cond, bbBodyHi, bbNext);
+
+    //  budy
+    m_builder->SetInsertPoint(bbBodyHi);
+    m_curr.push_back(curr);
+    auto    height  = make(expr->rhs);
+    auto    length  = m_builder->CreateSub(hi, lo, "length");
+    auto    volume  = m_builder->CreateMul(height, length, "volume");
+    auto    sumBody   = m_builder->CreateAdd(sumHead, volume, "total@body");
+    m_curr.pop_back();
+
+    bbBodyLo        = m_builder->GetInsertBlock();
+    m_builder->CreateBr(bbNext);
+
+    //  next
+    m_builder->SetInsertPoint(bbNext);
+    auto    sumNext = m_builder->CreatePHI(type, 3, "total@next");
+    auto    curr1   = next;
+    auto    next1   = m_builder->CreateGEP(m_propType, curr1, m_1, "next");
+    m_builder->CreateBr(bbHead);
+
+    //  tail
+    m_builder->SetInsertPoint(bbTail);
+
+    auto    result  = m_builder->CreatePHI(m_builder->getInt64Ty(), 1, "value");
+
+    //  link
+    curr->addIncoming(curr0, bbEntry);
+    curr->addIncoming(curr1, bbNext);
+
+    next->addIncoming(next0, bbEntry);
+    next->addIncoming(next1, bbNext);
+
+    result->addIncoming(sumHead, bbHead);
+
+    sumNext->addIncoming(sumBody, bbBodyLo);
+    sumNext->addIncoming(sumHead, bbInnerLo);
+    sumNext->addIncoming(sumHead, bbOuter);
+
+    sumHead->addIncoming(m_0,     bbEntry);
+    sumHead->addIncoming(sumNext, bbNext);
+
+    result->addIncoming( sumHead, bbHead);
+
+    m_value = result;
 }
 
 void    CompileExprImpl::visit(ExprLe*           expr)
@@ -1103,7 +1266,6 @@ void Compile::make(llvm::LLVMContext* context, llvm::Module* module, Module* ref
     auto    propType    = llvm::StructType::create(*context, propTypes, "__prop_t");
     auto    propPtrType = llvm::PointerType::get(propType, 0);
     module->getOrInsertGlobal("__prop__", propPtrType);
-
 
     auto    exprs   = refmod->getExprs();
     for(auto expr: exprs)

@@ -59,10 +59,18 @@
 #include "llvm/Transforms/InstCombine/InstCombine.h"
 #include "llvm/Transforms/Scalar.h"
 #include "llvm/Transforms/Scalar/GVN.h"
+#include "llvm/ExecutionEngine/JITSymbol.h"
 #include <memory>
 
 #include "antlr2ast.hpp"
 #include "visitors/compile.hpp"
+
+
+extern "C"
+void    debug(int64_t value)
+{
+    printf("debug: %lld\n", value);
+}
 
 
 class RefereeJIT 
@@ -87,6 +95,11 @@ public:
         , CompileLayer(*this->ES, ObjectLayer, std::make_unique<llvm::orc::ConcurrentIRCompiler>(std::move(JTMB)))
         , MainJD(this->ES->createBareJITDylib("<main>")) 
     {
+
+        llvm::ExitOnError()(MainJD.define(
+            llvm::orc::absoluteSymbols(llvm::orc::SymbolMap{
+                { Mangle("debug"), llvm::JITEvaluatedSymbol::fromPointer(&debug)}})));
+
         MainJD.addGenerator(cantFail(llvm::orc::DynamicLibrarySearchGenerator::GetForCurrentProcess(DL.getGlobalPrefix())));
     }
 
@@ -104,18 +117,18 @@ public:
         if (!EPC)
             return EPC.takeError();
 
-        auto ES     = std::make_unique<llvm::orc::ExecutionSession>(std::move(*EPC));
-        auto JTMB   = llvm::orc::JITTargetMachineBuilder(ES->getExecutorProcessControl().getTargetTriple());
-        auto DL     = JTMB.getDefaultDataLayoutForTarget();
-
+        auto    ES     = std::make_unique<llvm::orc::ExecutionSession>(std::move(*EPC));
+        auto    JTMB   = llvm::orc::JITTargetMachineBuilder(ES->getExecutorProcessControl().getTargetTriple());
+        auto    DL     = JTMB.getDefaultDataLayoutForTarget();
+        
         if (!DL)
             return DL.takeError();
 
         return std::make_unique<RefereeJIT>(std::move(ES), std::move(JTMB), std::move(*DL));
     }
 
-    const llvm::DataLayout& getDataLayout() const { return DL; }
-    llvm::orc::JITDylib&    getMainJITDylib() { return MainJD; }
+    const llvm::DataLayout& getDataLayout() const   { return DL; }
+    llvm::orc::JITDylib&    getMainJITDylib()       { return MainJD; }
     llvm::Error             addModule(llvm::orc::ThreadSafeModule TSM, llvm::orc::ResourceTrackerSP RT = nullptr)
     {
         if (!RT)
@@ -128,8 +141,6 @@ public:
         return ES->lookup({&MainJD}, Mangle(Name.str()));
     }
 };
-
-
 
 typedef struct state_t {
     uint64_t    time;
@@ -196,6 +207,9 @@ TEST_F(LogicTest, Pass)
     auto    TheBuilder  = std::make_unique<llvm::IRBuilder<>>(*TheContext);   
     auto    TheFPM      = std::make_unique<llvm::legacy::FunctionPassManager>(TheModule.get());
 
+    auto    funcType    = llvm::FunctionType::get(TheBuilder->getVoidTy(), {TheBuilder->getInt64Ty()}, false);
+    auto    func        = llvm::Function::Create(funcType, llvm::Function::ExternalLinkage, "debug", *TheModule);
+
     llvm::InitializeNativeTarget();
     llvm::InitializeNativeTargetAsmPrinter();
     llvm::InitializeNativeTargetAsmParser();
@@ -254,6 +268,8 @@ TEST_F(LogicTest, Pass)
             {
                 auto    symbol  = ExitOnErr(TheJIT->lookup(name));
                 auto    func    = (bool (*)(state_t*, state_t*, void*))(intptr_t)symbol.getAddress();
+                if(name == "debug")
+                    continue;
                 auto    result  = func(&state[0], &state[25], nullptr);
                 std::cout << std::setw(20) << std::left << name << " eval: " << result << std::endl; 
             }

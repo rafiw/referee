@@ -50,3 +50,12 @@ Xs(26, z) == false;
 Xw(26, z) == true;
 Xs(26, true) == false;
 Xw(26, false) == true;
+
+I(a, 1) == 1000;
+I(a, 2) == 2000;
+I(b, 2) == 2000;
+I(c || f, 2) == 4000;
+I(z, 1) == 0;
+I(true, 1) == 25000;
+I(false, 1) == 0;
+Xs(I(true, 1) == 24000);
