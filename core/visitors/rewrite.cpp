@@ -363,10 +363,21 @@ void    RewriteImpl::visit( ExprIndx*           expr)
 
 void    RewriteImpl::visit( ExprInt*            expr)
 {
-    m_expr =  Factory<ExprInt>::create(
-        expr->where(),
-        make(expr->lhs),
-        make(expr->rhs));
+    if(expr->time)
+    {
+        m_expr =  Factory<ExprInt>::create(
+            expr->where(),
+            make(expr->time),
+            make(expr->lhs),
+            make(expr->rhs));
+    }
+    else
+    {
+        m_expr =  Factory<ExprInt>::create(
+            expr->where(),
+            make(expr->lhs),
+            make(expr->rhs));
+    }
 }
 
 void    RewriteImpl::visit( ExprLe*             expr)

@@ -653,14 +653,13 @@ uint64_t    integral(prop_t const* curr, prop_t const* frst, prop_t const* last)
     return  result;
 }
 */
-//    auto    debug = m_module->getFunction("debug");
-//    m_builder->CreateCall(debug, {result});
+    auto    debug = m_module->getFunction("debug");
 
     auto    bbHead  = llvm::BasicBlock::Create(*m_context, "I-head", m_function);
 
     auto    bbOuter = llvm::BasicBlock::Create(*m_context, "I-outer", m_function);
-    auto    bbInnerHi   = llvm::BasicBlock::Create(*m_context, "I-inner", m_function);
-    auto    bbInnerLo   = bbInnerHi;
+    auto    bbInnerHi = llvm::BasicBlock::Create(*m_context, "I-inner", m_function);
+    auto    bbInnerLo = bbInnerHi;
     auto    bbBodyHi= llvm::BasicBlock::Create(*m_context, "I-body", m_function);
     auto    bbBodyLo= bbBodyHi;
     auto    bbNext  = llvm::BasicBlock::Create(*m_context, "I-next", m_function);
@@ -671,6 +670,20 @@ uint64_t    integral(prop_t const* curr, prop_t const* frst, prop_t const* last)
     auto    next0   = m_builder->CreateGEP(m_propType, curr0, m_1, "next");
     auto    last    = m_last;
 
+    llvm::Value*    timeLo  = nullptr;
+    llvm::Value*    timeHi  = nullptr;
+    auto    now     = m_builder->CreateLoad(m_builder->getInt64Ty(), m_builder->CreateStructGEP(m_propType, curr0, 0), false, "now");
+
+    if(expr->time && expr->time->lo)
+    {
+        timeLo  = m_builder->CreateAdd(now, make(expr->time->lo), "now + lo");
+    }
+
+    if(expr->time && expr->time->hi)
+    {
+        timeHi  = m_builder->CreateAdd(now, make(expr->time->hi), "now + hi");
+    }
+
     auto    bbEntry = m_builder->GetInsertBlock();
     m_builder->CreateBr(bbHead);
 
@@ -678,18 +691,36 @@ uint64_t    integral(prop_t const* curr, prop_t const* frst, prop_t const* last)
 
     //  head
     m_builder->SetInsertPoint(bbHead);
-    auto    sumHead   = m_builder->CreatePHI(type, 2, "total@head");
+    auto    sumHead = m_builder->CreatePHI(type, 2, "total@head");
 
     auto    curr    = m_builder->CreatePHI(frst->getType(), 2, "curr");
     auto    next    = m_builder->CreatePHI(frst->getType(), 2, "next");
-    auto    nextLElast  = m_builder->CreateICmpSLE(next, last);
-    m_builder->CreateCondBr(nextLElast, bbOuter, bbTail);
+    auto    cont    = m_builder->CreateICmpSLE(next, last, "next <= last");
+    if(timeHi)
+    {
+        auto    currT   = m_builder->CreateLoad(m_builder->getInt64Ty(), m_builder->CreateStructGEP(m_propType, curr, 0), false, "curr->__time__");
+        auto    timeHiLEcurrT
+                        = m_builder->CreateICmpSGT(timeHi, currT, "timeHi > currT");
+        cont    = m_builder->CreateAnd(cont, timeHiLEcurrT);
+    }
+    m_builder->CreateCondBr(cont, bbOuter, bbTail);
 
     //  outer
     m_builder->SetInsertPoint(bbOuter);
-    auto    lo      = m_builder->CreateLoad(m_builder->getInt64Ty(), m_builder->CreateStructGEP(m_propType, curr, 0), false, "curr->__time__");
-    auto    hi      = m_builder->CreateLoad(m_builder->getInt64Ty(), m_builder->CreateStructGEP(m_propType, next, 0), false, "next->__time__");
+
+    //  TODO: break the loop if timeHi <= currLo
+
+    auto    currT   = m_builder->CreateLoad(m_builder->getInt64Ty(), m_builder->CreateStructGEP(m_propType, curr, 0), false, "curr->__time__");
+    auto    nextT   = m_builder->CreateLoad(m_builder->getInt64Ty(), m_builder->CreateStructGEP(m_propType, next, 0), false, "next->__time__");
+
+    auto    lo      = timeLo 
+                    ? m_builder->CreateSelect(m_builder->CreateICmpSLT(currT, timeLo), timeLo, currT)
+                    : currT;
+    auto    hi      = timeHi
+                    ? m_builder->CreateSelect(m_builder->CreateICmpSLT(timeHi, nextT), timeHi, nextT)
+                    : nextT;
     auto    loLThi  = m_builder->CreateICmpSLT(lo, hi);
+
     m_builder->CreateCondBr(loLThi, bbInnerHi, bbNext);
 
     //  inner
@@ -700,7 +731,7 @@ uint64_t    integral(prop_t const* curr, prop_t const* frst, prop_t const* last)
     bbInnerLo       = m_builder->GetInsertBlock();
     m_builder->CreateCondBr(cond, bbBodyHi, bbNext);
 
-    //  budy
+    //  body
     m_builder->SetInsertPoint(bbBodyHi);
     m_curr.push_back(curr);
     auto    height  = make(expr->rhs);
