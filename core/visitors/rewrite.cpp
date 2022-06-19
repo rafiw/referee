@@ -445,6 +445,7 @@ void    RewriteImpl::visit( ExprO*              expr)
 {
     m_expr =  Factory<ExprO>::create(
         expr->where(),
+        make(expr->time),
         make(expr->arg));
 }
 
@@ -518,21 +519,12 @@ void    RewriteImpl::visit( ExprRw*             expr)
 
 void    RewriteImpl::visit( ExprSs*             expr)
 {
-    if(expr->time)
-    {
-        m_expr =  Factory<ExprSs>::create(
-            expr->where(),
-            make(expr->time),
-            make(expr->lhs),
-            make(expr->rhs));
-    }
-    else
-    {
-        m_expr =  Factory<ExprSs>::create(
-            expr->where(),
-            make(expr->lhs),
-            make(expr->rhs));
-    }
+    m_expr =  Factory<ExprSs>::create(
+        expr->where(),
+        make(expr->time),
+        make(expr->lhs),
+        make(expr->rhs));
+
 }
 
 void    RewriteImpl::visit( ExprSub*            expr)
@@ -546,97 +538,51 @@ void    RewriteImpl::visit( ExprSub*            expr)
 
 void    RewriteImpl::visit( ExprSw*             expr)
 {
-    if(expr->time)
-    {
-        m_expr =  Factory<ExprSw>::create(
-            expr->where(),
-            make(expr->time),
-            make(expr->lhs),
-            make(expr->rhs));
-    }
-    else
-    {
-        m_expr =  Factory<ExprSw>::create(
-            expr->where(),
-            make(expr->lhs),
-            make(expr->rhs));
-    }
+    m_expr =  Factory<ExprSw>::create(
+        expr->where(),
+        make(expr->time),
+        make(expr->lhs),
+        make(expr->rhs));
+
 }
 
 void    RewriteImpl::visit( ExprTs*             expr)
 {
-    if(expr->time)
-    {
-        m_expr =  Factory<ExprTs>::create(
-            expr->where(),
-            make(expr->time),
-            make(expr->lhs),
-            make(expr->rhs));    
-    }
-    else 
-    {
-        m_expr =  Factory<ExprTs>::create(
-            expr->where(),
-            make(expr->lhs),
-            make(expr->rhs));
-    }
+    m_expr =  Factory<ExprTs>::create(
+        expr->where(),
+        make(expr->time),
+        make(expr->lhs),
+        make(expr->rhs));    
+
 }
 
 void    RewriteImpl::visit( ExprTw*             expr)
 {
-    if(expr->time)
-    {
-        m_expr =  Factory<ExprTw>::create(
-            expr->where(),
-            make(expr->lhs),
-            make(expr->rhs));   
-    }
-    else 
-    {
-        m_expr =  Factory<ExprTw>::create(
-            expr->where(),
-            make(expr->time),
-            make(expr->lhs),
-            make(expr->rhs));
-    }
+    m_expr =  Factory<ExprTw>::create(
+        expr->where(),
+        make(expr->time),
+        make(expr->lhs),
+        make(expr->rhs));
 }
 
 void    RewriteImpl::visit( ExprUs*             expr) 
 {
-    if(expr->time)
-    {
-        m_expr =  Factory<ExprUs>::create(
-            expr->where(),
-            make(expr->time),
-            make(expr->lhs),
-            make(expr->rhs));
-    }
-    else
-    {
-        m_expr =  Factory<ExprUs>::create(
-            expr->where(),
-            make(expr->lhs),
-            make(expr->rhs));
-    }
+    m_expr =  Factory<ExprUs>::create(
+        expr->where(),
+        make(expr->time),
+        make(expr->lhs),
+        make(expr->rhs));
+
 }
 
 void    RewriteImpl::visit( ExprUw*             expr)
 {
-    if(expr->time)
-    {
-        m_expr =  Factory<ExprUw>::create(
-            expr->where(),
-            make(expr->time),
-            make(expr->lhs),
-            make(expr->rhs));
-    }
-    else
-    {
-        m_expr =  Factory<ExprUw>::create(
-            expr->where(),
-            make(expr->lhs),
-            make(expr->rhs));
-    }
+    m_expr =  Factory<ExprUw>::create(
+        expr->where(),
+        make(expr->time),
+        make(expr->lhs),
+        make(expr->rhs));
+
 }
 
 void    RewriteImpl::visit( ExprXor*            expr) 

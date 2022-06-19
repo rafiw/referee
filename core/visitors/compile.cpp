@@ -1334,10 +1334,10 @@ uint64_t    ST(prop_t const* curr, prop_t const* frst, prop_t const* last, bool 
     auto    bbWhile = llvm::BasicBlock::Create(*m_context, name + "-while", m_function);
     auto    bbOuter = llvm::BasicBlock::Create(*m_context, name + "-outer", m_function);
     auto    bbInner = llvm::BasicBlock::Create(*m_context, name + "-inner", m_function);
-    auto    bbLhsHi = llvm::BasicBlock::Create(*m_context, name + "-body-lhs", m_function);
-    auto    bbLhsLo = bbLhsHi;
     auto    bbRhsHi = llvm::BasicBlock::Create(*m_context, name + "-body-rhs", m_function);
     auto    bbRhsLo = bbRhsHi;
+    auto    bbLhsHi = llvm::BasicBlock::Create(*m_context, name + "-body-lhs", m_function);
+    auto    bbLhsLo = bbLhsHi;
     auto    bbPrev  = llvm::BasicBlock::Create(*m_context, name + "-prev", m_function);
     auto    bbTail  = llvm::BasicBlock::Create(*m_context, name + "-tail", m_function);
 
@@ -1392,10 +1392,10 @@ uint64_t    ST(prop_t const* curr, prop_t const* frst, prop_t const* last, bool 
     auto    prevT   = m_builder->CreateLoad(m_builder->getInt64Ty(), m_builder->CreateStructGEP(m_propType, prev, 0), false, "prev->__time__");
 
     auto    lo      = timeHi
-                    ? m_builder->CreateSelect(m_builder->CreateICmpSLT(prevT, timeHi), timeHi, prevT)
+                    ? m_builder->CreateSelect(m_builder->CreateICmpSLT(prevT, timeLo), timeLo, prevT)
                     : prevT;
     auto    hi      = timeLo 
-                    ? m_builder->CreateSelect(m_builder->CreateICmpSLT(timeLo, currT), timeLo, currT)
+                    ? m_builder->CreateSelect(m_builder->CreateICmpSLT(timeHi, currT), timeHi, currT)
                     : currT;
 
     auto    loLThi  = m_builder->CreateICmpSLT(lo, hi);
