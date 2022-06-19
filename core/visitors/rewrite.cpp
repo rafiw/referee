@@ -484,13 +484,15 @@ void    RewriteImpl::visit( ExprRs*             expr)
 {
     if(expr->time)
     {
-        m_expr = make(!(Uw(expr->time, Not(expr->lhs), Not(expr->rhs))));
-    }
+        m_expr =  Factory<ExprRs>::create(
+            expr->where(),
+            make(expr->time),
+            make(expr->lhs),
+            make(expr->rhs));    }
     else 
     {
         m_expr =  Factory<ExprRs>::create(
             expr->where(),
-            make(expr->time),
             make(expr->lhs),
             make(expr->rhs));
     }
@@ -500,12 +502,15 @@ void    RewriteImpl::visit( ExprRw*             expr)
 {
     if(expr->time)
     {
-        m_expr = make(!(Us(expr->time, Not(expr->lhs), Not(expr->rhs))));
-    }
+        m_expr =  Factory<ExprRw>::create(
+            expr->where(),
+            make(expr->time),
+            make(expr->lhs),
+            make(expr->rhs));    }
     else 
     {
         m_expr =  Factory<ExprRw>::create(
-            expr->where(),make(expr->time),
+            expr->where(),
             make(expr->lhs),
             make(expr->rhs));
     }
@@ -515,17 +520,11 @@ void    RewriteImpl::visit( ExprSs*             expr)
 {
     if(expr->time)
     {
-        auto    time        = make(expr->time, "starting");
-        auto    lo          = Wrapper(time->lo);
-        auto    hi          = Wrapper(time->hi);
-        auto    prev_time   = Wrapper(Factory<ExprData>::create(Factory<ExprContext>::create("starting"), "__time__"));
-        auto    curr_time   = Wrapper(Factory<ExprData>::create(Factory<ExprContext>::create("__curr__"), "__time__"));
-        auto    cT_lt_hi    = (prev_time - curr_time) < hi;
-        auto    lo_lt_Nt    = Yw(lo < (prev_time - curr_time));
-        auto    lhs         = (Wrapper(make(expr->lhs)) && cT_lt_hi) || !lo_lt_Nt;
-        auto    rhs         = (Wrapper(make(expr->rhs)) && cT_lt_hi) &&  lo_lt_Nt;
-
-        m_expr  = At("starting", make(Ss(lhs, rhs).get()));
+        m_expr =  Factory<ExprSs>::create(
+            expr->where(),
+            make(expr->time),
+            make(expr->lhs),
+            make(expr->rhs));
     }
     else
     {
@@ -549,17 +548,11 @@ void    RewriteImpl::visit( ExprSw*             expr)
 {
     if(expr->time)
     {
-        auto    time        = make(expr->time, "starting");
-        auto    lo          = Wrapper(time->lo);
-        auto    hi          = Wrapper(time->hi);
-        auto    prev_time   = Wrapper(Factory<ExprData>::create(Factory<ExprContext>::create("starting"), "__time__"));
-        auto    curr_time   = Wrapper(Factory<ExprData>::create(Factory<ExprContext>::create("__curr__"), "__time__"));
-        auto    cT_lt_hi    = (prev_time - curr_time) < hi;
-        auto    lo_lt_Nt    = Yw(lo < (prev_time - curr_time));
-        auto    lhs         = (Wrapper(make(expr->lhs)) && cT_lt_hi) || !lo_lt_Nt;
-        auto    rhs         = (Wrapper(make(expr->rhs)) && cT_lt_hi) &&  lo_lt_Nt;
-
-        m_expr  = At("starting", make(Sw(lhs, rhs).get()));
+        m_expr =  Factory<ExprSw>::create(
+            expr->where(),
+            make(expr->time),
+            make(expr->lhs),
+            make(expr->rhs));
     }
     else
     {
@@ -574,13 +567,16 @@ void    RewriteImpl::visit( ExprTs*             expr)
 {
     if(expr->time)
     {
-        m_expr = make(!(Sw(expr->time, Not(expr->lhs), Not(expr->rhs))));
+        m_expr =  Factory<ExprTs>::create(
+            expr->where(),
+            make(expr->time),
+            make(expr->lhs),
+            make(expr->rhs));    
     }
     else 
     {
         m_expr =  Factory<ExprTs>::create(
             expr->where(),
-            make(expr->time),
             make(expr->lhs),
             make(expr->rhs));
     }
@@ -590,7 +586,10 @@ void    RewriteImpl::visit( ExprTw*             expr)
 {
     if(expr->time)
     {
-        m_expr = make(!(Ss(expr->time, Not(expr->lhs), Not(expr->rhs))));
+        m_expr =  Factory<ExprTw>::create(
+            expr->where(),
+            make(expr->lhs),
+            make(expr->rhs));   
     }
     else 
     {
@@ -606,17 +605,11 @@ void    RewriteImpl::visit( ExprUs*             expr)
 {
     if(expr->time)
     {
-        auto    time        = make(expr->time, "starting");
-        auto    lo          = Wrapper(time->lo);
-        auto    hi          = Wrapper(time->hi);
-        auto    prev_time   = Wrapper(Factory<ExprData>::create(Factory<ExprContext>::create("starting"), "__time__"));
-        auto    curr_time   = Wrapper(Factory<ExprData>::create(Factory<ExprContext>::create("__curr__"), "__time__"));
-        auto    cT_lt_hi    = (curr_time - prev_time) < hi;
-        auto    lo_lt_Nt    = Xw(lo < (curr_time - prev_time));
-        auto    lhs         = (Wrapper(make(expr->lhs)) && cT_lt_hi) || !lo_lt_Nt;
-        auto    rhs         = (Wrapper(make(expr->rhs)) && cT_lt_hi) &&  lo_lt_Nt;
-
-        m_expr  = At("starting", make(Us(lhs, rhs).get()));
+        m_expr =  Factory<ExprUs>::create(
+            expr->where(),
+            make(expr->time),
+            make(expr->lhs),
+            make(expr->rhs));
     }
     else
     {
@@ -631,17 +624,11 @@ void    RewriteImpl::visit( ExprUw*             expr)
 {
     if(expr->time)
     {
-        auto    time        = make(expr->time, "starting");
-        auto    lo          = Wrapper(time->lo);
-        auto    hi          = Wrapper(time->hi);
-        auto    prev_time   = Wrapper(Factory<ExprData>::create(Factory<ExprContext>::create("starting"), "__time__"));
-        auto    curr_time   = Wrapper(Factory<ExprData>::create(Factory<ExprContext>::create("__curr__"), "__time__"));
-        auto    cT_lt_hi    = (curr_time - prev_time) < hi;
-        auto    lo_lt_Nt    = Xw(lo < (curr_time - prev_time));
-        auto    lhs         = (Wrapper(make(expr->lhs)) && cT_lt_hi) || !lo_lt_Nt;
-        auto    rhs         = (Wrapper(make(expr->rhs)) && cT_lt_hi) &&  lo_lt_Nt;
-
-        m_expr  = At("starting", make(Uw(lhs, rhs).get()));
+        m_expr =  Factory<ExprUw>::create(
+            expr->where(),
+            make(expr->time),
+            make(expr->lhs),
+            make(expr->rhs));
     }
     else
     {
@@ -664,7 +651,6 @@ void    RewriteImpl::visit( ExprXs*             expr)
 {
     m_expr =  Factory<ExprXs>::create(
         expr->where(),
-        make(expr->time),
         make(expr->lhs),
         make(expr->rhs));
 }
@@ -673,7 +659,6 @@ void    RewriteImpl::visit( ExprXw*             expr)
 {
     m_expr =  Factory<ExprXw>::create(
         expr->where(),
-        make(expr->time),
         make(expr->lhs),
         make(expr->rhs));
 }
@@ -682,7 +667,6 @@ void    RewriteImpl::visit( ExprYs*             expr)
 {
     m_expr =  Factory<ExprYs>::create(
         expr->where(),
-        make(expr->time),
         make(expr->lhs),
         make(expr->rhs));
 }
@@ -691,7 +675,6 @@ void    RewriteImpl::visit( ExprYw*             expr)
 {
     m_expr =  Factory<ExprYw>::create(
         expr->where(),
-        make(expr->time),
         make(expr->lhs),
         make(expr->rhs));
 }

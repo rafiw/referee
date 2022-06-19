@@ -150,7 +150,7 @@ typedef struct state_t {
 class LogicTest : public ::testing::Test {
 
 protected:
-    state_t     state[26];
+    state_t     state[28];  //  1 + 26 + 1
     bool        T   = true;
     bool        F   = false;
 
@@ -159,13 +159,15 @@ protected:
     {
         for(int i = 0 ; i < 26; i++)
         {
-            state[i].time   = i * 1000;
+            state[i + 1].time   = i * 1000;
 
             for(int j = 0; j < 26; j++)
             {
-                state[i].lttr[j]    = i == j ? &T : &F;
+                state[i + 1].lttr[j]    = i == j ? &T : &F;
             }
         }
+        state[ 0].time  = state[ 1].time - 1;
+        state[27].time  = state[26].time + 1;
 /*
         auto    type    = referee::db::TypeBoolean();
 
@@ -270,7 +272,7 @@ TEST_F(LogicTest, Pass)
                 auto    func    = (bool (*)(state_t*, state_t*, void*))(intptr_t)symbol.getAddress();
                 if(name == "debug")
                     continue;
-                auto    result  = func(&state[0], &state[25], nullptr);
+                auto    result  = func(&state[0], &state[27], nullptr);
                 std::cout << std::setw(20) << std::left << name << " eval: " << result << std::endl; 
             }
         }

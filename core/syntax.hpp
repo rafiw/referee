@@ -346,19 +346,19 @@ using ExprEqu   = Final<SetOper<'<=>', ExprBinary>>;
 
 using ExprChoice= Final<SetOper<'?:',  ExprTernary>>;
 
+using ExprXs    = Final<SetOper<'Xs',  ExprBinary>>;
+using ExprXw    = Final<SetOper<'Xw',  ExprBinary>>;
 using ExprG     = Final<SetOper<'G',   Temporal<ExprUnary>>>;
 using ExprF     = Final<SetOper<'F',   Temporal<ExprUnary>>>;
-using ExprXs    = Final<SetOper<'Xs',  Temporal<ExprBinary>>>;
-using ExprXw    = Final<SetOper<'Xw',  Temporal<ExprBinary>>>;
 using ExprUs    = Final<SetOper<'Us',  Temporal<ExprBinary>>>;
 using ExprUw    = Final<SetOper<'Uw',  Temporal<ExprBinary>>>;
 using ExprRs    = Final<SetOper<'Rs',  Temporal<ExprBinary>>>;
 using ExprRw    = Final<SetOper<'Rw',  Temporal<ExprBinary>>>;
                                                 
+using ExprYs    = Final<SetOper<'Ys',  ExprBinary>>;
+using ExprYw    = Final<SetOper<'Yw',  ExprBinary>>;
 using ExprH     = Final<SetOper<'H',   Temporal<ExprUnary>>>;
 using ExprO     = Final<SetOper<'O',   Temporal<ExprUnary>>>;
-using ExprYs    = Final<SetOper<'Ys',  Temporal<ExprBinary>>>;
-using ExprYw    = Final<SetOper<'Yw',  Temporal<ExprBinary>>>;
 using ExprSs    = Final<SetOper<'Ss',  Temporal<ExprBinary>>>;
 using ExprSw    = Final<SetOper<'Sw',  Temporal<ExprBinary>>>;
 using ExprTs    = Final<SetOper<'Ts',  Temporal<ExprBinary>>>;

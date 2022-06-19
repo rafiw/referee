@@ -124,8 +124,8 @@ void    NegatedImpl::visit(ExprImp*    expr) {m_negated = Factory<ExprAnd>::crea
 
 void    NegatedImpl::visit(ExprG*      expr) {m_negated = Factory<ExprF>::create(expr->time, negated(expr->arg));}
 void    NegatedImpl::visit(ExprF*      expr) {m_negated = Factory<ExprG>::create(expr->time, negated(expr->arg));}
-void    NegatedImpl::visit(ExprXs*     expr) {m_negated = Factory<ExprXw>::create(expr->time, expr->lhs, negated(expr->rhs));}
-void    NegatedImpl::visit(ExprXw*     expr) {m_negated = Factory<ExprXs>::create(expr->time, expr->lhs, negated(expr->rhs));}
+void    NegatedImpl::visit(ExprXs*     expr) {m_negated = Factory<ExprXw>::create(expr->lhs, negated(expr->rhs));}
+void    NegatedImpl::visit(ExprXw*     expr) {m_negated = Factory<ExprXs>::create(expr->lhs, negated(expr->rhs));}
 void    NegatedImpl::visit(ExprUs*     expr) {m_negated = Factory<ExprRw>::create(expr->time, negated(expr->lhs), negated(expr->rhs));}
 void    NegatedImpl::visit(ExprUw*     expr) {m_negated = Factory<ExprRs>::create(expr->time, negated(expr->lhs), negated(expr->rhs));}
 void    NegatedImpl::visit(ExprRs*     expr) {m_negated = Factory<ExprUw>::create(expr->time, negated(expr->lhs), negated(expr->rhs));}
@@ -133,8 +133,8 @@ void    NegatedImpl::visit(ExprRw*     expr) {m_negated = Factory<ExprUs>::creat
 
 void    NegatedImpl::visit(ExprH*      expr) {m_negated = Factory<ExprO>::create(expr->time, negated(expr->arg));}
 void    NegatedImpl::visit(ExprO*      expr) {m_negated = Factory<ExprH>::create(expr->time, negated(expr->arg));}
-void    NegatedImpl::visit(ExprYs*     expr) {m_negated = Factory<ExprYw>::create(expr->time, expr->lhs, negated(expr->rhs));}
-void    NegatedImpl::visit(ExprYw*     expr) {m_negated = Factory<ExprYs>::create(expr->time, expr->lhs, negated(expr->rhs));}
+void    NegatedImpl::visit(ExprYs*     expr) {m_negated = Factory<ExprYw>::create(expr->lhs, negated(expr->rhs));}
+void    NegatedImpl::visit(ExprYw*     expr) {m_negated = Factory<ExprYs>::create(expr->lhs, negated(expr->rhs));}
 void    NegatedImpl::visit(ExprSs*     expr) {m_negated = Factory<ExprTw>::create(expr->time, negated(expr->lhs), negated(expr->rhs));}
 void    NegatedImpl::visit(ExprSw*     expr) {m_negated = Factory<ExprTs>::create(expr->time, negated(expr->lhs), negated(expr->rhs));}
 void    NegatedImpl::visit(ExprTs*     expr) {m_negated = Factory<ExprSw>::create(expr->time, negated(expr->lhs), negated(expr->rhs));}
