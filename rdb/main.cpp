@@ -26,6 +26,7 @@
 #include "utils.hpp"
 
 #include <spdlog/spdlog.h>
+#include "spdlog/fmt/fmt.h"
 #include <spdlog/fmt/ostr.h>
 
 #include <CLI/App.hpp>

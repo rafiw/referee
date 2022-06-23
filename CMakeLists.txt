@@ -40,10 +40,13 @@ enable_testing()
 find_package(antlr4-runtime   REQUIRED)
 find_package(antlr4-generator REQUIRED)
 find_package(LLVM             REQUIRED CONFIG)
+find_package(FMT              REQUIRED)
+
 
 add_code_coverage()
 
-set(ANTLR4_JAR_LOCATION /opt/homebrew/Cellar/antlr/4.10.1/antlr-4.10.1-complete.jar)
+#set(ANTLR4_JAR_LOCATION /opt/homebrew/Cellar/antlr/4.10.1/antlr-4.10.1-complete.jar)
+set(ANTLR4_JAR_LOCATION /usr/local/lib/antlr-4.10.1-complete.jar)
 
 antlr4_generate(
     referee_parser
@@ -76,7 +79,7 @@ link_directories(
 
 separate_arguments(LLVM_DEFINITIONS_LIST NATIVE_COMMAND ${LLVM_DEFINITIONS})
 add_definitions(${LLVM_DEFINITIONS_LIST})
-llvm_map_components_to_libnames(llvm_libs support core irreader orcjit aarch64asmparser aarch64codegen aarch64info)
+llvm_map_components_to_libnames(llvm_libs support core irreader orcjit aarch64asmparser aarch64codegen aarch64info x86asmparser x86codegen x86desc x86disassembler x86info)
 
 file(GLOB_RECURSE ALL_CODE_FILES
     ${PROJECT_SOURCE_DIR}/core/*.[ch]pp
@@ -116,11 +119,14 @@ add_dependencies(
 )
 
 target_link_libraries(
-    referee
+    referee PUBLIC
+    fmt::fmt
     core
+    fmt::fmt
     antlr4_shared
     ${llvm_libs}
 )
+target_code_coverage(referee)
 
 add_executable(
     tests
@@ -131,21 +137,25 @@ add_executable(
 )
 
 target_link_libraries(
-    tests
+    tests PUBLIC
+    fmt::fmt
     core
+    fmt::fmt
     gtest
     gtest_main
     pthread
     antlr4_shared
     ${llvm_libs}
 )
-add_test(tests tests)
-
 target_code_coverage(tests)
-target_code_coverage(referee)
+
+add_test(tests tests)
 
 add_executable(
     rdb
     rdb/database.cpp
     rdb/main.cpp
 )
+target_link_libraries(
+    rdb
+    fmt::fmt)

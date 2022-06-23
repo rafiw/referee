@@ -36,6 +36,34 @@
 #include "rapidcsv.h"
 #include "utils.hpp"
 
+constexpr auto htonll(int64_t h)
+{
+    if (std::endian::native != std::endian::big) {
+        static_assert(CHAR_BIT==8);
+        constexpr auto shift_bytes1{8};
+        constexpr auto shift_bytes2{16};
+        constexpr auto shift_bytes4{32};
+        h = ((h&UINT64_C(0x00FF00FF00FF00FF))<<shift_bytes1) | ((h&UINT64_C(0xFF00FF00FF00FF00))>>shift_bytes1);
+        h = ((h&UINT64_C(0x0000FFFF0000FFFF))<<shift_bytes2) | ((h&UINT64_C(0xFFFF0000FFFF0000))>>shift_bytes2);
+        h = ((h&UINT64_C(0x00000000FFFFFFFF))<<shift_bytes4) | ((h&UINT64_C(0xFFFFFFFF00000000))>>shift_bytes4);
+    }
+    return h;
+}
+
+constexpr auto ntohll(int64_t h)
+{
+    if (std::endian::native != std::endian::big) {
+        static_assert(CHAR_BIT==8);
+        constexpr auto shift_bytes1{8};
+        constexpr auto shift_bytes2{16};
+        constexpr auto shift_bytes4{32};
+        h = ((h&UINT64_C(0x00FF00FF00FF00FF))<<shift_bytes1) | ((h&UINT64_C(0xFF00FF00FF00FF00))>>shift_bytes1);
+        h = ((h&UINT64_C(0x0000FFFF0000FFFF))<<shift_bytes2) | ((h&UINT64_C(0xFFFF0000FFFF0000))>>shift_bytes2);
+        h = ((h&UINT64_C(0x00000000FFFFFFFF))<<shift_bytes4) | ((h&UINT64_C(0xFFFFFFFF00000000))>>shift_bytes4);
+    }
+    return h;
+}
+
 namespace referee::db {
 
 class DataWriter::Impl

@@ -5,6 +5,8 @@ Install the following tools
 2. sudo apt-get install gcc
 3. sudo apt-get install g++
 4. sudo apt-get install libgtest-dev
+5. sudo apt-get install libspdlog-dev
+5. sudo apt-get install libcli11-dev
 
 
 ```
