@@ -63,6 +63,7 @@
 #include <memory>
 
 #include "antlr2ast.hpp"
+#include "strings.hpp"
 #include "visitors/compile.hpp"
 
 
@@ -147,10 +148,18 @@ typedef struct state_t {
     bool*       lttr[26];
 } state_t;
 
+typedef struct conf_t {
+    int64_t     i;
+    bool        b;
+    double      n;
+    char const* s;
+} conf_t;
+
 class LogicTest : public ::testing::Test {
 
 protected:
     state_t     state[28];  //  1 + 26 + 1
+    conf_t      conf;
     bool        T   = true;
     bool        F   = false;
 
@@ -168,6 +177,11 @@ protected:
         }
         state[ 0].time  = state[ 1].time - 1;
         state[27].time  = state[26].time + 1;
+
+        conf.i  = 1;
+        conf.b  = true;
+        conf.n  = 1.1;
+        conf.s  = Strings::instance()->getString("hello");
 /*
         auto    type    = referee::db::TypeBoolean();
 
@@ -272,8 +286,9 @@ TEST_F(LogicTest, Pass)
                 auto    func    = (bool (*)(state_t*, state_t*, void*))(intptr_t)symbol.getAddress();
                 if(name == "debug")
                     continue;
-                auto    result  = func(&state[0], &state[27], nullptr);
+                auto    result  = func(&state[0], &state[27], &conf);
                 std::cout << std::setw(20) << std::left << name << " eval: " << result << std::endl; 
+                ASSERT_TRUE(result);
             }
         }
     }

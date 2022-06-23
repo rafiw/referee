@@ -24,8 +24,8 @@
 
 #include "compile.hpp"
 #include "rewrite.hpp"
-#include "printer.hpp"
 #include "typecalc.hpp"
+#include "strings.hpp"
 #include "../factory.hpp"
 
 #include <functional>
@@ -373,6 +373,9 @@ void    CompileExprImpl::visit(ExprConstNumber*  expr)
 
 void    CompileExprImpl::visit(ExprConstString*  expr)
 {
+    auto    value   = llvm::ConstantInt::getSigned(m_builder->getInt64Ty(), reinterpret_cast<int64_t>(Strings::instance()->getString(expr->value)));
+
+    m_value = m_builder->CreateIntToPtr(value, m_builder->getInt8PtrTy(), expr->value);
 }
 
 void    CompileExprImpl::visit(ExprContext*      expr)
@@ -402,22 +405,21 @@ void    CompileExprImpl::visit(ExprContext*      expr)
 
 void    CompileExprImpl::visit(ExprConf*         expr)
 {
-    auto    ctxtPtr         = make(expr->ctxt);
-    auto    ctxtPtrType     = cast<llvm::PointerType>(ctxtPtr->getType());
-    auto    ctxtType        = ctxtPtrType->getPointerElementType();
+    auto    ctxtPtr     = make(expr->ctxt);
+    auto    ctxtPtrType = cast<llvm::PointerType>(ctxtPtr->getType());
+    auto    ctxtType    = ctxtPtrType->getPointerElementType();
 
-    auto    confPtrPtr      = m_builder->CreateStructGEP(ctxtType, ctxtPtr, dynamic_cast<TypeContext*>(expr->ctxt->type())->index(expr->name));
-    auto    confPtrPtrType  = cast<llvm::PointerType>(confPtrPtr->getType());
-    auto    confPtrType     = cast<llvm::PointerType>(confPtrPtrType->getPointerElementType());
-
-    auto    confType        = confPtrType->getPointerElementType();
-
-    m_value = m_builder->CreateLoad(confPtrType, confPtrPtr, false, "ptr_" + expr->name);
+    auto    confPtr     = m_builder->CreateStructGEP(ctxtType, ctxtPtr, dynamic_cast<TypeContext*>(expr->ctxt->type())->index(expr->name));
+    auto    confPtrType = cast<llvm::PointerType>(confPtr->getType());
 
     if(dynamic_cast<TypePrimitive*>(expr->type()))
     {
         m_value = m_builder->CreateLoad(confPtrType->getPointerElementType(), m_value, false, "val_" + expr->name);
-    }        
+    }
+    else
+    {
+        m_value = confPtr;
+    }   
 }
 
 void    CompileExprImpl::visit(ExprData*         expr)
@@ -592,7 +594,6 @@ void    CompileExprImpl::visit(ExprIndx*         expr)
     auto    elemType    = baseType->getElementType();
 
     m_value = m_builder->CreateGEP(baseType, basePtr, {m_0, indx}, "ptr_[]");
-    m_value->print(llvm::outs()); std::cout << std::endl;
 
     if(dynamic_cast<TypePrimitive*>(exprType))
     {
@@ -1470,8 +1471,6 @@ llvm::Value*    CompileExprImpl::make(Expr* expr)
 {
     auto    save    = m_value;
 
-    m_value = llvm::ConstantInt::getTrue(*m_context);
-
     expr->accept(*this);
 
     auto    result  = m_value;
@@ -1502,7 +1501,7 @@ void Compile::make(llvm::LLVMContext* context, llvm::Module* module, Module* ref
     for(auto name: confNames)
     {
         auto    type    = refmod->getConf(name);
-        confTypes.push_back(llvm::PointerType::get(make(context, module, type, name), 0));
+        confTypes.push_back(make(context, module, type, name));
     }
     auto    confType    = llvm::StructType::create(*context, confTypes, "__conf_t");
     auto    confPtrType = llvm::PointerType::get(confType, 0);
@@ -1517,7 +1516,6 @@ void Compile::make(llvm::LLVMContext* context, llvm::Module* module, Module* ref
         if(name == "__time__")
             continue;
             
-        std::cout << "prop: " << name << std::endl;
         auto    type    = refmod->getProp(name);
         propTypes.push_back(llvm::PointerType::get(make(context, module, type, name), 0));
     }
@@ -1545,7 +1543,6 @@ void Compile::make(llvm::LLVMContext* context, llvm::Module* module, Module* ref
 
         auto    temp        = Rewrite::make(expr);
         TypeCalc::make(refmod, temp);
-        Printer::output(std::cout, temp) << std::endl;
         builder->CreateRet(compExpr.make(temp));
 
         llvm::verifyFunction(*funcBody);

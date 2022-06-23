@@ -31,6 +31,7 @@
 #include "colormod.hpp"             //  TODO: remove
 #include "module.hpp"
 #include "utils.hpp"
+#include "strings.hpp"
 #include "factory.hpp"
 
 Antlr2AST::Antlr2AST()
@@ -198,7 +199,7 @@ std::any Antlr2AST::visitExprConst(     referee::refereeParser::ExprConstContext
         return  static_cast<Expr*>(build<ExprConstBoolean>(ctx, parse_boolean(ctx->boolean()->getText())));
 
     if(ctx->string() != nullptr)
-        return  static_cast<Expr*>(build<ExprConstString>(ctx, parse_string(ctx->string()->getText())));
+        return  static_cast<Expr*>(build<ExprConstString>(ctx, Strings::instance()->getString(parse_string(ctx->string()->getText()))));
 
     throw std::runtime_error(__PRETTY_FUNCTION__);
     /*

@@ -64,7 +64,7 @@ floating    : FLOATING EXPONENT?
             | INTEGER  EXPONENT
             ;
 
-STRING      : '"' [a-zA-Z_0-9] '"' ;         
+STRING      : '"' [a-zA-Z_0-9?!.]* '"' ;         
 string      : STRING;
 
 ID          : [a-zA-Z_][a-zA-Z0-9_]*

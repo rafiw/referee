@@ -25,6 +25,13 @@ data    x:  boolean;
 data    y:  boolean;
 data    z:  boolean;
 
+conf    C:  struct {
+    i:  integer;
+    b:  boolean;
+    n:  number;
+    s:  string;
+};
+
 a == true;
 b == false;
 Xs(a == false);
@@ -81,6 +88,12 @@ Xs(25, G(z));
 Xs(25, F(z));
 O(a);
 G(z => O(a));
-#G(z => O[0:3000](x));
+G(z => O[0:3000](x));
 Xs(25, O[0:2000](x)) == false;
 Xs(25, O[0:2001](x));
+
+G(C.i == 1);
+G(C.n == 1.1);
+G(C.b == true);
+G(C.s == "hello");
+C.s != "hello?";
