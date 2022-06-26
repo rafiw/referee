@@ -481,7 +481,19 @@ public:
 class Spec
     : public Visitable<Base, Spec>
 {
+};
 
+class SpecScoped
+    : public Visitable<Spec, SpecScoped>
+{
+public:
+    SpecScoped(Spec* spec)
+        : Visitable<Spec, SpecScoped>()
+        , spec(spec)
+    {
+    }
+
+    Spec*  const    spec;
 };
 
 class SpecUniversality
@@ -710,6 +722,85 @@ public:
     Expr*   P;
     Expr*   S;
     Time*   tPS;    
+};
+
+class SpecGlobally
+    : public Visitable<SpecScoped, SpecGlobally>
+{
+public:
+    SpecGlobally(Spec* spec)
+        : Visitable<SpecScoped, SpecGlobally>(spec)
+    {
+    }
+};
+
+class SpecBefore
+    : public Visitable<SpecScoped, SpecBefore>
+{
+public:
+    SpecBefore(Expr* arg, Spec* spec)
+        : Visitable<SpecScoped, SpecBefore>(spec)
+        , arg(arg)
+    {
+    }
+
+    Expr* const arg;
+};
+
+class SpecAfter
+    : public Visitable<SpecScoped, SpecAfter>
+{
+public:
+    SpecAfter(Expr* arg, Spec* spec)
+        : Visitable<SpecScoped, SpecAfter>(spec)
+        , arg(arg)
+    {
+    }
+
+    Expr* const arg;
+};
+
+class SpecWhile
+    : public Visitable<SpecScoped, SpecWhile>
+{
+public:
+    SpecWhile(Expr* arg, Spec* spec)
+        : Visitable<SpecScoped, SpecWhile>(spec)
+        , arg(arg)
+    {
+    }
+
+    Expr* const arg;
+};
+
+class SpecBetweenAnd
+    : public Visitable<SpecScoped, SpecBetweenAnd>
+{
+public:
+    SpecBetweenAnd(Expr* lhs, Expr* rhs, Spec* spec)
+        : Visitable<SpecScoped, SpecBetweenAnd>(spec)
+        , lhs(lhs)
+        , rhs(rhs)
+    {
+    }
+
+    Expr* const lhs;
+    Expr* const rhs;
+};
+
+class SpecAfterUntil
+    : public Visitable<SpecScoped, SpecAfterUntil>
+{
+public:
+    SpecAfterUntil(Expr* lhs, Expr* rhs, Spec* spec)
+        : Visitable<SpecScoped, SpecAfterUntil>(spec)
+        , lhs(lhs)
+        , rhs(rhs)
+    {
+    }
+
+    Expr* const lhs;
+    Expr* const rhs;
 };
 
 

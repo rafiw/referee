@@ -97,3 +97,11 @@ G(C.n == 1.1);
 G(C.b == true);
 G(C.s == "hello");
 C.s != "hello?";
+
+1 - 2 == -1;
+
+after b, it is never the case that a holds;
+before b, it is always the case that a holds;
+
+after b, before c, it is always the case that b holds;
+after b, before c, it is never the case that a holds;

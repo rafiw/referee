@@ -113,7 +113,14 @@ struct CompileExprImpl
              , ExprXs
              , ExprXw
              , ExprYs
-             , ExprYw>
+             , ExprYw
+             , Spec
+             , SpecGlobally
+             , SpecBefore
+             , SpecAfter
+             , SpecWhile
+             , SpecBetweenAnd
+             , SpecAfterUntil>
 {
     CompileExprImpl(
             llvm::LLVMContext*  context, 
@@ -170,6 +177,14 @@ struct CompileExprImpl
     void    visit(ExprYs*           expr) override;
     void    visit(ExprYw*           expr) override;
 
+    void    visit(Spec*             spec) override;
+    void    visit(SpecGlobally*     spec) override;
+    void    visit(SpecBefore*       spec) override;
+    void    visit(SpecAfter*        spec) override;
+    void    visit(SpecWhile*        spec) override;
+    void    visit(SpecBetweenAnd*   spec) override;
+    void    visit(SpecAfterUntil*   spec) override;
+
     void    compare(
                 llvm::CmpInst::Predicate    ipred, 
                 llvm::CmpInst::Predicate    fpred, ExprBinary* expr);
@@ -195,6 +210,10 @@ struct CompileExprImpl
                 std::string             name);
 
     llvm::Value*    make(Expr* expr);
+    llvm::Value*    make(Spec* spec);
+
+    llvm::Value*    getNext(llvm::Value* curr);
+    llvm::Value*    getPrev(llvm::Value* curr);
 
 private:
     llvm::Value*        add(llvm::Value* lhs, llvm::Value* rhs, std::string const& name);
@@ -219,8 +238,8 @@ private:
     llvm::Value*        m_m1;
     llvm::Value*        m_T;
     llvm::Value*        m_F;
-    llvm::Value*        m_frst;
-    llvm::Value*        m_last;
+    std::vector<llvm::Value*>   m_frst;
+    std::vector<llvm::Value*>   m_last;
     llvm::Value*        m_conf;
     llvm::Type*         m_propType;
     llvm::Type*         m_confType;
@@ -321,13 +340,13 @@ CompileExprImpl::CompileExprImpl(
 
     auto    iter    = function->arg_begin();
     
-    m_frst  = iter++;
-    m_last  = iter++;
+    m_frst.push_back(iter++);
+    m_last.push_back(iter++);
     m_conf  = iter;
-    m_propType  = cast<llvm::PointerType>(m_frst->getType())->getPointerElementType();
+    m_propType  = cast<llvm::PointerType>(m_frst.front()->getType())->getPointerElementType();
     m_confType  = cast<llvm::PointerType>(m_conf->getType())->getPointerElementType();
 
-    m_curr.push_back(m_builder->CreateGEP(m_propType, m_frst, m_p1, "curr"));
+    m_curr.push_back(getNext(m_frst.front()));
 }
  
 void    CompileExprImpl::visit(ExprAdd*          expr)
@@ -354,6 +373,7 @@ void    CompileExprImpl::visit(ExprAt*           expr)
 
 void    CompileExprImpl::visit(ExprChoice*       expr)
 {
+    throw std::runtime_error(__PRETTY_FUNCTION__);
 }
 
 void    CompileExprImpl::visit(ExprConstBoolean* expr)
@@ -757,10 +777,10 @@ uint64_t    integral(prop_t const* curr, prop_t const* frst, prop_t const* last)
     auto    bbNext  = llvm::BasicBlock::Create(*m_context, "I-next", m_function);
     auto    bbTail  = llvm::BasicBlock::Create(*m_context, "I-tail", m_function);
 
-    auto    frst    = m_frst;
+    auto    frst    = m_frst.back();
     auto    curr0   = m_curr.back();
-    auto    next0   = m_builder->CreateGEP(m_propType, curr0, m_p1, "next");
-    auto    last    = m_last;
+    auto    next0   = getNext(curr0);
+    auto    last    = m_last.back();
 
     llvm::Value*    timeLo  = nullptr;
     llvm::Value*    timeHi  = nullptr;
@@ -841,14 +861,14 @@ uint64_t    integral(prop_t const* curr, prop_t const* frst, prop_t const* last)
     //  next
     m_builder->SetInsertPoint(bbNext);
     auto    sumNext = m_builder->CreatePHI(type, 3, "total@next");
-    auto    curr1   = next;
-    auto    next1   = m_builder->CreateGEP(m_propType, curr1, m_p1, "next");
+    auto    curr1   = getNext(curr);
+    auto    next1   = getNext(next);
     m_builder->CreateBr(bbHead);
 
     //  tail
     m_builder->SetInsertPoint(bbTail);
 
-    auto    result  = m_builder->CreatePHI(type, 1, "value");
+    //auto    result  = m_builder->CreatePHI(type, 1, "value");
 
     //  link
     curr->addIncoming(curr0, bbEntry);
@@ -857,7 +877,7 @@ uint64_t    integral(prop_t const* curr, prop_t const* frst, prop_t const* last)
     next->addIncoming(next0, bbEntry);
     next->addIncoming(next1, bbNext);
 
-    result->addIncoming(sumHead, bbHead);
+    //result->addIncoming(sumHead, bbHead);
 
     sumNext->addIncoming(sumBody, bbBodyLo);
     sumNext->addIncoming(sumHead, bbCondLo);
@@ -866,9 +886,9 @@ uint64_t    integral(prop_t const* curr, prop_t const* frst, prop_t const* last)
     sumHead->addIncoming(zero,    bbEntry);
     sumHead->addIncoming(sumNext, bbNext);
 
-    result->addIncoming( sumHead, bbHead);
+    //result->addIncoming( sumHead, bbHead);
 
-    m_value = result;
+    m_value = sumHead;
 }
 
 void    CompileExprImpl::visit(ExprLe*           expr)
@@ -1026,9 +1046,9 @@ void    CompileExprImpl::XY(ExprBinary*     expr,
     auto    bbBodyHi= llvm::BasicBlock::Create(*m_context, name + "-body", m_function);
     auto    bbBodyLo= bbBodyHi;
     auto    bbTail  = llvm::BasicBlock::Create(*m_context, name + "-tail", m_function);
-    auto    frst    = m_frst;
+    auto    frst    = m_frst.back();
     auto    curr    = m_curr.back();
-    auto    last    = m_last;
+    auto    last    = m_last.back();
 
     m_builder->CreateBr(bbHeadHi);
 
@@ -1149,10 +1169,10 @@ uint64_t    UR(prop_t const* curr, prop_t const* frst, prop_t const* last, bool 
     auto    bbNext  = llvm::BasicBlock::Create(*m_context, name + "-next", m_function);
     auto    bbTail  = llvm::BasicBlock::Create(*m_context, name + "-tail", m_function);
 
-    auto    frst    = m_frst;
+    auto    frst    = m_frst.back();
     auto    curr0   = m_curr.back();
-    auto    next0   = m_builder->CreateGEP(m_propType, curr0, m_p1, "next");
-    auto    last    = m_last;
+    auto    next0   = getNext(curr0);
+    auto    last    = m_last.back();
 
     llvm::Value*    timeLo  = nullptr;
     llvm::Value*    timeHi  = nullptr;
@@ -1231,19 +1251,20 @@ uint64_t    UR(prop_t const* curr, prop_t const* frst, prop_t const* last, bool 
     //  next
     m_builder->SetInsertPoint(bbNext);
     auto    curr1   = next;
-    auto    next1   = m_builder->CreateGEP(m_propType, curr1, m_p1, "next");
+    auto    next1   = getNext(curr1);
     m_builder->CreateBr(bbWhile);
 
     //  tail
     m_builder->SetInsertPoint(bbTail);
-    auto    result  = m_builder->CreatePHI(m_builder->getInt1Ty(), 4, "result");
+    auto    result  = m_builder->CreatePHI(m_builder->getInt1Ty(), timeHi ? 4 : 3, "result");
 
     //  link
     result->addIncoming(lhsV, bbLhsLo);
     result->addIncoming(rhsV, bbRhsLo);
     result->addIncoming(endV, bbWhile);
-    result->addIncoming(endV, bbOuter);
-
+    if(timeHi)
+        result->addIncoming(endV, bbOuter);
+        
     curr->addIncoming(curr0, bbEntry);
     curr->addIncoming(curr1, bbNext);
 
@@ -1342,10 +1363,10 @@ uint64_t    ST(prop_t const* curr, prop_t const* frst, prop_t const* last, bool 
     auto    bbPrev  = llvm::BasicBlock::Create(*m_context, name + "-prev", m_function);
     auto    bbTail  = llvm::BasicBlock::Create(*m_context, name + "-tail", m_function);
 
-    auto    frst    = m_frst;
+    auto    frst    = m_frst.back();
     auto    curr0   = m_curr.back();
-    auto    prev0   = m_builder->CreateGEP(m_propType, curr0, m_m1, "prev");
-    auto    last    = m_last;
+    auto    prev0   = getPrev(curr0);
+    auto    last    = m_last.back();
 
     llvm::Value*    timeLo  = nullptr;
     llvm::Value*    timeHi  = nullptr;
@@ -1425,18 +1446,19 @@ uint64_t    ST(prop_t const* curr, prop_t const* frst, prop_t const* last, bool 
     //  next
     m_builder->SetInsertPoint(bbPrev);
     auto    curr1   = prev;
-    auto    prev1   = m_builder->CreateGEP(m_propType, curr1, m_m1, "prev");
+    auto    prev1   = getPrev(curr1);
     m_builder->CreateBr(bbWhile);
 
     //  tail
     m_builder->SetInsertPoint(bbTail);
-    auto    result  = m_builder->CreatePHI(m_builder->getInt1Ty(), 4, "result");
+    auto    result  = m_builder->CreatePHI(m_builder->getInt1Ty(), timeHi ? 4 : 3, "result");
 
     //  link
     result->addIncoming(lhsV, bbLhsLo);
     result->addIncoming(rhsV, bbRhsLo);
     result->addIncoming(endV, bbWhile);
-    result->addIncoming(endV, bbOuter);
+    if(timeHi)
+        result->addIncoming(endV, bbOuter);
 
     curr->addIncoming(curr0, bbEntry);
     curr->addIncoming(curr1, bbPrev);
@@ -1467,11 +1489,223 @@ void    CompileExprImpl::visit(ExprYw*           expr)
     XY(expr, m_m1, m_T, "Yw");
 }
 
+void    CompileExprImpl::visit(Spec*             spec)
+{
+    auto    expr    = Rewrite::make(spec);
+    TypeCalc::make(m_refmod, expr);
+
+    m_value = make(expr);
+}
+
+void    CompileExprImpl::visit(SpecGlobally*     spec)
+{
+    m_value = make(spec->spec);
+}
+
+void    CompileExprImpl::visit(SpecBefore*       spec)
+{
+/*
+    auto    curr    = frst + 1;
+    auto    result  = true;
+
+    while(curr < last)
+    {
+        if(eval(curr, spec->arg))
+        {
+            result  = eval(frst, curr, frst+1, spec->spec);
+            break
+        }
+
+        curr    = curr + 1;
+    }
+
+    return result;
+*/
+
+    auto    bbWhile = llvm::BasicBlock::Create(*m_context, "spec-while",m_function);
+    auto    bbTestHi= llvm::BasicBlock::Create(*m_context, "spec-test", m_function);
+    auto    bbTestLo= bbTestHi;
+    auto    bbBodyHi= llvm::BasicBlock::Create(*m_context, "spec-body", m_function);
+    auto    bbBodyLo= bbBodyHi;
+    auto    bbNext  = llvm::BasicBlock::Create(*m_context, "spec-next", m_function);
+    auto    bbTail  = llvm::BasicBlock::Create(*m_context, "spec-tail", m_function);
+    auto    bbEntry = m_builder->GetInsertBlock();
+
+    auto    frst    = m_frst.back();
+    auto    last    = m_last.back();
+
+    auto    curr0   = getNext(frst);
+
+    m_builder->CreateBr(bbWhile);
+
+    //  while
+    m_builder->SetInsertPoint(bbWhile);
+    auto    curr        = m_builder->CreatePHI(frst->getType(), 2, "curr");
+    auto    currLTlast  = m_builder->CreateICmpSLT(curr, last, "curr < last");
+    m_builder->CreateCondBr(currLTlast, bbTestHi, bbTail);
+
+    //  test
+    m_builder->SetInsertPoint(bbTestHi);
+    m_curr.push_back(curr);
+    auto    test= make(spec->arg);
+    m_curr.pop_back();
+    bbTestLo    = m_builder->GetInsertBlock();
+    m_builder->CreateCondBr(test, bbBodyHi, bbNext);
+
+    //  body
+    m_builder->SetInsertPoint(bbBodyHi);
+    m_curr.push_back(curr0);
+    m_last.push_back(curr);
+    auto    body    = make(spec->spec);
+    m_last.pop_back();
+    m_last.pop_back();
+    bbBodyLo    = m_builder->GetInsertBlock();
+    m_builder->CreateBr(bbTail);
+
+    //  next
+    m_builder->SetInsertPoint(bbNext);
+    auto    curr1   = getNext(curr);
+    m_builder->CreateBr(bbWhile);
+
+    //  tail
+    m_builder->SetInsertPoint(bbTail);
+    auto    result  = m_builder->CreatePHI(m_builder->getInt1Ty(), 2, "result");
+
+    //  links
+    curr->addIncoming(curr0, bbEntry);
+    curr->addIncoming(curr1, bbNext);
+
+    result->addIncoming(m_T, bbWhile);
+    result->addIncoming(body,bbBodyLo);
+
+    m_value = result;
+}
+
+void    CompileExprImpl::visit(SpecAfter*        spec)
+{
+/*
+    auto    curr    = frst + 1;
+    auto    result  = true;
+
+    while(curr < last)
+    {
+        if(eval(curr, spec->arg))
+        {
+            result  = eval(curr - 1, last, curr, spec->spec);
+            break
+        }
+
+        prev    = curr;
+        curr    = curr + 1;
+    }
+
+    return result;
+*/
+
+    auto    bbWhile = llvm::BasicBlock::Create(*m_context, "spec-while",m_function);
+    auto    bbTestHi= llvm::BasicBlock::Create(*m_context, "spec-test", m_function);
+    auto    bbTestLo= bbTestHi;
+    auto    bbBodyHi= llvm::BasicBlock::Create(*m_context, "spec-body", m_function);
+    auto    bbBodyLo= bbBodyHi;
+    auto    bbNext  = llvm::BasicBlock::Create(*m_context, "spec-next", m_function);
+    auto    bbTail  = llvm::BasicBlock::Create(*m_context, "spec-tail", m_function);
+    auto    bbEntry = m_builder->GetInsertBlock();
+
+    auto    frst    = m_frst.back();
+    auto    last    = m_last.back();
+
+    auto    curr0   = getNext(frst);
+
+    m_builder->CreateBr(bbWhile);
+
+    //  while
+    m_builder->SetInsertPoint(bbWhile);
+    auto    curr        = m_builder->CreatePHI(frst->getType(), 2, "curr");
+    auto    currLTlast  = m_builder->CreateICmpSLT(curr, last, "curr < last");
+    m_builder->CreateCondBr(currLTlast, bbTestHi, bbTail);
+
+    //  test
+    m_builder->SetInsertPoint(bbTestHi);
+    m_curr.push_back(curr);
+    auto    test= make(spec->arg);
+    m_curr.pop_back();
+    bbTestLo    = m_builder->GetInsertBlock();
+    m_builder->CreateCondBr(test, bbBodyHi, bbNext);
+
+    //  body
+    m_builder->SetInsertPoint(bbBodyHi);
+    m_frst.push_back(getPrev(curr));
+    m_curr.push_back(curr);
+    auto    body    = make(spec->spec);
+    m_curr.pop_back();
+    m_frst.pop_back();
+    bbBodyLo    = m_builder->GetInsertBlock();
+    m_builder->CreateBr(bbTail);
+
+    //  next
+    m_builder->SetInsertPoint(bbNext);
+    auto    curr1   = getNext(curr);
+    m_builder->CreateBr(bbWhile);
+
+    //  tail
+    m_builder->SetInsertPoint(bbTail);
+    auto    result  = m_builder->CreatePHI(m_builder->getInt1Ty(), 2, "result");
+
+    //  links
+    curr->addIncoming(curr0, bbEntry);
+    curr->addIncoming(curr1, bbNext);
+
+    result->addIncoming(m_T, bbWhile);
+    result->addIncoming(body,bbBodyLo);
+
+    m_value = result;
+}
+
+void    CompileExprImpl::visit(SpecWhile*        spec)
+{
+
+}
+
+void    CompileExprImpl::visit(SpecBetweenAnd*   spec)
+{
+/*
+
+*/
+}
+
+void    CompileExprImpl::visit(SpecAfterUntil*   spec)
+{
+
+}
+
+llvm::Value*    CompileExprImpl::getNext(llvm::Value* curr)
+{
+    return  m_builder->CreateGEP(m_propType, curr, m_p1, "next");
+}
+
+llvm::Value*    CompileExprImpl::getPrev(llvm::Value* curr)
+{
+    return  m_builder->CreateGEP(m_propType, curr, m_m1, "prev");
+
+}
+
 llvm::Value*    CompileExprImpl::make(Expr* expr)
 {
     auto    save    = m_value;
 
     expr->accept(*this);
+
+    auto    result  = m_value;
+    m_value = save;
+    
+    return  result;
+}
+
+llvm::Value*    CompileExprImpl::make(Spec* spec)
+{
+    auto    save    = m_value;
+
+    spec->accept(*this);
 
     auto    result  = m_value;
     m_value = save;
@@ -1544,7 +1778,35 @@ void Compile::make(llvm::LLVMContext* context, llvm::Module* module, Module* ref
         auto    temp        = Rewrite::make(expr);
         TypeCalc::make(refmod, temp);
         builder->CreateRet(compExpr.make(temp));
+        if(!llvm::verifyFunction(*funcBody, &llvm::outs()))
+        {
+   //         throw std::runtime_error(__PRETTY_FUNCTION__);
+        }
+    }
 
-        llvm::verifyFunction(*funcBody);
+    auto    specs   = refmod->getSpecs();
+    for(auto spec: specs)
+    {
+        auto    pos         = spec->where();
+        auto    funcName    = std::to_string(pos.beg.row) + ":" + std::to_string(pos.beg.col) + " .. " + std::to_string(pos.end.row) + ":" + std::to_string(pos.end.col);
+        auto    funcType    = llvm::FunctionType::get(builder->getInt1Ty(), {propPtrType, propPtrType, confPtrType}, false);
+        auto    funcBody    = llvm::Function::Create(funcType, llvm::Function::ExternalLinkage, funcName, module);
+        auto    funcArgs    = funcBody->args().begin();
+
+        funcArgs->setName("frst");  funcArgs++;
+        funcArgs->setName("last");  funcArgs++;
+        funcArgs->setName("conf");
+
+        auto    bb          = llvm::BasicBlock::Create(*context, "entry", funcBody);
+        builder->SetInsertPoint(bb);
+
+        CompileExprImpl compExpr(context, module, builder.get(), funcBody, refmod);
+
+        builder->CreateRet(compExpr.make(spec));
+
+        if(!llvm::verifyFunction(*funcBody, &llvm::outs()))
+        {
+            //throw std::runtime_error(__PRETTY_FUNCTION__);
+        }
     }
 }

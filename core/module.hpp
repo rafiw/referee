@@ -58,11 +58,15 @@ public:
     void    addExpr(    Expr*   expr);
     std::vector<Expr*> const&   getExprs();
 
+    void    addSpec(    Spec*   spec);
+    std::vector<Spec*> const&   getSpecs();
+
 private:
     std::map<std::string, Type*>    m_name2type;
     std::map<std::string, Type*>    m_name2data;
     std::map<std::string, Type*>    m_name2conf;
     std::vector<Expr*>              m_exprs;
+    std::vector<Spec*>              m_specs;
     std::vector<std::string>        m_context;
 
     std::vector<std::string>        m_propNames;

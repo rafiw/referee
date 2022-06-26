@@ -63,7 +63,29 @@ struct TypeCalcImpl
              , ExprYs
              , ExprYw
              , Time
-             , ExprAt>
+             , ExprAt
+             , SpecUniversality
+             , SpecAbsence
+             , SpecExistence
+             , SpecTransientState
+             , SpecSteadyState
+             , SpecMinimunDuration
+             , SpecMaximumDuration
+             , SpecRecurrence
+             , SpecPrecedence
+             , SpecPrecedenceChain12
+             , SpecPrecedenceChain21
+             , SpecResponse
+             , SpecResponseChain12
+             , SpecResponseChain21
+             , SpecResponseInvariance
+             , SpecUntil
+             , SpecGlobally
+             , SpecBefore
+             , SpecAfter
+             , SpecWhile
+             , SpecBetweenAnd
+             , SpecAfterUntil>
 {
     TypeCalcImpl(Module* module)
         : m_module(module)
@@ -72,7 +94,10 @@ struct TypeCalcImpl
     
     Type*   m_type  = nullptr;
 
-    Type*   make(Expr*          expr);
+    Type*   make(Expr*          expr, Type* type = nullptr);
+    Type*   make(Spec*          spec);
+    Type*   safe(Expr*          expr, Type* type = nullptr);
+    Type*   safe(Time*          time);
 
     void    visit(ExprAdd*              expr) override;
     void    visit(ExprAnd*              expr) override;
@@ -110,6 +135,29 @@ struct TypeCalcImpl
     void    visit(ExprXw*               expr) override;
     void    visit(ExprYs*               expr) override;
     void    visit(ExprYw*               expr) override;
+    void    visit(SpecUniversality*         spec)  override;
+    void    visit(SpecAbsence*              spec)  override;
+    void    visit(SpecExistence*            spec)  override;
+    void    visit(SpecTransientState*       spec)  override;
+    void    visit(SpecSteadyState*          spec)  override;
+    void    visit(SpecMinimunDuration*      spec)  override;
+    void    visit(SpecMaximumDuration*      spec)  override;
+    void    visit(SpecRecurrence*           spec)  override;
+    void    visit(SpecPrecedence*           spec)  override;
+    void    visit(SpecPrecedenceChain12*    spec)  override;
+    void    visit(SpecPrecedenceChain21*    spec)  override;
+    void    visit(SpecResponse*             spec)  override;
+    void    visit(SpecResponseChain12*      spec)  override;
+    void    visit(SpecResponseChain21*      spec)  override;
+    void    visit(SpecResponseInvariance*   spec)  override;
+    void    visit(SpecUntil*                spec)  override;
+    void    visit(SpecGlobally*            spec)  override;
+    void    visit(SpecBefore*              spec)  override;
+    void    visit(SpecAfter*               spec)  override;
+    void    visit(SpecWhile*               spec)  override;
+    void    visit(SpecBetweenAnd*          spec)  override;
+    void    visit(SpecAfterUntil*          spec)  override;
+
 
     Type*    boolBool2Bool(  
                     Expr*       expr,
@@ -392,20 +440,14 @@ void    TypeCalcImpl::visit(ExprXor*                expr)
 
 void    TypeCalcImpl::visit(Temporal<ExprBinary>*   expr)
 {
-    if(expr->time)
-    {
-        make(expr->time);
-    }
+    safe(expr->time);
 
     m_type = boolBool2Bool(expr, expr->lhs, expr->rhs);
 }
 
 void    TypeCalcImpl::visit(Temporal<ExprUnary>*    expr)
 {
-    if(expr->time)
-    {
-        make(expr->time);
-    }
+    safe(expr->time);
 
     m_type = bool2Bool(expr, expr->arg);
 }
@@ -531,7 +573,160 @@ Type*   TypeCalcImpl::nmbrNmbr2Bool(
     throw Exception(expr->where(), "bad type");
 }
 
-Type*   TypeCalcImpl::make(Expr* expr)
+void    TypeCalcImpl::visit(SpecUniversality*         spec)
+{
+    make(spec->P, typeBoolean);
+    safe(spec->tP);
+}
+
+void    TypeCalcImpl::visit(SpecAbsence*              spec)
+{
+    make(spec->P, typeBoolean);
+    safe(spec->tP);
+}
+
+void    TypeCalcImpl::visit(SpecExistence*            spec)
+{
+    make(spec->P, typeBoolean);
+    safe(spec->tP);
+}
+
+void    TypeCalcImpl::visit(SpecTransientState*       spec)
+{
+    make(spec->P, typeBoolean);
+    safe(spec->tP);
+}
+
+void    TypeCalcImpl::visit(SpecSteadyState*          spec)
+{
+    make(spec->P, typeBoolean);
+}
+
+void    TypeCalcImpl::visit(SpecMinimunDuration*      spec)
+{
+    make(spec->P, typeBoolean);
+    safe(spec->tP);
+}
+
+void    TypeCalcImpl::visit(SpecMaximumDuration*      spec)
+{
+    make(spec->P, typeBoolean);
+    safe(spec->tP);
+}
+
+void    TypeCalcImpl::visit(SpecRecurrence*           spec)
+{
+    make(spec->P, typeBoolean);
+    safe(spec->tP);
+}
+
+void    TypeCalcImpl::visit(SpecPrecedence*           spec)
+{
+    make(spec->P, typeBoolean);
+    make(spec->S, typeBoolean);
+    safe(spec->tPS);
+}
+
+void    TypeCalcImpl::visit(SpecPrecedenceChain12*    spec)
+{
+    make(spec->P, typeBoolean);
+    make(spec->S, typeBoolean);
+    make(spec->T, typeBoolean);
+    safe(spec->tST);
+    safe(spec->tPS);
+}
+
+void    TypeCalcImpl::visit(SpecPrecedenceChain21*    spec)
+{
+    make(spec->P, typeBoolean);
+    make(spec->S, typeBoolean);
+    make(spec->T, typeBoolean);
+    safe(spec->tST);
+    safe(spec->tPS);
+}
+
+void    TypeCalcImpl::visit(SpecResponse*             spec)
+{
+    make(spec->P, typeBoolean);
+    make(spec->S, typeBoolean);
+    safe(spec->cPS, typeBoolean);
+    safe(spec->tPS);
+}
+
+void    TypeCalcImpl::visit(SpecResponseChain12*      spec)
+{
+    make(spec->P, typeBoolean);
+    make(spec->S, typeBoolean);
+    make(spec->T, typeBoolean);
+    safe(spec->cST, typeBoolean);
+    safe(spec->tST);
+    safe(spec->cPS, typeBoolean);
+    safe(spec->tPS);
+}
+
+void    TypeCalcImpl::visit(SpecResponseChain21*      spec)
+{
+    make(spec->P, typeBoolean);
+    make(spec->S, typeBoolean);
+    make(spec->T, typeBoolean);
+    safe(spec->cST, typeBoolean);
+    safe(spec->tST);
+    safe(spec->cTP, typeBoolean);
+    safe(spec->tTP);
+}
+
+void    TypeCalcImpl::visit(SpecResponseInvariance*   spec)
+{
+    make(spec->P, typeBoolean);
+    make(spec->S, typeBoolean);
+    safe(spec->tPS);
+}
+
+void    TypeCalcImpl::visit(SpecUntil*                spec)
+{
+    make(spec->P, typeBoolean);
+    make(spec->S, typeBoolean);
+    safe(spec->tPS);
+}
+
+void    TypeCalcImpl::visit(SpecGlobally*            spec)
+{
+    make(spec->spec);
+}
+
+void    TypeCalcImpl::visit(SpecBefore*              spec)
+{
+    make(spec->arg);
+    make(spec->spec);
+}
+
+void    TypeCalcImpl::visit(SpecAfter*               spec)
+{
+    make(spec->arg);
+    make(spec->spec);
+}
+
+void    TypeCalcImpl::visit(SpecWhile*               spec)
+{
+    make(spec->arg);
+    make(spec->spec);
+}
+
+void    TypeCalcImpl::visit(SpecBetweenAnd*          spec)
+{
+    make(spec->lhs);
+    make(spec->rhs);
+    make(spec->spec);
+}
+
+void    TypeCalcImpl::visit(SpecAfterUntil*          spec)
+{
+    make(spec->lhs);
+    make(spec->rhs);
+    make(spec->spec);
+}
+
+Type*   TypeCalcImpl::make(Expr* expr, Type* type)
 {
     if(expr->type() == nullptr)
     {
@@ -544,7 +739,46 @@ Type*   TypeCalcImpl::make(Expr* expr)
         m_type  = save;
     }
     
+    if(type != nullptr)
+    {
+        if(type != expr->type())
+        {
+            throw Exception(expr->where(), "bad type");   
+        }
+    }
+
     return expr->type();
+}
+
+Type*   TypeCalcImpl::make(Spec* spec)
+{
+    auto    save    = m_type;
+
+    m_type = nullptr;
+    spec->accept(*this);
+
+    m_type  = save;
+    
+    return Factory<TypeBoolean>::create();
+}
+
+Type*   TypeCalcImpl::safe(Expr*          expr, Type* type)
+{
+    if(expr != nullptr)
+    {
+        return make(expr, type);
+    }
+
+    return  nullptr;
+}
+
+Type*   TypeCalcImpl::safe(Time*          time)
+{
+    if(time != nullptr)
+    {
+        return make(time);
+    }
+    return  nullptr;
 }
 
 Type*   TypeCalc::make(Module* module, Expr* expr)
@@ -552,4 +786,11 @@ Type*   TypeCalc::make(Module* module, Expr* expr)
     TypeCalcImpl impl(module);
 
     return  impl.make(expr);
+}
+
+Type*   TypeCalc::make(Module* module, Spec* spec)
+{
+    TypeCalcImpl impl(module);
+
+    return  impl.make(spec);
 }

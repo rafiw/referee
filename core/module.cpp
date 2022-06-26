@@ -128,7 +128,17 @@ void    Module::addExpr(    Expr*   expr)
     m_exprs.push_back(expr);
 }
 
+void    Module::addSpec(    Spec*   spec)
+{
+    m_specs.push_back(spec);
+}
+
 std::vector<Expr*> const&   Module::getExprs()
 {
     return m_exprs;
+}
+
+std::vector<Spec*> const&   Module::getSpecs()
+{
+    return m_specs;
 }

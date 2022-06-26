@@ -144,9 +144,14 @@ expression  : sign? integer                                     # ExprConst
             |  ID '@' expression                                # ExprAt
             ;
 
-specPattern : (pshead ',')+ psbody
+specPattern : psbody                                                # SpecBody
+            | globally                            ',' specPattern   # SpecGlobally
+            | before  expression                  ',' specPattern   # SpecBefore
+            | after   expression                  ',' specPattern   # SpecAfter
+            | while   expression                  ',' specPattern   # SpecWhile
+            | between expression and   expression ',' specPattern   # SpecBetweenAnd
+            | after   expression until expression ',' specPattern   # SpecAfterUntil
             ;
-
 
 after           : 'after'           ;
 afterwards      : 'afterwards'      ;
@@ -213,13 +218,6 @@ exprZ           : expression ;
 exprN           : expression ;
 
 
-pshead          : globally
-                | before  expression
-                | after   expression
-                | while   expression
-                | between expression and   expression
-                | after   expression until expression
-                ;
 specUniversality        : it is always the case that exprP holds? timeBound                                         
                         ;
 specAbsence             : it is never the case that  exprP holds? timeBound                                         
@@ -278,6 +276,7 @@ constraint  : without exprZ holding in between
 timeBound   : upperTimeBound
             | lowerTimeBound 
             | intervalBound
+            | noTimeBound
             ;
 
 upperTimeBound
@@ -290,7 +289,6 @@ lowerTimeBound
 
 intervalBound
             : between exprN and exprN units
-            | noTimeBound
             ;
             
 noTimeBound : /* no time bound */

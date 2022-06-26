@@ -76,7 +76,13 @@ struct PrinterImpl
              , SpecResponseChain12
              , SpecResponseChain21
              , SpecResponseInvariance
-             , SpecUntil>
+             , SpecUntil
+             , SpecGlobally
+             , SpecBefore
+             , SpecAfter
+             , SpecWhile
+             , SpecBetweenAnd
+             , SpecAfterUntil>
 {
     PrinterImpl(std::ostream& os)
         : os(os)
@@ -120,6 +126,12 @@ struct PrinterImpl
     void    visit(SpecResponseChain21*      spec) override;
     void    visit(SpecResponseInvariance*   spec) override;
     void    visit(SpecUntil*                spec) override;
+    void    visit(SpecGlobally*            spec) override;
+    void    visit(SpecBefore*              spec) override;
+    void    visit(SpecAfter*               spec) override;
+    void    visit(SpecWhile*               spec) override;
+    void    visit(SpecBetweenAnd*          spec) override;
+    void    visit(SpecAfterUntil*          spec) override;
 
     std::ostream&   os;
 };
@@ -256,7 +268,7 @@ void    PrinterImpl::visit(SpecUniversality*         spec)
 
 void    PrinterImpl::visit(SpecAbsence*              spec)
 {
-    os  <<  "it is never the case that  " << make(spec->P) << " holds " << make(spec->tP);
+    os  <<  "it is never the case that " << make(spec->P) << " holds " << make(spec->tP);
 }
 
 void    PrinterImpl::visit(SpecExistence*            spec)
@@ -329,6 +341,36 @@ void    PrinterImpl::visit(SpecUntil*                spec)
     os  <<  make(spec->P) << " holds without interruption until " << make(spec->S) << " holds " << make(spec->tPS);
 }
 
+void    PrinterImpl::visit(SpecGlobally*            spec)
+{
+    os  << "globally, " << make(spec->spec);
+}
+
+void    PrinterImpl::visit(SpecBefore*              spec)
+{
+    os  << "before " << make(spec->arg) << ", " << make(spec->spec);
+}
+
+void    PrinterImpl::visit(SpecAfter*               spec)
+{
+    os  << "after " << make(spec->arg) << ", " << make(spec->spec);
+}
+
+void    PrinterImpl::visit(SpecWhile*               spec)
+{
+    os  << "while " << make(spec->arg) << ", " << make(spec->spec);
+}
+
+void    PrinterImpl::visit(SpecBetweenAnd*          spec)
+{
+    os  << "between " << make(spec->lhs) << " and " << make(spec->rhs) << ", " << make(spec->spec);
+}
+
+void    PrinterImpl::visit(SpecAfterUntil*          spec)
+{
+    os  << "after " << make(spec->lhs) << " until " << make(spec->rhs) << ", " << make(spec->spec);
+}
+
 std::string PrinterImpl::make(  Base*   base)
 {
     std::ostringstream  os;
@@ -341,12 +383,11 @@ std::string PrinterImpl::make(  Base*   base)
     return  os.str();
 }
 
-
 std::ostream&   Printer::output(std::ostream& os, Base* base)
 {
     PrinterImpl impl(os);
 
     impl.output(base);
 
-    return os << std::endl;
+    return os;
 }

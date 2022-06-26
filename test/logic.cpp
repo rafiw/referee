@@ -271,7 +271,7 @@ TEST_F(LogicTest, Pass)
         TheFPM->doInitialization();
         auto& functions = TheModule->getFunctionList();
 */
-        TheModule->dump();
+        //TheModule->dump();
 
         ExitOnErr(TheJIT->addModule(llvm::orc::ThreadSafeModule(std::move(TheModule), std::move(TheContext))));
 

@@ -95,9 +95,15 @@ public:
 
     std::any visitUnits(                    referee::refereeParser::UnitsContext*                   ctx) override;
 
-    //std::any visitPsbody(                   referee::refereeParser::PsbodyContext*                  ctx) override;
-    std::any visitSpecPattern(              referee::refereeParser::SpecPatternContext*             ctx) override;
     std::any visitConstraint(               referee::refereeParser::ConstraintContext*              ctx) override;
+
+    std::any visitSpecBody(                 referee::refereeParser::SpecBodyContext*                ctx) override;
+    std::any visitSpecGlobally(             referee::refereeParser::SpecGloballyContext*            ctx) override;
+    std::any visitSpecBefore(               referee::refereeParser::SpecBeforeContext*              ctx) override;
+    std::any visitSpecAfter(                referee::refereeParser::SpecAfterContext*               ctx) override;
+    std::any visitSpecWhile(                referee::refereeParser::SpecWhileContext*               ctx) override;
+    std::any visitSpecBetweenAnd(           referee::refereeParser::SpecBetweenAndContext*          ctx) override;
+    std::any visitSpecAfterUntil(           referee::refereeParser::SpecAfterUntilContext*          ctx) override;
 
     std::any visitSpecUniversality(         referee::refereeParser::SpecUniversalityContext*        ctx) override;
     std::any visitSpecAbsence(              referee::refereeParser::SpecAbsenceContext*             ctx) override;
@@ -116,7 +122,6 @@ public:
     std::any visitSpecResponseInvariance(   referee::refereeParser::SpecResponseInvarianceContext*  ctx) override;
     std::any visitSpecUntil(                referee::refereeParser::SpecUntilContext*               ctx) override;
 
-    std::any visitTimeBound(                referee::refereeParser::TimeBoundContext*               ctx) override;
     std::any visitUpperTimeBound(           referee::refereeParser::UpperTimeBoundContext*          ctx) override;
     std::any visitLowerTimeBound(           referee::refereeParser::LowerTimeBoundContext*          ctx) override;
     std::any visitIntervalBound(            referee::refereeParser::IntervalBoundContext*           ctx) override;
