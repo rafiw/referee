@@ -31,7 +31,7 @@ conf    C:  struct {
     n:  number;
     s:  string;
 };
-
+/*
 a == true;
 b == false;
 Xs(a == false);
@@ -105,3 +105,6 @@ before b, it is always the case that a holds;
 
 after b, before c, it is always the case that b holds;
 after b, before c, it is never the case that a holds;
+*/
+
+after a until c, it is always the case that a || b holds;
