@@ -83,7 +83,6 @@ struct TypeCalcImpl
              , SpecGlobally
              , SpecBefore
              , SpecAfter
-             , SpecWhile
              , SpecBetweenAnd
              , SpecAfterUntil>
 {
@@ -154,7 +153,6 @@ struct TypeCalcImpl
     void    visit(SpecGlobally*            spec)  override;
     void    visit(SpecBefore*              spec)  override;
     void    visit(SpecAfter*               spec)  override;
-    void    visit(SpecWhile*               spec)  override;
     void    visit(SpecBetweenAnd*          spec)  override;
     void    visit(SpecAfterUntil*          spec)  override;
 
@@ -701,12 +699,6 @@ void    TypeCalcImpl::visit(SpecBefore*              spec)
 }
 
 void    TypeCalcImpl::visit(SpecAfter*               spec)
-{
-    make(spec->arg);
-    make(spec->spec);
-}
-
-void    TypeCalcImpl::visit(SpecWhile*               spec)
 {
     make(spec->arg);
     make(spec->spec);

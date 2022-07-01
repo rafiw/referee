@@ -760,19 +760,6 @@ public:
     Expr* const arg;
 };
 
-class SpecWhile
-    : public Visitable<SpecScoped, SpecWhile>
-{
-public:
-    SpecWhile(Expr* arg, Spec* spec)
-        : Visitable<SpecScoped, SpecWhile>(spec)
-        , arg(arg)
-    {
-    }
-
-    Expr* const arg;
-};
-
 class SpecBetweenAnd
     : public Visitable<SpecScoped, SpecBetweenAnd>
 {
@@ -801,6 +788,13 @@ public:
 
     Expr* const lhs;
     Expr* const rhs;
+};
+
+class SpecWhile
+    : public Visitable<SpecBetweenAnd, SpecWhile>
+{
+public:
+    SpecWhile(Expr* arg, Spec* spec);
 };
 
 

@@ -358,7 +358,7 @@ void    PrinterImpl::visit(SpecAfter*               spec)
 
 void    PrinterImpl::visit(SpecWhile*               spec)
 {
-    os  << "while " << make(spec->arg) << ", " << make(spec->spec);
+    os  << "while " << make(spec->lhs) << ", " << make(spec->spec);
 }
 
 void    PrinterImpl::visit(SpecBetweenAnd*          spec)

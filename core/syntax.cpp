@@ -182,3 +182,8 @@ unsigned    TypeEnum::index(std::string name)
 
     throw std::runtime_error(__PRETTY_FUNCTION__);
 }
+
+SpecWhile::SpecWhile(Expr* arg, Spec* spec)
+    : Visitable<SpecBetweenAnd, SpecWhile>(arg, Factory<ExprNot>::create(arg), spec)
+{
+}

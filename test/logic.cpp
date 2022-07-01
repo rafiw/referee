@@ -243,6 +243,16 @@ TEST_F(LogicTest, Pass)
         TheFPM->add(llvm::createReassociatePass());
         TheFPM->add(llvm::createGVNPass());
         TheFPM->add(llvm::createCFGSimplificationPass());
+        TheFPM->add(llvm::createLoopStrengthReducePass());
+        TheFPM->add(llvm::createLoopLoadEliminationPass());
+        TheFPM->add(llvm::createLoopDataPrefetchPass());
+        TheFPM->add(llvm::createLoopSimplifyCFGPass());
+        TheFPM->add(llvm::createLoopGuardWideningPass());
+        TheFPM->add(llvm::createLoopDistributePass());
+        TheFPM->add(llvm::createInstructionCombiningPass());
+        TheFPM->add(llvm::createReassociatePass());
+        TheFPM->add(llvm::createGVNPass());
+        TheFPM->add(llvm::createCFGSimplificationPass());
 
         TheFPM->doInitialization();
 
@@ -255,23 +265,8 @@ TEST_F(LogicTest, Pass)
 
             TheFPM->run(*iter);
         }
-/*
-        TheFPM->add(llvm::createLoopStrengthReducePass());
-        TheFPM->add(llvm::createLoopLoadEliminationPass());
-        TheFPM->add(llvm::createLoopDataPrefetchPass());
-        TheFPM->add(llvm::createLoopSimplifyCFGPass());
-        TheFPM->add(llvm::createLoopGuardWideningPass());
-        TheFPM->add(llvm::createLoopDistributePass());
-        TheFPM->add(llvm::createInstructionCombiningPass());
-        TheFPM->add(llvm::createReassociatePass());
-        TheFPM->add(llvm::createGVNPass());
-        TheFPM->add(llvm::createCFGSimplificationPass());
 
-
-        TheFPM->doInitialization();
-        auto& functions = TheModule->getFunctionList();
-*/
-        TheModule->dump();
+        //TheModule->dump();
 
         ExitOnErr(TheJIT->addModule(llvm::orc::ThreadSafeModule(std::move(TheModule), std::move(TheContext))));
 
