@@ -110,3 +110,7 @@ after a until c, it is always the case that a || b holds;
 between a and c, it is always the case that a || b holds;
 
 while z, it is always the case that z holds;
+
+7 % 2 == 1; 
+8 % 3 == 2; 
+-8 % 3 == 2; 
