@@ -70,6 +70,7 @@ include_directories(
     submodules/rapidcsv/src
 )
 
+if (${CMAKE_SYSTEM_NAME} MATCHES "Darwin")
 include_directories(
     /opt/homebrew/Cellar/googletest/1.11.0/include
     /opt/homebrew/Cellar/antlr4-cpp-runtime/4.10.1/include/
@@ -79,6 +80,7 @@ link_directories(
     /opt/homebrew/Cellar/googletest/1.11.0/lib
     /opt/homebrew/Cellar/antlr4-cpp-runtime/4.10.1/lib
 )
+endif()
 
 separate_arguments(LLVM_DEFINITIONS_LIST NATIVE_COMMAND ${LLVM_DEFINITIONS})
 add_definitions(${LLVM_DEFINITIONS_LIST})

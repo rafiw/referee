@@ -1,40 +1,52 @@
-Installation
-===
+# Installation
+
 Install the following tools
-1. sudo apt-get install cmake
-2. sudo apt-get install gcc
-3. sudo apt-get install g++
-4. sudo apt-get install libgtest-dev
-5. sudo apt-get install libspdlog-dev
-5. sudo apt-get install libcli11-dev
-
-
+```bash
+sudo apt-get install antlr4
+sudo apt-get install cmake
+sudo apt-get install g++
+sudo apt-get install gcc
+sudo apt-get install libantlr4-runtime-dev
+sudo apt-get install libcli11-dev
+sudo apt-get install libfmt-dev
+sudo apt-get install libfmt8
+sudo apt-get install libgtest-dev
+sudo apt-get install libgtextutils-dev
+sudo apt-get install libspdlog-dev
+sudo apt-get install llvm
+sudo apt-get install spdlog
 ```
-/*
-             [XXXXXXXXXXXXX)              //  curr state, the state we are reasoning about !!!
-                           [_____)        //  next state, used to understand where curr ends in time
 
-             ^             ^
-             |             |
-             |             \-------------     begin of the current state 
-             \---------------------------     end of the current state
-[lo...hi]                                 //  case 1 - ends before the current state
-        [lo...hi]                         //  case 2 - starts before but ends within the current state
-                [lo...hi]                 //  case 3 - totally included within the current
-                        [lo...hi]         //  case 4 - starts within but ends after the current state
-                                [lo...hi] //  case 5 - starts after the current state
-          [lo...................hi]       //  case 6 - fully includes the current state
 
-a Uw[lo:hi] b  = start@(
-     (
-           (X timestamp - start.timestamp <= lo)   //  case 5
-       ||  (timestamp - start.timestamp <= hi)     //  case 2/3/4/6
-       &&  a
-     ) U (
-           (X timestamp - start.timestamp > lo) &&  b  
-       ||  (timestamp - start.timestamp > hi)
-     )
-   )
-*/
+# Checkout
+```bash
+git clone git@github.com:michaelrolnik/referee.git
+cd referee
+git submodule init
+git submodule update
+```
 
+# Building
+## Regular
+```bash
+cd referee
+cmake -GNinja ..
+ninja
+```
+### Run Tests
+```bash
+./tests
+```
+
+## Code Coverage
+```bash
+cd referee
+cmake -GNinja -DCODE_COVERAGE=ON ..
+ninja
+```
+
+### Run Tests
+(This does not work on MacOS)
+```bash
+ninja ccov-tests
 ```
