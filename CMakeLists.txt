@@ -45,8 +45,11 @@ find_package(FMT              REQUIRED)
 
 add_code_coverage()
 
-#set(ANTLR4_JAR_LOCATION /opt/homebrew/Cellar/antlr/4.10.1/antlr-4.10.1-complete.jar)
+if (${CMAKE_SYSTEM_NAME} MATCHES "Darwin")
+set(ANTLR4_JAR_LOCATION /opt/homebrew/Cellar/antlr/4.10.1/antlr-4.10.1-complete.jar)
+else()
 set(ANTLR4_JAR_LOCATION /usr/local/lib/antlr-4.10.1-complete.jar)
+endif()
 
 antlr4_generate(
     referee_parser

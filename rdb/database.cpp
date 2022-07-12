@@ -36,6 +36,7 @@
 #include "rapidcsv.h"
 #include "utils.hpp"
 
+#ifndef __APPLE__
 constexpr auto htonll(int64_t h)
 {
     if (std::endian::native != std::endian::big) {
@@ -63,6 +64,7 @@ constexpr auto ntohll(int64_t h)
     }
     return h;
 }
+#endif
 
 namespace referee::db {
 
