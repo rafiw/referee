@@ -100,6 +100,9 @@ C.s != "hello?";
 
 1 - 2 == -1;
 
+F(z && Ys(H(!z)));
+F(z && Ys(Ss(!z, a)));
+
 after b, it is never the case that a holds;
 before b, it is always the case that a holds;
 

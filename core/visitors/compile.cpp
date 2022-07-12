@@ -81,11 +81,8 @@ struct CompileExprImpl
              , ExprDiv
              , ExprEq
              , ExprEqu
-             , ExprF
-             , ExprG
              , ExprGe
              , ExprGt
-             , ExprH
              , ExprImp
              , ExprIndx
              , ExprInt
@@ -97,7 +94,6 @@ struct CompileExprImpl
              , ExprNe
              , ExprNeg
              , ExprNot
-             , ExprO
              , ExprOr
              , ExprParen
              , ExprRs
@@ -142,11 +138,8 @@ struct CompileExprImpl
     void    visit(ExprDiv*          expr) override;
     void    visit(ExprEq*           expr) override;
     void    visit(ExprEqu*          expr) override;
-    void    visit(ExprF*            expr) override;
-    void    visit(ExprG*            expr) override;
     void    visit(ExprGe*           expr) override;
     void    visit(ExprGt*           expr) override;
-    void    visit(ExprH*            expr) override;
     void    visit(ExprImp*          expr) override;
     void    visit(ExprIndx*         expr) override;
     void    visit(ExprInt*          expr) override;
@@ -158,7 +151,6 @@ struct CompileExprImpl
     void    visit(ExprNe*           expr) override;
     void    visit(ExprNeg*          expr) override;
     void    visit(ExprNot*          expr) override;
-    void    visit(ExprO*            expr) override;
     void    visit(ExprOr*           expr) override;
     void    visit(ExprParen*        expr) override;
     void    visit(ExprRs*           expr) override;
@@ -584,14 +576,6 @@ void    CompileExprImpl::visit(ExprEqu*          expr)
 {
 }
 
-void    CompileExprImpl::visit(ExprF*            expr)
-{
-}
-
-void    CompileExprImpl::visit(ExprG*            expr)
-{
-}
-
 void    CompileExprImpl::visit(ExprGe*           expr)
 {
     compare(llvm::CmpInst::Predicate::ICMP_SGE, llvm::CmpInst::Predicate::FCMP_OGE, expr);
@@ -600,10 +584,6 @@ void    CompileExprImpl::visit(ExprGe*           expr)
 void    CompileExprImpl::visit(ExprGt*           expr)
 {
     compare(llvm::CmpInst::Predicate::ICMP_SGT, llvm::CmpInst::Predicate::FCMP_OGT, expr);
-}
-
-void    CompileExprImpl::visit(ExprH*            expr)
-{
 }
 
 void    CompileExprImpl::visit(ExprImp*          expr)
@@ -973,10 +953,6 @@ void    CompileExprImpl::visit(ExprNot*          expr)
 {
     auto    arg = make(expr->arg);
     m_value = m_builder->CreateNot(arg);
-}
-
-void    CompileExprImpl::visit(ExprO*            expr)
-{
 }
 
 void    CompileExprImpl::visit(ExprOr*           expr)
@@ -2010,7 +1986,7 @@ void Compile::make(llvm::LLVMContext* context, llvm::Module* module, Module* ref
         builder->CreateRet(compExpr.make(temp));
         if(!llvm::verifyFunction(*funcBody, &llvm::outs()))
         {
-   //         throw std::runtime_error(__PRETTY_FUNCTION__);
+            //throw std::runtime_error(__PRETTY_FUNCTION__);
         }
     }
 
