@@ -412,6 +412,11 @@ std::any Antlr2AST::visitExprNot(       referee::refereeParser::ExprNotContext* 
     return acceptUnary<ExprNot>(ctx);
 }
 
+std::any Antlr2AST::visitExprNeg(       referee::refereeParser::ExprNegContext*     ctx)
+{
+    return acceptUnary<ExprNeg>(ctx);
+}
+
 std::any Antlr2AST::visitExprO(         referee::refereeParser::ExprOContext*       ctx)
 {
     return acceptTemporalUnary<ExprO>(ctx);
@@ -588,8 +593,9 @@ std::any Antlr2AST::visitStatement(     referee::refereeParser::StatementContext
     {
         auto    spec    = std::any_cast<Spec*>(ctx->specPattern()->accept(this));
 
-        module->addSpec(spec);
+        TypeCalc::make(module, spec);
 
+        module->addSpec(spec);
       
         std::cout << Color::Modifier(Color::FG_GREEN);
         Printer::output(std::cout, spec) << std::endl;

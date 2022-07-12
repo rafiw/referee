@@ -94,6 +94,7 @@ expression  : sign? integer                                     # ExprConst
             | expression '[' expression ']'                     # ExprIndx
 
             | '!' expression                                    # ExprNot
+            | '-' expression                                    # ExprNeg
 
             | expression '+'   expression                       # ExprAdd
             | expression '-'   expression                       # ExprSub

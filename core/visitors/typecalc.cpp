@@ -34,6 +34,7 @@ struct TypeCalcImpl
              , ExprConstString
              , ExprContext
              , ExprConf
+             , ExprChoice
              , ExprParen
              , ExprData
              , ExprMmbr
@@ -46,6 +47,7 @@ struct TypeCalcImpl
              , ExprLt
              , ExprLe
              , ExprNot
+             , ExprNeg
              , ExprOr
              , ExprAnd
              , ExprXor
@@ -123,8 +125,10 @@ struct TypeCalcImpl
     void    visit(ExprMul*              expr) override;
     void    visit(ExprNe*               expr) override;
     void    visit(ExprNot*              expr) override;
+    void    visit(ExprNeg*              expr) override;
     void    visit(ExprOr*               expr) override;
     void    visit(ExprParen*            expr) override;
+    void    visit(ExprChoice*           expr) override;
     void    visit(ExprSub*              expr) override;
     void    visit(ExprXor*              expr) override;
     void    visit(Temporal<ExprBinary>* expr) override;
@@ -186,7 +190,11 @@ void    TypeCalcImpl::visit(ExprAdd*                expr)
 
     if(lhs != typeInteger && lhs != typeNumber && rhs != typeInteger && rhs != typeNumber)
     {
+//  LCOV_EXCL_START 
+//  GCOV_EXCL_START 
         throw Exception(expr->where(), "bad type");
+//  GCOV_EXCL_STOP
+//  LCOV_EXCL_STOP
     }
 
     if(lhs == rhs)
@@ -237,7 +245,11 @@ void    TypeCalcImpl::visit(ExprDiv*                expr)
 
     if(lhs != typeInteger && lhs != typeNumber && rhs != typeInteger && rhs != typeNumber)
     {
+//  LCOV_EXCL_START 
+//  GCOV_EXCL_START 
         throw Exception(expr->where(), "bad type");
+//  GCOV_EXCL_STOP
+//  LCOV_EXCL_STOP
     }
 
     if(lhs == rhs)
@@ -287,14 +299,22 @@ void    TypeCalcImpl::visit(ExprMmbr*               expr)
 
     if(base == nullptr)
     {
+//  LCOV_EXCL_START 
+//  GCOV_EXCL_START 
         throw Exception(expr->where(), "bad type");
+//  GCOV_EXCL_STOP
+//  LCOV_EXCL_STOP
     }
 
     m_type  = base->member(expr->mmbr);
 
     if(m_type == nullptr)
     {
+//  LCOV_EXCL_START 
+//  GCOV_EXCL_START 
         throw Exception(expr->where(), "no such a member");
+//  GCOV_EXCL_STOP
+//  LCOV_EXCL_STOP
     }
 }
 
@@ -305,12 +325,20 @@ void    TypeCalcImpl::visit(ExprInt*              expr)
 
     if(lhs != typeBoolean)
     {
+//  LCOV_EXCL_START 
+//  GCOV_EXCL_START 
         throw Exception(expr->lhs->where(), "bad type");
+//  GCOV_EXCL_STOP
+//  LCOV_EXCL_STOP
     }
 
     if(rhs != typeInteger && rhs != typeNumber)
     {
+//  LCOV_EXCL_START 
+//  GCOV_EXCL_START 
         throw Exception(expr->rhs->where(), "bad type");
+//  GCOV_EXCL_STOP
+//  LCOV_EXCL_STOP
     }
 
     m_type  = rhs;
@@ -324,12 +352,20 @@ void    TypeCalcImpl::visit(ExprIndx*               expr)
 
     if(base == nullptr)
     {
+//  LCOV_EXCL_START 
+//  GCOV_EXCL_START 
         throw Exception(expr->where(), "bad type");
+//  GCOV_EXCL_STOP
+//  LCOV_EXCL_STOP
     }
 
     if(rhs != Factory<TypeInteger>::create())
     {
+//  LCOV_EXCL_START 
+//  GCOV_EXCL_START 
         throw Exception(expr->where(), "index should be integer");
+//  GCOV_EXCL_STOP
+//  LCOV_EXCL_STOP
     }
 
     m_type  = base->type;
@@ -342,14 +378,22 @@ void    TypeCalcImpl::visit(ExprData*               expr)
 
     if(ctxt == nullptr)
     {
+//  LCOV_EXCL_START 
+//  GCOV_EXCL_START 
         throw Exception(expr->where(), "bad type");
+//  GCOV_EXCL_STOP
+//  LCOV_EXCL_STOP
     }
 
     m_type  = ctxt->member(expr->name);
 
     if(m_type == nullptr)
     {
+//  LCOV_EXCL_START 
+//  GCOV_EXCL_START 
         throw Exception(expr->where(), "no such a member");
+//  GCOV_EXCL_STOP
+//  LCOV_EXCL_STOP
     }
 }
 
@@ -361,7 +405,11 @@ void    TypeCalcImpl::visit(ExprConf*               expr)
 
     if(m_type == nullptr)
     {
+//  LCOV_EXCL_START 
+//  GCOV_EXCL_START 
         throw Exception(expr->where(), "no such a member");
+//  GCOV_EXCL_STOP
+//  LCOV_EXCL_STOP
     }
 }
 
@@ -372,7 +420,11 @@ void    TypeCalcImpl::visit(ExprMod*                expr)
 
     if(lhs != typeInteger && rhs != typeInteger)
     {
+//  LCOV_EXCL_START 
+//  GCOV_EXCL_START 
         throw Exception(expr->where(), "bad type");
+//  GCOV_EXCL_STOP
+//  LCOV_EXCL_STOP
     }
 
     m_type  = typeInteger;
@@ -386,7 +438,11 @@ void    TypeCalcImpl::visit(ExprMul*                expr)
 
     if(lhs != typeInteger && lhs != typeNumber && rhs != typeInteger && rhs != typeNumber)
     {
+//  LCOV_EXCL_START 
+//  GCOV_EXCL_START 
         throw Exception(expr->where(), "bad type");
+//  GCOV_EXCL_STOP
+//  LCOV_EXCL_STOP
     }
 
     if(lhs == rhs)
@@ -405,9 +461,64 @@ void    TypeCalcImpl::visit(ExprNot*                expr)
     m_type = bool2Bool(expr, expr->arg);
 }
 
+void    TypeCalcImpl::visit(ExprNeg*                expr)
+{
+    m_type  = make(expr->arg);
+
+    if(m_type != typeInteger && m_type != typeNumber)
+    {
+//  LCOV_EXCL_START 
+//  GCOV_EXCL_START 
+        throw Exception(expr->where(), "bad type");
+//  GCOV_EXCL_STOP
+//  LCOV_EXCL_STOP
+    }
+}
+
 void    TypeCalcImpl::visit(ExprOr*                 expr)
 {
     m_type = boolBool2Bool(expr, expr->lhs, expr->rhs);
+}
+
+void    TypeCalcImpl::visit(ExprChoice*             expr)
+{
+    auto    lhs = make(expr->lhs);
+    auto    mhs = make(expr->mhs);
+    auto    rhs = make(expr->rhs);
+
+    if(lhs != typeBoolean)
+    {
+//  LCOV_EXCL_START 
+//  GCOV_EXCL_START 
+        throw Exception(expr->lhs->where(), "bad type");
+//  GCOV_EXCL_STOP
+//  LCOV_EXCL_STOP
+    }
+
+    if(mhs != typeInteger && rhs != typeInteger)
+    {
+        m_type = typeInteger;
+    }
+    else if(mhs != typeBoolean && rhs != typeBoolean)
+    {
+        m_type = typeBoolean;
+    }
+    else if(mhs != typeString && rhs != typeString)
+    {
+        m_type = typeString;
+    }
+    else if((mhs == typeInteger || mhs == typeNumber) && (rhs == typeInteger || rhs == typeNumber))
+    {
+        m_type = typeNumber;
+    }
+    else
+    {
+//  LCOV_EXCL_START 
+//  GCOV_EXCL_START 
+        throw Exception(expr->where(), "bad type");
+//  GCOV_EXCL_STOP
+//  LCOV_EXCL_STOP
+    }
 }
 
 void    TypeCalcImpl::visit(ExprParen*              expr)
@@ -422,7 +533,11 @@ void    TypeCalcImpl::visit(ExprSub*                expr)
 
     if(lhs != typeInteger && lhs != typeNumber && rhs != typeInteger && rhs != typeNumber)
     {
+//  LCOV_EXCL_START 
+//  GCOV_EXCL_START 
         throw Exception(expr->where(), "bad type");
+//  GCOV_EXCL_STOP
+//  LCOV_EXCL_STOP
     }
 
     if(lhs == rhs)
@@ -457,10 +572,22 @@ void    TypeCalcImpl::visit(Time*                   time)
     auto    hi  = time->hi ? TypeCalcImpl::make(time->hi) : typeInteger;
     
     if (lo != typeInteger)
+    {
+//  LCOV_EXCL_START 
+//  GCOV_EXCL_START 
         throw std::runtime_error(__PRETTY_FUNCTION__);
+//  GCOV_EXCL_STOP
+//  LCOV_EXCL_STOP
+    }
 
     if (hi != typeInteger)
+    {
+//  LCOV_EXCL_START 
+//  GCOV_EXCL_START 
         throw std::runtime_error(__PRETTY_FUNCTION__);
+//  GCOV_EXCL_STOP
+//  LCOV_EXCL_STOP
+    }
 
     m_type = typeVoid;
 }
@@ -471,10 +598,22 @@ void    TypeCalcImpl::visit(ExprXs*               expr)
     auto    rhs = make(expr->rhs);
 
     if (lhs != typeInteger)
+    {
+//  LCOV_EXCL_START 
+//  GCOV_EXCL_START 
         throw std::runtime_error(__PRETTY_FUNCTION__);
+//  GCOV_EXCL_STOP
+//  LCOV_EXCL_STOP
+    }
 
     if (rhs != typeBoolean)
+    {
+//  LCOV_EXCL_START 
+//  GCOV_EXCL_START 
         throw std::runtime_error(__PRETTY_FUNCTION__);
+//  GCOV_EXCL_STOP
+//  LCOV_EXCL_STOP
+    }
 
     m_type = typeBoolean;
 }
@@ -485,10 +624,22 @@ void    TypeCalcImpl::visit(ExprXw*               expr)
     auto    rhs = make(expr->rhs);
 
     if (lhs != typeInteger)
+    {
+//  LCOV_EXCL_START 
+//  GCOV_EXCL_START 
         throw std::runtime_error(__PRETTY_FUNCTION__);
+//  GCOV_EXCL_STOP
+//  LCOV_EXCL_STOP
+    }
 
     if (rhs != typeBoolean)
+    {
+//  LCOV_EXCL_START 
+//  GCOV_EXCL_START 
         throw std::runtime_error(__PRETTY_FUNCTION__);
+//  GCOV_EXCL_STOP
+//  LCOV_EXCL_STOP
+    }
 
     m_type = typeBoolean;
 }
@@ -499,10 +650,22 @@ void    TypeCalcImpl::visit(ExprYs*               expr)
     auto    rhs = make(expr->rhs);
 
     if (lhs != typeInteger)
+    {
+//  LCOV_EXCL_START 
+//  GCOV_EXCL_START 
         throw std::runtime_error(__PRETTY_FUNCTION__);
+//  GCOV_EXCL_STOP
+//  LCOV_EXCL_STOP
+    }
 
     if (rhs != typeBoolean)
+    {
+//  LCOV_EXCL_START 
+//  GCOV_EXCL_START 
         throw std::runtime_error(__PRETTY_FUNCTION__);
+//  GCOV_EXCL_STOP
+//  LCOV_EXCL_STOP
+    }
 
     m_type = typeBoolean;
 }
@@ -513,10 +676,22 @@ void    TypeCalcImpl::visit(ExprYw*               expr)
     auto    rhs = make(expr->rhs);
 
     if (lhs != typeInteger)
+    {
+//  LCOV_EXCL_START 
+//  GCOV_EXCL_START 
         throw std::runtime_error(__PRETTY_FUNCTION__);
+//  GCOV_EXCL_STOP
+//  LCOV_EXCL_STOP
+    }
 
     if (rhs != typeBoolean)
+    {
+//  LCOV_EXCL_START 
+//  GCOV_EXCL_START 
         throw std::runtime_error(__PRETTY_FUNCTION__);
+//  GCOV_EXCL_STOP
+//  LCOV_EXCL_STOP
+    }
 
     m_type = typeBoolean;
 }
@@ -531,7 +706,11 @@ Type*   TypeCalcImpl::boolBool2Bool(
 
     if(typeLhs != typeBoolean || typeRhs != typeBoolean)
     {
+//  LCOV_EXCL_START 
+//  GCOV_EXCL_START 
         throw Exception(expr->where(), "bad type");
+//  GCOV_EXCL_STOP
+//  LCOV_EXCL_STOP
     }
 
     return  typeBoolean;
@@ -545,7 +724,11 @@ Type*   TypeCalcImpl::bool2Bool(
 
     if(typeArg != typeBoolean)
     {
+//  LCOV_EXCL_START 
+//  GCOV_EXCL_START 
         throw Exception(expr->where(), "bad type");
+//  GCOV_EXCL_STOP
+//  LCOV_EXCL_STOP
     }
 
     return  typeBoolean;
@@ -568,7 +751,11 @@ Type*   TypeCalcImpl::nmbrNmbr2Bool(
         return  typeBoolean;
     }
     
+//  LCOV_EXCL_START 
+//  GCOV_EXCL_START 
     throw Exception(expr->where(), "bad type");
+//  GCOV_EXCL_STOP
+//  LCOV_EXCL_STOP
 }
 
 void    TypeCalcImpl::visit(SpecUniversality*         spec)
@@ -694,27 +881,27 @@ void    TypeCalcImpl::visit(SpecGlobally*            spec)
 
 void    TypeCalcImpl::visit(SpecBefore*              spec)
 {
-    make(spec->arg);
+    make(spec->arg, typeBoolean);
     make(spec->spec);
 }
 
 void    TypeCalcImpl::visit(SpecAfter*               spec)
 {
-    make(spec->arg);
+    make(spec->arg, typeBoolean);
     make(spec->spec);
 }
 
 void    TypeCalcImpl::visit(SpecBetweenAnd*          spec)
 {
-    make(spec->lhs);
-    make(spec->rhs);
+    make(spec->lhs, typeBoolean);
+    make(spec->rhs, typeBoolean);
     make(spec->spec);
 }
 
 void    TypeCalcImpl::visit(SpecAfterUntil*          spec)
 {
-    make(spec->lhs);
-    make(spec->rhs);
+    make(spec->lhs, typeBoolean);
+    make(spec->rhs, typeBoolean);
     make(spec->spec);
 }
 
@@ -735,7 +922,11 @@ Type*   TypeCalcImpl::make(Expr* expr, Type* type)
     {
         if(type != expr->type())
         {
+//  LCOV_EXCL_START 
+//  GCOV_EXCL_START 
             throw Exception(expr->where(), "bad type");   
+//  GCOV_EXCL_STOP
+//  LCOV_EXCL_STOP
         }
     }
 

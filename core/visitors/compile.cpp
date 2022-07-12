@@ -83,7 +83,6 @@ struct CompileExprImpl
              , ExprEqu
              , ExprGe
              , ExprGt
-             , ExprImp
              , ExprIndx
              , ExprInt
              , ExprLe
@@ -140,7 +139,6 @@ struct CompileExprImpl
     void    visit(ExprEqu*          expr) override;
     void    visit(ExprGe*           expr) override;
     void    visit(ExprGt*           expr) override;
-    void    visit(ExprImp*          expr) override;
     void    visit(ExprIndx*         expr) override;
     void    visit(ExprInt*          expr) override;
     void    visit(ExprLe*           expr) override;
@@ -374,7 +372,11 @@ void    CompileExprImpl::visit(ExprAt*           expr)
 
 void    CompileExprImpl::visit(ExprChoice*       expr)
 {
-    throw std::runtime_error(__PRETTY_FUNCTION__);
+    auto    lhs = make(expr->lhs);
+    auto    mhs = make(expr->mhs);
+    auto    rhs = make(expr->rhs);
+
+    m_value = m_builder->CreateSelect(lhs, mhs, rhs);
 }
 
 void    CompileExprImpl::visit(ExprConstBoolean* expr)
@@ -420,7 +422,11 @@ void    CompileExprImpl::visit(ExprContext*      expr)
             }
         }
 
+//  LCOV_EXCL_START 
+//  GCOV_EXCL_START 
         throw std::runtime_error(__PRETTY_FUNCTION__);
+//  GCOV_EXCL_STOP
+//  LCOV_EXCL_STOP
     }
 }
 
@@ -525,7 +531,11 @@ void    CompileExprImpl::compare(
     }
     else
     {
+//  LCOV_EXCL_START 
+//  GCOV_EXCL_START 
         throw std::runtime_error(__PRETTY_FUNCTION__);
+//  GCOV_EXCL_STOP
+//  LCOV_EXCL_STOP
     }
 }
 
@@ -563,7 +573,11 @@ void    CompileExprImpl::arithmetic(
     }
     else
     {
+//  LCOV_EXCL_START 
+//  GCOV_EXCL_START 
         throw std::runtime_error(__PRETTY_FUNCTION__);
+//  GCOV_EXCL_STOP
+//  LCOV_EXCL_STOP
     }
 }
 
@@ -574,6 +588,9 @@ void    CompileExprImpl::visit(ExprEq*           expr)
 
 void    CompileExprImpl::visit(ExprEqu*          expr)
 {
+    auto    lhs     = make(expr->lhs);
+    auto    rhs     = make(expr->rhs);
+    m_value = m_builder->CreateICmp(llvm::CmpInst::Predicate::ICMP_EQ, lhs, rhs);
 }
 
 void    CompileExprImpl::visit(ExprGe*           expr)
@@ -584,13 +601,6 @@ void    CompileExprImpl::visit(ExprGe*           expr)
 void    CompileExprImpl::visit(ExprGt*           expr)
 {
     compare(llvm::CmpInst::Predicate::ICMP_SGT, llvm::CmpInst::Predicate::FCMP_OGT, expr);
-}
-
-void    CompileExprImpl::visit(ExprImp*          expr)
-{
-    auto    lhs = make(expr->lhs);
-    auto    rhs = make(expr->rhs);
-    m_value = m_builder->CreateOr(m_builder->CreateNot(lhs), rhs);
 }
 
 void    CompileExprImpl::visit(ExprIndx*         expr)
@@ -923,7 +933,11 @@ void    CompileExprImpl::visit(ExprMmbr*         expr)
     }
     else
     {
+//  LCOV_EXCL_START 
+//  GCOV_EXCL_START 
         throw std::runtime_error(__PRETTY_FUNCTION__);
+//  GCOV_EXCL_STOP
+//  LCOV_EXCL_STOP
     }
 }
 
@@ -947,6 +961,26 @@ void    CompileExprImpl::visit(ExprNe*           expr)
 
 void    CompileExprImpl::visit(ExprNeg*          expr)
 {
+    auto    arg     = make(expr->arg);
+    auto    argT    = expr->arg->type();
+
+    if(argT == Factory<TypeNumber>::create())
+    {
+        m_value = m_builder->CreateFNeg(arg);
+    }
+
+    else if(argT == Factory<TypeInteger>::create())
+    {
+        m_value = m_builder->CreateNeg(arg);
+    }
+    else
+    {
+//  LCOV_EXCL_START 
+//  GCOV_EXCL_START 
+        throw std::runtime_error(__PRETTY_FUNCTION__);
+//  GCOV_EXCL_STOP
+//  LCOV_EXCL_STOP
+    }
 }
 
 void    CompileExprImpl::visit(ExprNot*          expr)
@@ -1986,7 +2020,11 @@ void Compile::make(llvm::LLVMContext* context, llvm::Module* module, Module* ref
         builder->CreateRet(compExpr.make(temp));
         if(!llvm::verifyFunction(*funcBody, &llvm::outs()))
         {
+//  LCOV_EXCL_START 
+//  GCOV_EXCL_START 
             //throw std::runtime_error(__PRETTY_FUNCTION__);
+//  GCOV_EXCL_STOP
+//  LCOV_EXCL_STOP
         }
     }
 
@@ -2012,7 +2050,11 @@ void Compile::make(llvm::LLVMContext* context, llvm::Module* module, Module* ref
 
         if(!llvm::verifyFunction(*funcBody, &llvm::outs()))
         {
+//  LCOV_EXCL_START 
+//  GCOV_EXCL_START 
             //throw std::runtime_error(__PRETTY_FUNCTION__);
+//  GCOV_EXCL_STOP
+//  LCOV_EXCL_STOP
         }
     }
 }
