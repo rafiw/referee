@@ -59,6 +59,8 @@ Xw(26, z) == true;
 Xs(26, true) == false;
 Xw(26, false) == true;
 
+beg@(F(z && beg.a));
+
 I(a, 1) == 1000;
 I(a, 2) == 2000;
 I(b, 2) == 2000;
@@ -120,6 +122,13 @@ between a and c, it is always the case that a || b holds;
 
 while z, it is always the case that z holds;
 
+globally, z eventually holds;
+globally, if a, then in response c eventually holds;
+globally, if a, then in response c followed by e eventually holds;
+globally, if a followed by c, then in response e eventually holds;
+#globally, if e holds, then it must have been the case that d has occurred before it;
+
+
 7 % 2 == 1; 
 8 % 3 == 2; 
 -8 % 3 == 2; 
@@ -133,6 +142,36 @@ while z, it is always the case that z holds;
 !Uw(a, b) <=> Rs(!a, !b);
 !Ss(a, b) <=> Tw(!a, !b);
 !Sw(a, b) <=> Ts(!a, !b);
+
+!Rs(a, b) == Uw(!a, !b);
+!Rw(a, b) == Us(!a, !b);
+!Ts(a, b) == Sw(!a, !b);
+!Tw(a, b) == Ss(!a, !b);
+
+!Rs(a, b) <=> Uw(!a, !b);
+!Rw(a, b) <=> Us(!a, !b);
+!Ts(a, b) <=> Sw(!a, !b);
+!Tw(a, b) <=> Ss(!a, !b);
+
+!Xs(a) <=> Xw(!a);
+!Xw(a) <=> Xs(!a);
+!Ys(a) <=> Yw(!a);
+!Yw(a) <=> Ys(!a);
+
+!F(a)   <=> G(!a);
+!G(a)   <=> F(!a);
+!O(a)   <=> H(!a);
+!H(a)   <=> O(!a);
+
+!(a && b) <=> !a || !b;
+!(a || b) <=> !a && !b;
+
+!(2 <  1) <=> (2 >= 1);
+!(2 <= 1) <=> (2 >  1);
+!(1 >  2) <=> (1 <= 2);
+!(1 >= 2) <=> (1 <  2);
+!(1 == 2) <=> (1 != 2);
+!(1 != 1) <=> (1 == 1);
 
 1   < 2;
 1.1 < 2.2;
@@ -198,5 +237,10 @@ while z, it is always the case that z holds;
 (1.0 / 1.0) == 1;
 (1.0 / 1.0) == 1.0;
 
-true ? true : false;
-false ? false : true;
+(true ? true : false) == true;
+(false ? false : true) == true;
+(true ? "true" : "false") == "true";
+(true ? 1 : 2) == 1;
+(true ? 1.0 : 2) == 1.0;
+(true ? 1.0 : 2.0) == 1;
+(true ? 1 : 2.0) == 1;

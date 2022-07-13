@@ -235,11 +235,11 @@ specMaximumDuration     : once exprP (becomes satisfied)? it remains so for less
                         ;
 specRecurrence          : exprP holds? repeatedly (every exprN units)?                                                   
                         ;
-specPrecedence          : if exprP holds? ',' then it must have been the case that exprS (has occurred)? intervalBound before it?                                                
+specPrecedence          : if exprP holds? ',' then it must have been the case that exprS (has occurred)? intervalBound before it?
                         ;
-specPrecedenceChain12   : if exprS and afterwards exprT upperTimeBound holds? ',' then it must have been the case that exprP (has occurred)? intervalBound before it?       
+specPrecedenceChain12   : if exprS and afterwards exprT upperTimeBound holds? ',' then it must have been the case that exprP (has occurred)? intervalBound before it?
                         ;
-specPrecedenceChain21   : if exprP holds? ',' then it must have been the case that exprS and afterwards exprT upperTimeBound (have occurred)? intervalBound before it? 
+specPrecedenceChain21   : if exprP holds? ',' then it must have been the case that exprS and afterwards exprT upperTimeBound (have occurred)? intervalBound before it?
                         ;
 specResponse            : if exprP (has occurred)? ',' then in response exprS (eventually holds)? timeBound constraint  
                         ;

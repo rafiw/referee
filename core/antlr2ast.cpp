@@ -217,7 +217,11 @@ std::any Antlr2AST::visitExprConst(     referee::refereeParser::ExprConstContext
     if(ctx->string() != nullptr)
         return  static_cast<Expr*>(build<ExprConstString>(ctx, Strings::instance()->getString(parse_string(ctx->string()->getText()))));
 
+//  LCOV_EXCL_START 
+//  GCOV_EXCL_START 
     throw std::runtime_error(__PRETTY_FUNCTION__);
+//  GCOV_EXCL_STOP
+//  LCOV_EXCL_STOP
 
     return nullptr;
 }
@@ -260,7 +264,11 @@ std::any Antlr2AST::visitExprData(      referee::refereeParser::ExprDataContext*
         return expr;
     }
 
+//  LCOV_EXCL_START 
+//  GCOV_EXCL_START 
     throw std::runtime_error(__PRETTY_FUNCTION__);
+//  GCOV_EXCL_STOP
+//  LCOV_EXCL_STOP
 }
 
 std::any Antlr2AST::visitExprDiv(       referee::refereeParser::ExprDivContext*     ctx)
@@ -357,7 +365,11 @@ std::any Antlr2AST::visitInteger(       referee::refereeParser::IntegerContext* 
     if(ctx->HEXINT())
         return  static_cast<Expr*>(build<ExprConstInteger>(ctx, parse_hexint(ctx->HEXINT()->getText())));
 
+//  LCOV_EXCL_START 
+//  GCOV_EXCL_START 
     throw std::runtime_error(__PRETTY_FUNCTION__);
+//  GCOV_EXCL_STOP
+//  LCOV_EXCL_STOP
 }
 
 std::any Antlr2AST::visitExprLe(        referee::refereeParser::ExprLeContext*      ctx)
@@ -382,9 +394,19 @@ std::any Antlr2AST::visitExprMmbr(      referee::refereeParser::ExprMmbrContext*
             return static_cast<Expr*>(build<ExprData>(ctx, ctxt, name));
 
         if(module->hasConf(name))
+        {
+//  LCOV_EXCL_START 
+//  GCOV_EXCL_START 
             throw std::runtime_error(__PRETTY_FUNCTION__);
+//  GCOV_EXCL_STOP
+//  LCOV_EXCL_STOP
+        }
             
+//  LCOV_EXCL_START 
+//  GCOV_EXCL_START 
         throw std::runtime_error(__PRETTY_FUNCTION__);
+//  GCOV_EXCL_STOP
+//  LCOV_EXCL_STOP
     }
     else
     {

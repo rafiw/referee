@@ -375,8 +375,20 @@ void    CompileExprImpl::visit(ExprChoice*       expr)
     auto    lhs = make(expr->lhs);
     auto    mhs = make(expr->mhs);
     auto    rhs = make(expr->rhs);
+    auto    mhsT= mhs->getType();
+    auto    rhsT= rhs->getType();
 
-    m_value = m_builder->CreateSelect(lhs, mhs, rhs);
+    if(mhsT == rhsT)
+    {
+        m_value = m_builder->CreateSelect(lhs, mhs, rhs);
+    }
+    else
+    {
+        m_value = m_builder->CreateSelect(
+            lhs,
+            m_builder->CreateSIToFP(mhs, m_builder->getDoubleTy()),
+            m_builder->CreateSIToFP(rhs, m_builder->getDoubleTy()));
+    }
 }
 
 void    CompileExprImpl::visit(ExprConstBoolean* expr)

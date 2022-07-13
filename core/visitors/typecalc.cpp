@@ -495,17 +495,9 @@ void    TypeCalcImpl::visit(ExprChoice*             expr)
 //  LCOV_EXCL_STOP
     }
 
-    if(mhs != typeInteger && rhs != typeInteger)
+    if(mhs == rhs)
     {
-        m_type = typeInteger;
-    }
-    else if(mhs != typeBoolean && rhs != typeBoolean)
-    {
-        m_type = typeBoolean;
-    }
-    else if(mhs != typeString && rhs != typeString)
-    {
-        m_type = typeString;
+        m_type = rhs;
     }
     else if((mhs == typeInteger || mhs == typeNumber) && (rhs == typeInteger || rhs == typeNumber))
     {
