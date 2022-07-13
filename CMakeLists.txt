@@ -35,6 +35,13 @@ add_compile_options(-g -ggdb)
 add_compile_options(-std=c++20)
 add_compile_options(-O0)
 
+if (${CMAKE_SYSTEM_NAME} MATCHES "Darwin")
+set(ANTLR4_JAR_LOCATION /opt/homebrew/Cellar/antlr/4.10.1/antlr-4.10.1-complete.jar)
+set(LLVM_DIR            /opt/homebrew/opt/llvm/lib/cmake/llvm )
+else()
+set(ANTLR4_JAR_LOCATION /usr/local/lib/antlr-4.10.1-complete.jar)
+endif()
+
 enable_testing()
 
 find_package(antlr4-runtime   REQUIRED)
@@ -42,14 +49,7 @@ find_package(antlr4-generator REQUIRED)
 find_package(LLVM             REQUIRED CONFIG)
 find_package(FMT              REQUIRED)
 
-
 add_code_coverage()
-
-if (${CMAKE_SYSTEM_NAME} MATCHES "Darwin")
-set(ANTLR4_JAR_LOCATION /opt/homebrew/Cellar/antlr/4.10.1/antlr-4.10.1-complete.jar)
-else()
-set(ANTLR4_JAR_LOCATION /usr/local/lib/antlr-4.10.1-complete.jar)
-endif()
 
 antlr4_generate(
     referee_parser

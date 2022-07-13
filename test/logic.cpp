@@ -266,8 +266,6 @@ TEST_F(LogicTest, Pass)
             TheFPM->run(*iter);
         }
 
-        TheModule->dump();
-
         ExitOnErr(TheJIT->addModule(llvm::orc::ThreadSafeModule(std::move(TheModule), std::move(TheContext))));
 
         //auto    symbol  = ExitOnErr(TheJIT->lookup("30:3 .. 30:13"));
