@@ -277,11 +277,11 @@ constraint  : without exprZ holding in between
 timeBound   : upperTimeBound
             | lowerTimeBound 
             | intervalBound
-            | noTimeBound
             ;
 
 upperTimeBound
             : within exprN units
+            | noTimeBound
             ;
 
 lowerTimeBound
@@ -290,6 +290,7 @@ lowerTimeBound
 
 intervalBound
             : between exprN and exprN units
+            | noTimeBound
             ;
             
 noTimeBound : /* no time bound */

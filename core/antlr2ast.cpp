@@ -864,11 +864,18 @@ std::any Antlr2AST::visitSpecUntil(             referee::refereeParser::SpecUnti
 
 std::any Antlr2AST::visitUpperTimeBound(        referee::refereeParser::UpperTimeBoundContext*          ctx)
 {
-    auto    hi  = std::any_cast<Expr*>(ctx->exprN()->accept(this));
-    auto    unit= std::any_cast<Expr*>(ctx->units()->accept(this));
+    if(ctx->noTimeBound() != nullptr)
+    {
+        return  ctx->noTimeBound()->accept(this);
+    }
+    else
+    {
+        auto    hi  = std::any_cast<Expr*>(ctx->exprN()->accept(this));
+        auto    unit= std::any_cast<Expr*>(ctx->units()->accept(this));
 
-    return  static_cast<Time*>(Factory<TimeMax>::create(
-        Factory<ExprMul>::create(hi, unit)));
+        return  static_cast<Time*>(Factory<TimeMax>::create(
+            Factory<ExprMul>::create(hi, unit)));
+    }
 }
 
 std::any Antlr2AST::visitLowerTimeBound(        referee::refereeParser::LowerTimeBoundContext*          ctx)
@@ -882,13 +889,20 @@ std::any Antlr2AST::visitLowerTimeBound(        referee::refereeParser::LowerTim
 
 std::any Antlr2AST::visitIntervalBound(         referee::refereeParser::IntervalBoundContext*           ctx)
 {
-    auto    lo  = std::any_cast<Expr*>(ctx->exprN(0)->accept(this));
-    auto    hi  = std::any_cast<Expr*>(ctx->exprN(1)->accept(this));
-    auto    unit= std::any_cast<Expr*>(ctx->units()->accept(this));
+    if(ctx->noTimeBound() != nullptr)
+    {
+        return  ctx->noTimeBound()->accept(this);
+    }
+    else
+    {
+        auto    lo  = std::any_cast<Expr*>(ctx->exprN(0)->accept(this));
+        auto    hi  = std::any_cast<Expr*>(ctx->exprN(1)->accept(this));
+        auto    unit= std::any_cast<Expr*>(ctx->units()->accept(this));
 
-    return  static_cast<Time*>(Factory<Time>::create(
-        Factory<ExprMul>::create(lo, unit),
-        Factory<ExprMul>::create(hi, unit)));
+        return  static_cast<Time*>(Factory<Time>::create(
+            Factory<ExprMul>::create(lo, unit),
+            Factory<ExprMul>::create(hi, unit)));
+    }
 }
 
 std::any Antlr2AST::visitNoTimeBound(           referee::refereeParser::NoTimeBoundContext*             ctx)
