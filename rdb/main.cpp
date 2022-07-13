@@ -39,7 +39,7 @@ using namespace referee::db;
 
 int main(int argc, char* argv[])
 {
-        CLI::App    app("referee");
+    CLI::App    app("referee");
     
     std::string refFilename = "default";
     bool        fCsvHeaders = false;

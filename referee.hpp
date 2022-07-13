@@ -21,49 +21,13 @@
  *  OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
  *  SOFTWARE.
  */
-#include "referee.hpp"
 
-#include <spdlog/spdlog.h>
-#include "spdlog/fmt/fmt.h"
-#include <spdlog/fmt/ostr.h>
+#pragma once
 
-#include <CLI/App.hpp>
-#include "CLI/Formatter.hpp"
-#include "CLI/Config.hpp"
+#include <string>
 
-int main(int argc, char * argv[])
+class Referee
 {
-    CLI::App    app("referee");
-    
-    std::string refFilename = "default";
-    bool        flDebug     = false;
-
-    auto        compile = app.add_subcommand("compile", "Compile REF file");
-    compile->add_option( "reffile", refFilename, "REF file to parse")
-        ->check(CLI::ExistingFile);
-    
-    try {
-        app.parse(argc, argv);
-
-        if(flDebug)
-        {
-            spdlog::set_level(spdlog::level::debug);
-        }
-
-        if(app.got_subcommand("compile"))
-        {
-            Referee::compile(refFilename);
-        }
-    }
-    catch (const CLI::ParseError &e)
-    {
-        return app.exit(e);
-    }
-    catch(std::exception& e)
-    {
-        std::cerr << "exception: " << e.what() << std::endl;
-        return 1;
-    }
-
-    return 0;
-}
+public:
+    static void     compile(std::string filename);
+};

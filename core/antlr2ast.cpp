@@ -596,10 +596,11 @@ std::any Antlr2AST::visitStatement(     referee::refereeParser::StatementContext
         TypeCalc::make(module, spec);
 
         module->addSpec(spec);
-      
+#if 0      
         std::cout << Color::Modifier(Color::FG_GREEN);
         Printer::output(std::cout, spec) << std::endl;
         std::cout << Color::Modifier(Color::FG_DEFAULT);
+#endif
     }
 
     return nullptr;

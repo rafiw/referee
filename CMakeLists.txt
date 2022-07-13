@@ -111,6 +111,7 @@ add_library(
     core/module.cpp
     core/utils.cpp
     rdb/database.cpp
+    referee.cpp
     ${ANTLR4_SRC_FILES_referee_parser}
 )
 
