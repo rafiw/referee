@@ -128,6 +128,8 @@ public:
     std::any visitIntervalBound(            referee::refereeParser::IntervalBoundContext*           ctx) override;
     std::any visitNoTimeBound(              referee::refereeParser::NoTimeBoundContext*             ctx) override;
 
+private:
+    void    assert_non_temporal(Expr* expr);
 
 private:
     template<typename Type, typename Ctxt>

@@ -328,7 +328,7 @@ std::any Antlr2AST::visitExprInt(       referee::refereeParser::ExprIntContext* 
 
     if(ctx->expression().size() == 1)
     {
-        lhs = Factory<ExprConstBoolean>::create(true);
+        lhs = std::any(static_cast<Expr*>(Factory<ExprConstBoolean>::create(true)));
         rhs = ctx->expression()[0]->accept(this);
     }
     else
@@ -357,13 +357,13 @@ std::any Antlr2AST::visitExprInt(       referee::refereeParser::ExprIntContext* 
 std::any Antlr2AST::visitInteger(       referee::refereeParser::IntegerContext*     ctx)
 {
     if(ctx->BININT())
-        return  static_cast<Expr*>(build<ExprConstInteger>(ctx, parse_binint(ctx->BININT()->getText())));
+        return  static_cast<Expr*>(build<ExprConstInteger>(ctx, parse_binint(ctx->BININT()->getText().c_str() + 2)));
     if(ctx->OCTINT())
-        return  static_cast<Expr*>(build<ExprConstInteger>(ctx, parse_octint(ctx->OCTINT()->getText())));
+        return  static_cast<Expr*>(build<ExprConstInteger>(ctx, parse_octint(ctx->OCTINT()->getText().c_str() + 2)));
     if(ctx->INTEGER())
         return  static_cast<Expr*>(build<ExprConstInteger>(ctx, parse_decint(ctx->INTEGER()->getText())));
     if(ctx->HEXINT())
-        return  static_cast<Expr*>(build<ExprConstInteger>(ctx, parse_hexint(ctx->HEXINT()->getText())));
+        return  static_cast<Expr*>(build<ExprConstInteger>(ctx, parse_hexint(ctx->HEXINT()->getText().c_str() + 2)));
 
 //  LCOV_EXCL_START 
 //  GCOV_EXCL_START 
@@ -711,6 +711,8 @@ std::any Antlr2AST::visitSpecUniversality(      referee::refereeParser::SpecUniv
     auto    P   = std::any_cast<Expr*>(ctx->exprP()->accept(this));
     auto    t   = std::any_cast<Time*>(ctx->timeBound()->accept(this));
 
+    assert_non_temporal(P);
+
     return  static_cast<Spec*>(build<SpecUniversality>(ctx, P, t));
 }
 
@@ -719,6 +721,8 @@ std::any Antlr2AST::visitSpecAbsence(           referee::refereeParser::SpecAbse
     auto    P   = std::any_cast<Expr*>(ctx->exprP()->accept(this));
     auto    t   = std::any_cast<Time*>(ctx->timeBound()->accept(this));
 
+    assert_non_temporal(P);
+
     return  static_cast<Spec*>(build<SpecAbsence>(ctx, P, t));
 }
 
@@ -726,6 +730,8 @@ std::any Antlr2AST::visitSpecExistence(         referee::refereeParser::SpecExis
 {
     auto    P   = std::any_cast<Expr*>(ctx->exprP()->accept(this));
     auto    t   = std::any_cast<Time*>(ctx->timeBound()->accept(this));
+
+    assert_non_temporal(P);
 
     return  static_cast<Spec*>(build<SpecExistence>(ctx, P, t));
 }
@@ -737,12 +743,16 @@ std::any Antlr2AST::visitSpecTransientState(    referee::refereeParser::SpecTran
     auto    u   = std::any_cast<Expr*>(ctx->units()->accept(this));
     auto    t   = Factory<TimeMin>::create(Factory<ExprMul>::create(n, u));
 
+    assert_non_temporal(P);
+
     return  static_cast<Spec*>(build<SpecTransientState>(ctx, P, t));
 }
 
 std::any Antlr2AST::visitSpecSteadyState(       referee::refereeParser::SpecSteadyStateContext*         ctx)
 {
     auto    P   = std::any_cast<Expr*>(ctx->exprP()->accept(this));
+
+    assert_non_temporal(P);
 
     return  static_cast<Spec*>(build<SpecSteadyState>(ctx, P));
 }
@@ -752,7 +762,9 @@ std::any Antlr2AST::visitSpecMinimunDuration(   referee::refereeParser::SpecMini
     auto    P   = std::any_cast<Expr*>(ctx->exprP()->accept(this));
     auto    n   = std::any_cast<Expr*>(ctx->exprN()->accept(this));
     auto    u   = std::any_cast<Expr*>(ctx->units()->accept(this));
-    auto    t   = Factory<TimeMin>::create(Factory<ExprMul>::create(n, u));
+    auto    t   = Factory<TimeMax>::create(Factory<ExprMul>::create(n, u));
+
+    assert_non_temporal(P);
 
     return  static_cast<Spec*>(build<SpecMinimunDuration>(ctx, P, t));
 }
@@ -764,6 +776,8 @@ std::any Antlr2AST::visitSpecMaximumDuration(   referee::refereeParser::SpecMaxi
     auto    u   = std::any_cast<Expr*>(ctx->units()->accept(this));
     auto    t   = Factory<TimeMax>::create(Factory<ExprMul>::create(n, u));
 
+    assert_non_temporal(P);
+
     return  static_cast<Spec*>(build<SpecMaximumDuration>(ctx, P, t));
 }
 
@@ -774,6 +788,8 @@ std::any Antlr2AST::visitSpecRecurrence(        referee::refereeParser::SpecRecu
     auto    u   = std::any_cast<Expr*>(ctx->units()->accept(this));
     auto    t   = Factory<TimeMax>::create(Factory<ExprMul>::create(n, u));
 
+    assert_non_temporal(P);
+
     return  static_cast<Spec*>(build<SpecRecurrence>(ctx, P, t));
 }
 
@@ -782,6 +798,9 @@ std::any Antlr2AST::visitSpecPrecedence(        referee::refereeParser::SpecPrec
     auto    P   = std::any_cast<Expr*>(ctx->exprP()->accept(this));
     auto    S   = std::any_cast<Expr*>(ctx->exprS()->accept(this));
     auto    t   = std::any_cast<Time*>(ctx->intervalBound()->accept(this));
+
+    assert_non_temporal(P);
+    assert_non_temporal(S);
 
     return  static_cast<Spec*>(build<SpecPrecedence>(ctx, P, S, t));
 }
@@ -794,6 +813,10 @@ std::any Antlr2AST::visitSpecPrecedenceChain12( referee::refereeParser::SpecPrec
     auto    st  = std::any_cast<Time*>(ctx->upperTimeBound()->accept(this));
     auto    ps  = std::any_cast<Time*>(ctx->intervalBound()->accept(this));
 
+    assert_non_temporal(P);
+    assert_non_temporal(S);
+    assert_non_temporal(T);
+
     return  static_cast<Spec*>(build<SpecPrecedenceChain12>(ctx, S, T, P, st, ps));
 }
 
@@ -805,6 +828,10 @@ std::any Antlr2AST::visitSpecPrecedenceChain21( referee::refereeParser::SpecPrec
     auto    st  = std::any_cast<Time*>(ctx->upperTimeBound()->accept(this));
     auto    ps  = std::any_cast<Time*>(ctx->intervalBound()->accept(this));
 
+    assert_non_temporal(P);
+    assert_non_temporal(S);
+    assert_non_temporal(T);
+
     return  static_cast<Spec*>(build<SpecPrecedenceChain21>(ctx, P, S, T, st, ps));
 }
 
@@ -814,6 +841,9 @@ std::any Antlr2AST::visitSpecResponse(          referee::refereeParser::SpecResp
     auto    S   = std::any_cast<Expr*>(ctx->exprS()->accept(this));
     auto    tPS = std::any_cast<Time*>(ctx->timeBound()->accept(this));
     auto    cPS = std::any_cast<Expr*>(ctx->constraint()->accept(this));
+
+    assert_non_temporal(P);
+    assert_non_temporal(S);
 
     return  static_cast<Spec*>(build<SpecResponse>(ctx, P, S, tPS, cPS));
 }
@@ -828,6 +858,10 @@ std::any Antlr2AST::visitSpecResponseChain12(   referee::refereeParser::SpecResp
     auto    cPS = std::any_cast<Expr*>(ctx->constraint(0)->accept(this));
     auto    cST = std::any_cast<Expr*>(ctx->constraint(1)->accept(this));
 
+    assert_non_temporal(P);
+    assert_non_temporal(S);
+    assert_non_temporal(T);
+
     return  static_cast<Spec*>(build<SpecResponseChain12>(ctx, P, S, T, tPS, tST, cPS, cST));
 }
 
@@ -841,6 +875,10 @@ std::any Antlr2AST::visitSpecResponseChain21(   referee::refereeParser::SpecResp
     auto    cPS = std::any_cast<Expr*>(ctx->constraint(0)->accept(this));
     auto    cST = std::any_cast<Expr*>(ctx->constraint(1)->accept(this));
 
+    assert_non_temporal(P);
+    assert_non_temporal(S);
+    assert_non_temporal(T);
+
     return  static_cast<Spec*>(build<SpecResponseChain21>(ctx, S, T, P, tPS, tST, cPS, cST));
 }
 
@@ -850,6 +888,9 @@ std::any Antlr2AST::visitSpecResponseInvariance(referee::refereeParser::SpecResp
     auto    S   = std::any_cast<Expr*>(ctx->exprS()->accept(this));
     auto    t   = std::any_cast<Time*>(ctx->timeBound()->accept(this));
 
+    assert_non_temporal(P);
+    assert_non_temporal(S);
+
     return  static_cast<Spec*>(build<SpecResponseInvariance>(ctx, P, S, t));
 }
 
@@ -858,6 +899,9 @@ std::any Antlr2AST::visitSpecUntil(             referee::refereeParser::SpecUnti
     auto    P   = std::any_cast<Expr*>(ctx->exprP()->accept(this));
     auto    S   = std::any_cast<Expr*>(ctx->exprS()->accept(this));
     auto    t   = std::any_cast<Time*>(ctx->timeBound()->accept(this));
+
+    assert_non_temporal(P);
+    assert_non_temporal(S);
 
     return  static_cast<Spec*>(build<SpecUntil>(ctx, P, S, t));
 }
@@ -937,6 +981,8 @@ std::any Antlr2AST::visitSpecBefore(               referee::refereeParser::SpecB
     auto    expr    = std::any_cast<Expr*>(ctx->expression()->accept(this));
     auto    body    = std::any_cast<Spec*>(ctx->specPattern()->accept(this));
 
+    assert_non_temporal(expr);
+
     return  static_cast<Spec*>(build<SpecBefore>(ctx, expr, body));
 }
 
@@ -945,6 +991,8 @@ std::any Antlr2AST::visitSpecAfter(                referee::refereeParser::SpecA
     auto    expr    = std::any_cast<Expr*>(ctx->expression()->accept(this));
     auto    body    = std::any_cast<Spec*>(ctx->specPattern()->accept(this));
 
+    assert_non_temporal(expr);
+
     return  static_cast<Spec*>(build<SpecAfter>(ctx, expr, body));
 }
 
@@ -952,6 +1000,8 @@ std::any Antlr2AST::visitSpecWhile(                referee::refereeParser::SpecW
 {
     auto    expr    = std::any_cast<Expr*>(ctx->expression()->accept(this));
     auto    body    = std::any_cast<Spec*>(ctx->specPattern()->accept(this));
+
+    assert_non_temporal(expr);
 
     return  static_cast<Spec*>(build<SpecWhile>(ctx, expr, body));
 }
@@ -962,6 +1012,9 @@ std::any Antlr2AST::visitSpecBetweenAnd(           referee::refereeParser::SpecB
     auto    rhs     = std::any_cast<Expr*>(ctx->expression(1)->accept(this));
     auto    body    = std::any_cast<Spec*>(ctx->specPattern()->accept(this));
 
+    assert_non_temporal(lhs);
+    assert_non_temporal(rhs);
+
     return  static_cast<Spec*>(build<SpecBetweenAnd>(ctx, lhs, rhs, body));
 }
 
@@ -971,5 +1024,22 @@ std::any Antlr2AST::visitSpecAfterUntil(           referee::refereeParser::SpecA
     auto    rhs     = std::any_cast<Expr*>(ctx->expression(1)->accept(this));
     auto    body    = std::any_cast<Spec*>(ctx->specPattern()->accept(this));
 
+    assert_non_temporal(lhs);
+    assert_non_temporal(rhs);
+
     return  static_cast<Spec*>(build<SpecAfterUntil>(ctx, lhs, rhs, body));
 }
+
+void    Antlr2AST::assert_non_temporal(Expr* expr)
+{
+    if(expr->is_temporal())
+    {
+//  LCOV_EXCL_START 
+//  GCOV_EXCL_START 
+        throw Exception(expr->where(), "cannot be temporal");   
+//  GCOV_EXCL_STOP
+//  LCOV_EXCL_STOP
+    }
+
+}
+

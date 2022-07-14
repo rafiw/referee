@@ -40,7 +40,11 @@ void    Module::addType(std::string name, Type* type)
 {
     if(m_name2type.contains(name))
     {
+//  LCOV_EXCL_START 
+//  GCOV_EXCL_START 
         throw std::runtime_error(__PRETTY_FUNCTION__);
+//  GCOV_EXCL_STOP
+//  LCOV_EXCL_STOP
     }
     m_name2type[name]   = type;
     m_typeNames.push_back(name);
@@ -50,7 +54,11 @@ void    Module::addProp(std::string name, Type* data)
 {
     if(m_name2data.contains(name))
     {
+//  LCOV_EXCL_START 
+//  GCOV_EXCL_START 
         throw std::runtime_error(__PRETTY_FUNCTION__);
+//  GCOV_EXCL_STOP
+//  LCOV_EXCL_STOP
     }
     m_name2data[name]   = data;
     m_propNames.push_back(name);
@@ -60,7 +68,11 @@ void    Module::addConf(std::string name, Type* data)
 {
     if(m_name2conf.contains(name))
     {
+//  LCOV_EXCL_START 
+//  GCOV_EXCL_START 
         throw std::runtime_error(__PRETTY_FUNCTION__);
+//  GCOV_EXCL_STOP
+//  LCOV_EXCL_STOP
     }
     m_name2conf[name]   = data;
     m_confNames.push_back(name);
@@ -70,7 +82,11 @@ Type*   Module::getType(std::string name)
 {
     if(!m_name2type.contains(name))
     {
+//  LCOV_EXCL_START 
+//  GCOV_EXCL_START 
         throw std::runtime_error(__PRETTY_FUNCTION__);
+//  GCOV_EXCL_STOP
+//  LCOV_EXCL_STOP
     }
     return m_name2type[name];
 }
@@ -79,7 +95,11 @@ Type*   Module::getProp(std::string name)
 {
     if(!m_name2data.contains(name))
     {
+//  LCOV_EXCL_START 
+//  GCOV_EXCL_START 
         throw std::runtime_error(__PRETTY_FUNCTION__);
+//  GCOV_EXCL_STOP
+//  LCOV_EXCL_STOP
     }
     return m_name2data[name];
 }
@@ -88,7 +108,11 @@ Type*   Module::getConf(std::string name)
 {
     if(!m_name2conf.contains(name))
     {
+//  LCOV_EXCL_START 
+//  GCOV_EXCL_START 
         throw std::runtime_error(__PRETTY_FUNCTION__);
+//  GCOV_EXCL_STOP
+//  LCOV_EXCL_STOP
     }
     return m_name2conf[name];
 }

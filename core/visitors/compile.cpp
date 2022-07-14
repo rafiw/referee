@@ -1277,7 +1277,7 @@ uint64_t    UR(prop_t const* curr, prop_t const* frst, prop_t const* last, bool 
     auto    lhs     = make(expr->lhs);
     m_curr.pop_back();
     auto    lhsCond = m_builder->CreateCmp(llvm::CmpInst::Predicate::ICMP_EQ, lhs, lhsV);
-    m_builder->CreateCondBr(rhsCond, bbTail, bbNext);
+    m_builder->CreateCondBr(lhsCond, bbTail, bbNext);
     bbLhsLo = m_builder->GetInsertBlock();
 
     //  next
@@ -1472,7 +1472,7 @@ uint64_t    ST(prop_t const* curr, prop_t const* frst, prop_t const* last, bool 
     auto    lhs     = make(expr->lhs);
     m_curr.pop_back();
     auto    lhsCond = m_builder->CreateCmp(llvm::CmpInst::Predicate::ICMP_EQ, lhs, lhsV);
-    m_builder->CreateCondBr(rhsCond, bbTail, bbPrev);
+    m_builder->CreateCondBr(lhsCond, bbTail, bbPrev);
     bbLhsLo = m_builder->GetInsertBlock();
 
     //  next

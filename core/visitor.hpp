@@ -92,7 +92,11 @@ private:
             }
             catch(VisitorException& e)
             {
+//  LCOV_EXCL_START 
+//  GCOV_EXCL_START 
                 throw VisitorException(std::string(e.what()) + "\n" + error(visitor));
+//  GCOV_EXCL_STOP
+//  LCOV_EXCL_STOP
             }
         }
     }
@@ -108,7 +112,11 @@ private:
         }
         else
         {
+//  LCOV_EXCL_START 
+//  GCOV_EXCL_START 
             throw VisitorException(error(visitor));
+//  GCOV_EXCL_STOP
+//  LCOV_EXCL_STOP
         }
     }
 
@@ -134,7 +142,11 @@ public:
     virtual ~Visitable() = default;
     virtual void  accept(Visitor<>& visitor)
     {
+//  LCOV_EXCL_START 
+//  GCOV_EXCL_START 
         throw VisitorException("");
+//  GCOV_EXCL_STOP
+//  LCOV_EXCL_STOP
     }
 };
 

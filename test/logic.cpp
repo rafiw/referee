@@ -70,12 +70,15 @@
 #include "visitors/compile.hpp"
 
 
+//  LCOV_EXCL_START 
+//  GCOV_EXCL_START 
 extern "C"
 void    debug(int64_t value)
 {
     printf("debug: %lld\n", value);
 }
-
+//  GCOV_EXCL_STOP
+//  LCOV_EXCL_STOP
 
 class RefereeJIT 
 {
@@ -156,6 +159,7 @@ typedef struct conf_t {
     bool        b;
     double      n;
     char const* s;
+    uint8_t     e;
 } conf_t;
 
 class LogicTest : public ::testing::Test {
@@ -185,6 +189,7 @@ protected:
         conf.b  = true;
         conf.n  = 1.1;
         conf.s  = Strings::instance()->getString("hello");
+        conf.e  = 1;
 /*
         auto    type    = referee::db::TypeBoolean();
 

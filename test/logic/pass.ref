@@ -25,12 +25,17 @@ data    x:  boolean;
 data    y:  boolean;
 data    z:  boolean;
 
-conf    C:  struct {
+type    Enum: enum {ON, OFF};
+
+type    Conf: struct {
     i:  integer;
     b:  boolean;
     n:  number;
     s:  string;
+    e:  Enum;
 };
+
+conf    C:  Conf;
 
 a == true;
 b == false;
@@ -67,8 +72,13 @@ I(b, 2) == 2000;
 I(c || f, 2) == 4000;
 I(z, 1) == 1;
 I(true, 1) == 25001;
+I(1) == 25001;
 I(false, 1) == 0;
 Xs(I(true, 1) == 24001);
+Xs(2, c);
+Xw(2, c);
+F(z => Ys(2, y));
+F(z => Yw(2, y));
 
 I[0:500](a, 1) == 500;
 I[1:500](a, 1) == 499;
@@ -100,6 +110,7 @@ G(C.b == true);
 G(C.s == "hello");
 C.s != "hello?";
 -C.i == 1 - 2;
+C.e.ON;
 
 1 - 2 == -1;
 
@@ -131,6 +142,8 @@ globally, if b and afterwards c holds, then it must have been the case that a ha
 globally, if c holds, then it must have been the case that a and afterwards b have occurred before it;
 globally, !z holds without interruption until z holds;
 globally, if a has occurred, then in response !a holds continually after 1000 nanoseconds;
+globally, once b becomes satisfied it remains so for at least 1000 nanoseconds;
+globally, once b becomes satisfied it remains so for less than 1001 nanoseconds;
 
 7 % 2 == 1; 
 8 % 3 == 2; 
@@ -247,3 +260,8 @@ globally, if a has occurred, then in response !a holds continually after 1000 na
 (true ? 1.0 : 2) == 1.0;
 (true ? 1.0 : 2.0) == 1;
 (true ? 1 : 2.0) == 1;
+
+123 == 0b1111011;
+123 == 0o173; 
+123 == 0x7b;
+

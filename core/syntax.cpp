@@ -113,7 +113,11 @@ unsigned    TypeContext::index(std::string name)
         index ++;
     }
     
+//  LCOV_EXCL_START 
+//  GCOV_EXCL_START 
     throw std::runtime_error(__PRETTY_FUNCTION__);
+//  GCOV_EXCL_STOP
+//  LCOV_EXCL_STOP
 }
 
 
@@ -144,7 +148,11 @@ unsigned    TypeStruct::index(std::string name)
         return m_name2indx[name];
     }
 
+//  LCOV_EXCL_START 
+//  GCOV_EXCL_START 
     throw std::runtime_error(__PRETTY_FUNCTION__);
+//  GCOV_EXCL_STOP
+//  LCOV_EXCL_STOP
 }
 
 
@@ -180,7 +188,11 @@ unsigned    TypeEnum::index(std::string name)
         return m_name2indx[name] + 1;
     }
 
+//  LCOV_EXCL_START 
+//  GCOV_EXCL_START 
     throw std::runtime_error(__PRETTY_FUNCTION__);
+//  GCOV_EXCL_STOP
+//  LCOV_EXCL_STOP
 }
 
 SpecWhile::SpecWhile(Expr* arg, Spec* spec)

@@ -32,5 +32,14 @@ conf    C:  struct {
     s:  string;
 };
 
+Us[0:999](a, b);
+
 globally, if a has occurred, then in response !a holds continually after 999 nanoseconds;
+
+#Xs(G[0:1001](b));
+#Uw(!b, G[0:1001](b));
+#G(b || Uw(!b, G[0:1001](b)));
+
+globally, once b becomes satisfied it remains so for at least 1001 nanoseconds;
+globally, once b becomes satisfied it remains so for less than 999 nanoseconds;
 

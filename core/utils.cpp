@@ -41,7 +41,11 @@ int64_t     parse_integer(  std::string const& text, unsigned base)
         ||  (res == LLONG_MAX) 
         ||  (res == LLONG_MIN))
     {
+//  LCOV_EXCL_START 
+//  GCOV_EXCL_START 
         throw std::runtime_error(__PRETTY_FUNCTION__);
+//  GCOV_EXCL_STOP
+//  LCOV_EXCL_STOP
     }
 
     return  res;
@@ -62,7 +66,11 @@ double      parse_number(   std::string const& text)
     if(     (err != nullptr && *err != 0)  
         ||  (res == HUGE_VAL))
     {
+//  LCOV_EXCL_START 
+//  GCOV_EXCL_START 
         throw std::runtime_error(__PRETTY_FUNCTION__);
+//  GCOV_EXCL_STOP
+//  LCOV_EXCL_STOP
     }
 
     return  res;
@@ -81,9 +89,15 @@ bool        parse_boolean(  std::string const& text)
     if(text == "false")
         return false;
 
+//  LCOV_EXCL_START 
+//  GCOV_EXCL_START 
     throw std::runtime_error(__PRETTY_FUNCTION__);
+//  GCOV_EXCL_STOP
+//  LCOV_EXCL_STOP
 }
 
+//  LCOV_EXCL_START 
+//  GCOV_EXCL_START 
 std::ostream&   printHex(std::string const& data)
 {
     std::cout << std::endl;
@@ -114,3 +128,5 @@ std::ostream&   printHex(std::string const& data)
 
     return std::cout;
 }
+//  GCOV_EXCL_STOP
+//  LCOV_EXCL_STOP
