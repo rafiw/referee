@@ -1,0 +1,36 @@
+data    a:  boolean;
+data    b:  boolean;
+data    c:  boolean;
+data    d:  boolean;
+data    e:  boolean;
+data    f:  boolean;
+data    g:  boolean;
+data    h:  boolean;
+data    i:  boolean;
+data    j:  boolean;
+data    k:  boolean;
+data    l:  boolean;
+data    m:  boolean;
+data    n:  boolean;
+data    o:  boolean;
+data    p:  boolean;
+data    q:  boolean;
+data    r:  boolean;
+data    s:  boolean;
+data    t:  boolean;
+data    u:  boolean;
+data    v:  boolean;
+data    w:  boolean;
+data    x:  boolean;
+data    y:  boolean;
+data    z:  boolean;
+
+conf    C:  struct {
+    i:  integer;
+    b:  boolean;
+    n:  number;
+    s:  string;
+};
+
+globally, if a has occurred, then in response !a holds continually after 999 nanoseconds;
+

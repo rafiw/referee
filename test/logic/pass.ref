@@ -129,6 +129,8 @@ globally, if a followed by c, then in response e eventually holds;
 globally, if e holds, then it must have been the case that d has occurred before it;
 globally, if b and afterwards c holds, then it must have been the case that a has occurred before it;
 globally, if c holds, then it must have been the case that a and afterwards b have occurred before it;
+globally, !z holds without interruption until z holds;
+globally, if a has occurred, then in response !a holds continually after 1000 nanoseconds;
 
 7 % 2 == 1; 
 8 % 3 == 2; 

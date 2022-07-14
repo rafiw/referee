@@ -36,7 +36,7 @@ class Antlr2AST
     : public referee::refereeBaseVisitor
 {
 public:
-    Antlr2AST();
+    Antlr2AST(std::string name);
 
     std::any visitDeclConf(     referee::refereeParser::DeclConfContext*    ctx) override;
     std::any visitDeclData(     referee::refereeParser::DeclDataContext*    ctx) override;

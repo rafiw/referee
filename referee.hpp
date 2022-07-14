@@ -24,10 +24,10 @@
 
 #pragma once
 
-#include <string>
+#include <iostream>
 
 class Referee
 {
 public:
-    static void     compile(std::string filename);
+    static void     compile(std::istream& is, std::string name, std::ostream& os = std::cout);
 };

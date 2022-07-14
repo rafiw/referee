@@ -25,6 +25,7 @@ brew install antlr
 brew install antlr4-cpp-runtime
 brew install clang-format
 brew install cli11
+brew install cmake
 brew install fmt
 brew install googletest
 brew install llvm

@@ -52,7 +52,9 @@ int main(int argc, char * argv[])
 
         if(app.got_subcommand("compile"))
         {
-            Referee::compile(refFilename);
+            std::ifstream   is(refFilename, std::ios_base::in);
+
+            Referee::compile(is, refFilename);
         }
     }
     catch (const CLI::ParseError &e)

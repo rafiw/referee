@@ -29,6 +29,7 @@
 #include "refereeParser.h"
 #include "refereeLexer.h"
 #include "refereeBaseVisitor.h"
+#include "referee.hpp"
 
 #include "llvm/ADT/APFloat.h"
 #include "llvm/ADT/STLExtras.h"
@@ -60,6 +61,8 @@
 #include "llvm/Transforms/Scalar.h"
 #include "llvm/Transforms/Scalar/GVN.h"
 #include "llvm/ExecutionEngine/JITSymbol.h"
+#include "llvm/IRReader/IRReader.h"
+#include "llvm/Support/SourceMgr.h"
 #include <memory>
 
 #include "antlr2ast.hpp"
@@ -212,33 +215,30 @@ TEST_F(LogicTest, Pass)
 
     ASSERT_TRUE(stream.is_open());
 
-    antlr4::ANTLRInputStream    input(stream);
-    referee::refereeLexer       lexer(&input);
-    antlr4::CommonTokenStream   tokens(&lexer);
-    referee::refereeParser      parser(&tokens);
-    Antlr2AST                   antlr2ast;
-
-    auto    TheContext  = std::make_unique<llvm::LLVMContext>();
-    auto    TheModule   = std::make_unique<llvm::Module>(filename, *TheContext);
-    auto    TheBuilder  = std::make_unique<llvm::IRBuilder<>>(*TheContext);   
-    auto    TheFPM      = std::make_unique<llvm::legacy::FunctionPassManager>(TheModule.get());
-
-    auto    funcType    = llvm::FunctionType::get(TheBuilder->getVoidTy(), {TheBuilder->getInt64Ty()}, false);
-    auto    func        = llvm::Function::Create(funcType, llvm::Function::ExternalLinkage, "debug", *TheModule);
+    std::ostringstream          os;
+    Referee::compile(stream, filename, os);
+    std::string                 ir  = os.str();
+    auto    ref     = llvm::StringRef(ir);
+    auto    buff    = llvm::MemoryBuffer::getMemBuffer(ref);
 
     llvm::InitializeNativeTarget();
     llvm::InitializeNativeTargetAsmPrinter();
     llvm::InitializeNativeTargetAsmParser();
     auto    TheJIT      = ExitOnErr(RefereeJIT::Create());
+
+    auto    error       = std::make_unique<llvm::SMDiagnostic>();
+    auto    TheContext  = std::make_unique<llvm::LLVMContext>();
+    auto    TheModule   = llvm::parseIR(*buff, *error, *TheContext);
+    auto    TheBuilder  = std::make_unique<llvm::IRBuilder<>>(*TheContext);   
+    auto    TheFPM      = std::make_unique<llvm::legacy::FunctionPassManager>(TheModule.get());
+#if 0
+    auto    funcType    = llvm::FunctionType::get(TheBuilder->getVoidTy(), {TheBuilder->getInt64Ty()}, false);
+    auto    func        = llvm::Function::Create(funcType, llvm::Function::ExternalLinkage, "debug", *TheModule);
+#endif
         
     TheModule->setDataLayout(TheJIT->getDataLayout());
 
     try {
-        auto*   tree    = parser.program();
-        auto*   module  = std::any_cast<Module*>(antlr2ast.visitProgram(tree));
-
-        Compile::make(TheContext.get(), TheModule.get(), module);
-
         TheFPM->add(llvm::createInstructionCombiningPass());
         TheFPM->add(llvm::createReassociatePass());
         TheFPM->add(llvm::createGVNPass());
@@ -282,6 +282,87 @@ TEST_F(LogicTest, Pass)
                 auto    result  = func(&state[0], &state[27], &conf);
                 std::cout << std::setw(20) << std::left << name << " eval: " << result << std::endl; 
                 ASSERT_TRUE(result);
+            }
+        }
+    }
+    catch(Exception& e)
+    {
+        std::cerr << "exception: " << e.what() << std::endl;
+        ASSERT_TRUE(false);
+    }
+    catch(std::exception& e)
+    {
+        std::cerr << "exception: " << e.what() << std::endl;
+        ASSERT_TRUE(false);
+    }
+}
+
+TEST_F(LogicTest, Fail)
+{
+    std::string                 filename    = "../test/logic/fail.ref";
+    std::ifstream               stream(filename, std::ios_base::in);
+
+    ASSERT_TRUE(stream.is_open());
+
+    std::ostringstream          os;
+    Referee::compile(stream, filename, os);
+    std::string                 ir  = os.str();
+    auto    ref     = llvm::StringRef(ir);
+    auto    buff    = llvm::MemoryBuffer::getMemBuffer(ref);
+
+    llvm::InitializeNativeTarget();
+    llvm::InitializeNativeTargetAsmPrinter();
+    llvm::InitializeNativeTargetAsmParser();
+    auto    TheJIT      = ExitOnErr(RefereeJIT::Create());
+
+    auto    error       = std::make_unique<llvm::SMDiagnostic>();
+    auto    TheContext  = std::make_unique<llvm::LLVMContext>();
+    auto    TheModule   = llvm::parseIR(*buff, *error, *TheContext);
+    auto    TheBuilder  = std::make_unique<llvm::IRBuilder<>>(*TheContext);   
+    auto    TheFPM      = std::make_unique<llvm::legacy::FunctionPassManager>(TheModule.get());
+        
+    TheModule->setDataLayout(TheJIT->getDataLayout());
+
+    try {
+        TheFPM->add(llvm::createInstructionCombiningPass());
+        TheFPM->add(llvm::createReassociatePass());
+        TheFPM->add(llvm::createGVNPass());
+        TheFPM->add(llvm::createCFGSimplificationPass());
+        TheFPM->add(llvm::createLoopStrengthReducePass());
+        TheFPM->add(llvm::createLoopLoadEliminationPass());
+        TheFPM->add(llvm::createLoopDataPrefetchPass());
+        TheFPM->add(llvm::createLoopSimplifyCFGPass());
+        TheFPM->add(llvm::createLoopGuardWideningPass());
+        TheFPM->add(llvm::createLoopDistributePass());
+        TheFPM->add(llvm::createInstructionCombiningPass());
+        TheFPM->add(llvm::createReassociatePass());
+        TheFPM->add(llvm::createGVNPass());
+        TheFPM->add(llvm::createCFGSimplificationPass());
+
+        TheFPM->doInitialization();
+
+        auto& functions = TheModule->getFunctionList();
+        std::vector<std::string>    names;
+
+        for(auto iter = functions.begin(); iter != functions.end(); iter++)
+        {
+            names.push_back(iter->getName().str());
+
+            TheFPM->run(*iter);
+        }
+
+        ExitOnErr(TheJIT->addModule(llvm::orc::ThreadSafeModule(std::move(TheModule), std::move(TheContext))));
+
+        {
+            for(auto name: names)
+            {
+                auto    symbol  = ExitOnErr(TheJIT->lookup(name));
+                auto    func    = (bool (*)(state_t*, state_t*, void*))(intptr_t)symbol.getAddress();
+                if(name == "debug")
+                    continue;
+                auto    result  = func(&state[0], &state[27], &conf);
+                std::cout << std::setw(20) << std::left << name << " eval: " << result << std::endl; 
+                ASSERT_FALSE(result);
             }
         }
     }

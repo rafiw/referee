@@ -61,24 +61,24 @@
 #include "llvm/Transforms/Scalar.h"
 #include "llvm/Transforms/Scalar/GVN.h"
 #include "llvm/ExecutionEngine/JITSymbol.h"
+#include "llvm/Support/raw_os_ostream.h"
+
 #include <memory>
 
 #include "antlr2ast.hpp"
 #include "strings.hpp"
 #include "visitors/compile.hpp"
 
-void    Referee::compile(std::string filename)
+void    Referee::compile(std::istream& is, std::string name, std::ostream& os)
 {
-    std::ifstream               stream(filename, std::ios_base::in);
-
-    antlr4::ANTLRInputStream    input(stream);
+    antlr4::ANTLRInputStream    input(is);
     referee::refereeLexer       lexer(&input);
     antlr4::CommonTokenStream   tokens(&lexer);
     referee::refereeParser      parser(&tokens);
-    Antlr2AST                   antlr2ast;
+    Antlr2AST                   antlr2ast(name);
 
     auto    TheContext  = std::make_unique<llvm::LLVMContext>();
-    auto    TheModule   = std::make_unique<llvm::Module>(filename, *TheContext);
+    auto    TheModule   = std::make_unique<llvm::Module>(name, *TheContext);
     auto    TheBuilder  = std::make_unique<llvm::IRBuilder<>>(*TheContext);   
     auto    TheFPM      = std::make_unique<llvm::legacy::FunctionPassManager>(TheModule.get());
 
@@ -122,7 +122,8 @@ void    Referee::compile(std::string filename)
             TheFPM->run(*iter);
         }
 
-        TheModule->print(llvm::outs(), nullptr);
+        auto    xyz = llvm::raw_os_ostream(os);
+        TheModule->print(xyz, nullptr);
     }
     catch(Exception& e)
     {

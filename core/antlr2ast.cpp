@@ -34,8 +34,8 @@
 #include "strings.hpp"
 #include "factory.hpp"
 
-Antlr2AST::Antlr2AST()
-    : module(Factory<Module>::create("main"))   // TODO: ?
+Antlr2AST::Antlr2AST(std::string name)
+    : module(Factory<Module>::create(name))
 {
 }
 
