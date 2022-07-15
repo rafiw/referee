@@ -160,6 +160,7 @@ typedef struct conf_t {
     double      n;
     char const* s;
     uint8_t     e;
+    int64_t     a[2];
 } conf_t;
 
 class LogicTest : public ::testing::Test {
@@ -190,6 +191,8 @@ protected:
         conf.n  = 1.1;
         conf.s  = Strings::instance()->getString("hello");
         conf.e  = 1;
+        conf.a[0]   = 1;
+        conf.a[1]   = 2;
 /*
         auto    type    = referee::db::TypeBoolean();
 

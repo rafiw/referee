@@ -25,11 +25,15 @@ data    x:  boolean;
 data    y:  boolean;
 data    z:  boolean;
 
+type    Enum: enum {ON, OFF};
+
 conf    C:  struct {
     i:  integer;
     b:  boolean;
     n:  number;
     s:  string;
+    e:  Enum;
+    a:  integer[2];
 };
 
 Us[0:999](a, b);

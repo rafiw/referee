@@ -33,6 +33,7 @@ type    Conf: struct {
     n:  number;
     s:  string;
     e:  Enum;
+    a:  integer[2];
 };
 
 conf    C:  Conf;
@@ -84,6 +85,8 @@ I[0:500](a, 1) == 500;
 I[1:500](a, 1) == 499;
 I[1000:1002](a || b, 1) == 2;
 I[0:500](a, 1.1) == 550;
+I[0:](a, 1) == 1000;
+I[:1000](a, 1) == 1000;
 
 G[100:1000](a);
 G[100:1001](a) == false;
@@ -264,4 +267,7 @@ globally, once b becomes satisfied it remains so for less than 1001 nanoseconds;
 123 == 0b1111011;
 123 == 0o173; 
 123 == 0x7b;
+
+C.a[0] == 1;
+C.a[1] == 2;
 
