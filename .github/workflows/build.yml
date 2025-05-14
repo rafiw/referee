@@ -1,0 +1,46 @@
+name: Build C++ Project
+
+on:
+  pull_request:
+    branches: [ "**" ]
+
+jobs:
+  build:
+
+    strategy:
+      matrix:
+        os: [ubuntu-latest, macos-latest]
+
+    runs-on: ${{ matrix.os }}
+
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+        with:
+          submodules: recursive
+
+      - name: Install dependencies (Ubuntu)
+        if: runner.os == 'Linux'
+        run: |
+          sudo apt update
+          sudo apt install -y clang-format cmake g++ build-essential libcli11-dev libfmt-dev libgtest-dev libgtextutils-dev llvm ninja-build
+
+      - name: Install dependencies (macOS)
+        if: runner.os == 'macOS'
+        run: |
+          brew update
+          brew install cmake antlr antlr4-cpp-runtime clang-format cli11 fmt googletest llvm
+
+      - name: Create build directory
+        run: mkdir -p build
+
+      - name: Run CMake
+        run: cmake -S . -B build -G Ninja
+
+      - name: Build
+        run: cmake --build build --parallel
+
+      - name: Run tests
+        run: |
+          cd build
+          ./tests
