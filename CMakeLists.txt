@@ -40,6 +40,8 @@ add_compile_options(-Wno-multichar)
 add_compile_options(-g -ggdb)
 add_compile_options(-std=c++20)
 add_compile_options(-O0)
+# TODO: remove this once we have fixed all the deprecation warnings
+add_compile_options(-Wno-deprecated-declarations)
 
 if (${CMAKE_SYSTEM_NAME} MATCHES "Darwin")
     set(LLVM_DIR            /opt/homebrew/opt/llvm/lib/cmake/llvm )
