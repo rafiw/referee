@@ -115,6 +115,9 @@ macro(add_antlr4_cpp ANTLR4_TAG)
     endif()
   endif()
 
+  set(CMAKE_CXX_STANDARD 20 CACHE STRING "C++ standard used" FORCE)
+  set(CMAKE_CXX_STANDARD_REQUIRED ON CACHE BOOL "" FORCE)
+
   add_subdirectory(
     ${ANTLR4CPP_SOURCE_DIR} 
     ${antlr4_cpp_BINARY_DIR}
